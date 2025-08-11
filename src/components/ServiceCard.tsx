@@ -39,6 +39,10 @@ const ServiceCard = ({ title, description, icon: Icon, features }: ServiceCardPr
         <Button 
           variant="outline" 
           className="w-full border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+          onClick={() => {
+            const searchParams = new URLSearchParams({ service: title });
+            window.location.href = `/book-service?${searchParams.toString()}`;
+          }}
         >
           Book Service
         </Button>
