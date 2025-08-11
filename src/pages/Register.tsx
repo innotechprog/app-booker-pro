@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Mail, Lock, User, ArrowLeft, Phone } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -15,76 +16,143 @@ const Register = () => {
     password: "",
     confirmPassword: "",
   });
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const navigate = useNavigate();
 
+  const validateForm = () => {
+    const newErrors: {[key: string]: string} = {};
+
+    // Name validation
+    if (!formData.name.trim()) {
+      newErrors.name = "Full name is required";
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = "Name must be at least 2 characters";
+    }
+
+    // Email validation
+    if (!formData.email) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    // Phone validation (optional but if provided, validate format)
+    if (formData.phone && !/^[\+]?[1-9][\d]{0,15}$/.test(formData.phone.replace(/\s/g, ''))) {
+      newErrors.phone = "Please enter a valid phone number";
+    }
+
+    // Password validation
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters";
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
+      newErrors.password = "Password must contain at least one uppercase letter, one lowercase letter, and one number";
+    }
+
+    // Confirm password validation
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password";
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    // Validate passwords match
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match");
-      setIsLoading(false);
+    
+    if (!validateForm()) {
       return;
     }
 
+    setIsLoading(true);
+
     // Simulate registration process
     setTimeout(() => {
-      if (formData.name && formData.email && formData.password) {
-        const user = {
-          id: Date.now().toString(),
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          joinDate: new Date().toISOString(),
-        };
-        localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("isAuthenticated", "true");
-        
-        toast.success("Account created successfully!");
-        navigate("/dashboard");
-      } else {
-        toast.error("Please fill in all required fields");
-      }
+      const user = {
+        id: Date.now().toString(),
+        name: formData.name.trim(),
+        email: formData.email,
+        phone: formData.phone || undefined,
+        joinDate: new Date().toISOString(),
+      };
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("isAuthenticated", "true");
+      
+      toast.success(`Welcome, ${formData.name}!`, {
+        duration: 3000,
+        description: "Your account has been created successfully."
+      });
+      navigate("/dashboard");
       setIsLoading(false);
     }, 1000);
   };
 
+  const handleGoogleSignup = async () => {
+    setIsGoogleLoading(true);
+    
+    // Simulate Google OAuth
+    setTimeout(() => {
+      const googleUser = {
+        id: Date.now().toString(),
+        email: "user@gmail.com",
+        name: "Google User",
+        joinDate: new Date().toISOString(),
+        provider: "google"
+      };
+      localStorage.setItem("user", JSON.stringify(googleUser));
+      localStorage.setItem("isAuthenticated", "true");
+      
+      toast.success(`Welcome, ${googleUser.name}!`, {
+        duration: 3000,
+        description: "Your account has been created successfully with Google."
+      });
+      navigate("/dashboard");
+      setIsGoogleLoading(false);
+    }, 1500);
+  };
+
   return (
-    <div className="min-h-screen bg-hero-gradient flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
         <Button
           variant="ghost"
           onClick={() => navigate("/")}
-          className="mb-6 text-foreground hover:text-primary"
+          className="mb-6 text-white hover:text-blue-300 hover:bg-white/10 px-4 py-2 rounded-xl transition-all duration-300 group"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform duration-300" />
           Back to Home
         </Button>
 
-        <Card className="bg-card border-border">
+        <Card className="bg-white/10 backdrop-blur-sm border-white/20 shadow-xl">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-card-foreground">
+            <CardTitle className="text-2xl font-bold text-white">
               Create Account
             </CardTitle>
-            <CardDescription className="text-muted-foreground">
+            <CardDescription className="text-gray-300">
               Join us to start booking services
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-card-foreground">Full Name</Label>
+                <Label htmlFor="name" className="text-white font-semibold">Full Name</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="name"
                     name="name"
@@ -92,16 +160,23 @@ const Register = () => {
                     placeholder="Enter your full name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="pl-10 bg-background border-border text-foreground"
+                    className={`pl-10 border-2 transition-all duration-300 bg-white text-gray-900 ${
+                      errors.name 
+                        ? "border-red-500 focus:border-red-500" 
+                        : "border-gray-200 focus:border-blue-500"
+                    } rounded-xl`}
                     required
                   />
                 </div>
+                {errors.name && (
+                  <p className="text-red-400 text-sm mt-1">{errors.name}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-card-foreground">Email</Label>
+                <Label htmlFor="email" className="text-white font-semibold">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="email"
                     name="email"
@@ -109,16 +184,23 @@ const Register = () => {
                     placeholder="Enter your email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="pl-10 bg-background border-border text-foreground"
+                    className={`pl-10 border-2 transition-all duration-300 bg-white text-gray-900 ${
+                      errors.email 
+                        ? "border-red-500 focus:border-red-500" 
+                        : "border-gray-200 focus:border-blue-500"
+                    } rounded-xl`}
                     required
                   />
                 </div>
+                {errors.email && (
+                  <p className="text-red-400 text-sm mt-1">{errors.email}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-card-foreground">Phone Number</Label>
+                <Label htmlFor="phone" className="text-white font-semibold">Phone Number (Optional)</Label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="phone"
                     name="phone"
@@ -126,15 +208,22 @@ const Register = () => {
                     placeholder="Enter your phone number"
                     value={formData.phone}
                     onChange={handleChange}
-                    className="pl-10 bg-background border-border text-foreground"
+                    className={`pl-10 border-2 transition-all duration-300 bg-white text-gray-900 ${
+                      errors.phone 
+                        ? "border-red-500 focus:border-red-500" 
+                        : "border-gray-200 focus:border-blue-500"
+                    } rounded-xl`}
                   />
                 </div>
+                {errors.phone && (
+                  <p className="text-red-400 text-sm mt-1">{errors.phone}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-card-foreground">Password</Label>
+                <Label htmlFor="password" className="text-white font-semibold">Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="password"
                     name="password"
@@ -142,16 +231,23 @@ const Register = () => {
                     placeholder="Create a password"
                     value={formData.password}
                     onChange={handleChange}
-                    className="pl-10 bg-background border-border text-foreground"
+                    className={`pl-10 border-2 transition-all duration-300 bg-white text-gray-900 ${
+                      errors.password 
+                        ? "border-red-500 focus:border-red-500" 
+                        : "border-gray-200 focus:border-blue-500"
+                    } rounded-xl`}
                     required
                   />
                 </div>
+                {errors.password && (
+                  <p className="text-red-400 text-sm mt-1">{errors.password}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-card-foreground">Confirm Password</Label>
+                <Label htmlFor="confirmPassword" className="text-white font-semibold">Confirm Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="confirmPassword"
                     name="confirmPassword"
@@ -159,27 +255,77 @@ const Register = () => {
                     placeholder="Confirm your password"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    className="pl-10 bg-background border-border text-foreground"
+                    className={`pl-10 border-2 transition-all duration-300 bg-white text-gray-900 ${
+                      errors.confirmPassword 
+                        ? "border-red-500 focus:border-red-500" 
+                        : "border-gray-200 focus:border-blue-500"
+                    } rounded-xl`}
                     required
                   />
                 </div>
+                {errors.confirmPassword && (
+                  <p className="text-red-400 text-sm mt-1">{errors.confirmPassword}</p>
+                )}
               </div>
 
               <Button
                 type="submit"
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                 disabled={isLoading}
               >
                 {isLoading ? "Creating Account..." : "Create Account"}
               </Button>
             </form>
 
+            <div className="relative my-6">
+              <Separator className="bg-gray-600" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 px-4 text-gray-300 text-sm">
+                  or continue with
+                </span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleGoogleSignup}
+              disabled={isGoogleLoading}
+              className="w-full border-2 border-gray-300 text-gray-300 hover:bg-white/10 hover:text-white py-3 font-semibold rounded-xl transition-all duration-300"
+            >
+              {isGoogleLoading ? (
+                "Connecting to Google..."
+              ) : (
+                <>
+                  <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
+                    <path
+                      fill="currentColor"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    />
+                  </svg>
+                  Continue with Google
+                </>
+              )}
+            </Button>
+
             <div className="mt-6 text-center">
-              <p className="text-muted-foreground">
+              <p className="text-gray-300">
                 Already have an account?{" "}
                 <Link
                   to="/login"
-                  className="text-primary hover:text-primary/80 font-medium"
+                  className="text-blue-300 hover:text-blue-200 font-medium transition-colors"
                 >
                   Sign in
                 </Link>

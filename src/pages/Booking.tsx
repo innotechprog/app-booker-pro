@@ -22,6 +22,8 @@ const Booking = () => {
     description: "",
     urgency: "normal",
     contactMethod: "phone",
+    specificService: "",
+    customService: "",
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -45,23 +47,10 @@ const Booking = () => {
 
     setIsLoading(true);
 
-    // Simulate booking process
+    // Simulate form validation
     setTimeout(() => {
-      const booking = {
-        id: Date.now().toString(),
-        ...bookingData,
-        status: "pending",
-        createdAt: new Date().toISOString(),
-        estimatedCost: Math.floor(Math.random() * 100) + 50, // Random cost for demo
-      };
-
-      // Get existing bookings
-      const existingBookings = JSON.parse(localStorage.getItem("bookings") || "[]");
-      existingBookings.push(booking);
-      localStorage.setItem("bookings", JSON.stringify(existingBookings));
-
-      toast.success("Service booked successfully!");
-      navigate("/dashboard");
+      // Navigate to billing form with booking data
+      navigate("/billing", { state: { bookingData } });
       setIsLoading(false);
     }, 1000);
   };
@@ -74,9 +63,9 @@ const Booking = () => {
           <Button
             variant="ghost"
             onClick={() => navigate("/book-service")}
-            className="mb-6 text-gray-600 hover:text-gray-900"
+            className="mb-6 text-white hover:text-blue-300 hover:bg-white/10 px-4 py-2 rounded-xl transition-all duration-300 group"
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform duration-300" />
             Back to Send Me
           </Button>
 
@@ -131,21 +120,70 @@ const Booking = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="location" className="text-white font-semibold">Service Location</Label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="location"
-                      type="text"
-                      placeholder="Enter service location"
-                      value={bookingData.location}
-                      onChange={(e) => handleChange("location", e.target.value)}
-                      className="pl-10 border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300"
-                      required
-                    />
+                                 <div className="space-y-2">
+                   <Label htmlFor="location" className="text-white font-semibold">Service Location</Label>
+                   <div className="relative">
+                     <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                     <Input
+                       id="location"
+                       type="text"
+                       placeholder="Enter service location"
+                       value={bookingData.location}
+                       onChange={(e) => handleChange("location", e.target.value)}
+                       className="pl-10 border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300"
+                       required
+                     />
+                   </div>
+                 </div>
+
+                                   <div className="space-y-2">
+                    <Label htmlFor="specificService" className="text-white font-semibold">Specific Service</Label>
+                    <Select value={bookingData.specificService} onValueChange={(value) => handleChange("specificService", value)}>
+                      <SelectTrigger className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900">
+                        <SelectValue placeholder="Select a specific service" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="grocery-shopping">Grocery Shopping</SelectItem>
+                        <SelectItem value="prescription-pickup">Prescription Pickup</SelectItem>
+                        <SelectItem value="dry-cleaning">Dry Cleaning Pickup/Drop-off</SelectItem>
+                        <SelectItem value="package-delivery">Package Delivery</SelectItem>
+                        <SelectItem value="document-delivery">Document Delivery</SelectItem>
+                        <SelectItem value="meal-delivery">Meal/Food Delivery</SelectItem>
+                        <SelectItem value="appointment-scheduling">Appointment Scheduling</SelectItem>
+                        <SelectItem value="file-organization">File/Paperwork Organization</SelectItem>
+                        <SelectItem value="travel-booking">Travel/Accommodation Booking</SelectItem>
+                        <SelectItem value="light-cleaning">Light Cleaning/Tidying</SelectItem>
+                        <SelectItem value="plant-pet-care">Plant Watering/Pet Feeding</SelectItem>
+                        <SelectItem value="maintenance-appointments">Home Maintenance Appointments</SelectItem>
+                        <SelectItem value="document-filing">Document Filing/Copying</SelectItem>
+                        <SelectItem value="office-errands">Office-related Errands</SelectItem>
+                        <SelectItem value="event-setup">Event Setup/Coordination</SelectItem>
+                        <SelectItem value="supplies-pickup">Supplies/Decorations Pickup</SelectItem>
+                        <SelectItem value="event-assistance">Event Assistance</SelectItem>
+                        <SelectItem value="school-pickup">School Pickup/Drop-off</SelectItem>
+                        <SelectItem value="babysitting">Babysitting/Supervision</SelectItem>
+                        <SelectItem value="tech-setup">Technology Setup</SelectItem>
+                        <SelectItem value="elderly-assistance">Elderly/Disabled Assistance</SelectItem>
+                        <SelectItem value="emergency-delivery">Emergency Delivery</SelectItem>
+                        <SelectItem value="other">Other (Please specify below)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                </div>
+
+                  {bookingData.specificService === "other" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="customService" className="text-white font-semibold">Specify Your Service</Label>
+                      <Input
+                        id="customService"
+                        type="text"
+                        placeholder="Please describe the service you need..."
+                        value={bookingData.customService}
+                        onChange={(e) => handleChange("customService", e.target.value)}
+                        className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300"
+                        required={bookingData.specificService === "other"}
+                      />
+                    </div>
+                  )}
 
                 <div className="space-y-2">
                   <Label htmlFor="urgency" className="text-white font-semibold">Urgency Level</Label>
@@ -178,14 +216,16 @@ const Booking = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="description" className="text-white font-semibold">Service Description</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Describe what you need help with in detail..."
-                    value={bookingData.description}
-                    onChange={(e) => handleChange("description", e.target.value)}
-                    className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 min-h-[120px] resize-none"
-                    required
-                  />
+                                     <Textarea
+                     id="description"
+                     placeholder={bookingData.specificService === "other" 
+                       ? "Please describe your custom service request in detail..." 
+                       : "Describe what you need help with in detail..."}
+                     value={bookingData.description}
+                     onChange={(e) => handleChange("description", e.target.value)}
+                     className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 min-h-[120px] resize-none"
+                     required
+                   />
                 </div>
 
                 <Button
