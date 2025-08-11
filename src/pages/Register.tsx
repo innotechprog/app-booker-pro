@@ -330,6 +330,17 @@ const Register = () => {
                   Sign in
                 </Link>
               </p>
+              <div className="mt-4 pt-4 border-t border-gray-600">
+                <p className="text-gray-300 mb-3">
+                  Want to join our team?
+                </p>
+                <Link
+                  to="/agent-register"
+                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium rounded-xl transition-all duration-300 transform hover:scale-105"
+                >
+                  Become an Agent
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>

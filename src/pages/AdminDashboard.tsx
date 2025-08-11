@@ -69,8 +69,31 @@ interface User {
   joinDate: string;
   provider?: string;
   role: 'super-admin' | 'admin' | 'manager' | 'agent';
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'pending';
   lastLogin?: string;
+  applicationId?: string;
+}
+
+interface AgentApplication {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  dateOfBirth: string;
+  experience: string;
+  motivation: string;
+  documents: {
+    criminalRecord: string;
+    idDocument: string;
+    fingerprintCheck: string;
+    profilePicture: string;
+  };
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  reviewNotes?: string;
 }
 
 interface Task {
@@ -142,6 +165,10 @@ const AdminDashboard = () => {
     role: "agent" as 'super-admin' | 'admin' | 'manager' | 'agent',
     status: "active" as 'active' | 'inactive'
   });
+  const [agentApplications, setAgentApplications] = useState<AgentApplication[]>([]);
+  const [selectedApplication, setSelectedApplication] = useState<AgentApplication | null>(null);
+  const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
+  const [reviewNotes, setReviewNotes] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
@@ -320,6 +347,10 @@ const AdminDashboard = () => {
       paidInvoices,
       pendingInvoices
     });
+
+    // Load agent applications
+    const applicationsData = JSON.parse(localStorage.getItem("agentApplications") || "[]");
+    setAgentApplications(applicationsData);
   };
 
   const handleBookingClick = (booking: Booking) => {
@@ -402,6 +433,47 @@ const AdminDashboard = () => {
     setInvoices(updatedInvoices);
     localStorage.setItem("invoices", JSON.stringify(updatedInvoices));
     toast.success(`Invoice status updated to ${newStatus}`);
+  };
+
+  const handleApplicationClick = (application: AgentApplication) => {
+    setSelectedApplication(application);
+    setReviewNotes(application.reviewNotes || "");
+    setIsApplicationModalOpen(true);
+  };
+
+  const handleApplicationReview = (status: 'approved' | 'rejected') => {
+    if (!selectedApplication) return;
+
+    const updatedApplication = {
+      ...selectedApplication,
+      status,
+      reviewedAt: new Date().toISOString(),
+      reviewedBy: "Admin", // In a real app, this would be the current admin's name
+      reviewNotes: reviewNotes
+    };
+
+    const updatedApplications = agentApplications.map(app => 
+      app.id === selectedApplication.id ? updatedApplication : app
+    );
+    setAgentApplications(updatedApplications);
+    localStorage.setItem("agentApplications", JSON.stringify(updatedApplications));
+
+    // Update user status if approved
+    if (status === 'approved') {
+      const updatedUsers = users.map(user => 
+        user.applicationId === selectedApplication.id 
+          ? { ...user, status: 'active' as const }
+          : user
+      );
+      setUsers(updatedUsers);
+      localStorage.setItem("users", JSON.stringify(updatedUsers));
+    }
+
+    setIsApplicationModalOpen(false);
+    setSelectedApplication(null);
+    setReviewNotes("");
+    
+    toast.success(`Application ${status}`);
   };
 
   const getUsersReportingTo = (userId: string) => {
@@ -694,6 +766,10 @@ const AdminDashboard = () => {
              <TabsTrigger value="invoices" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-300">
                <FileText className="mr-2 h-4 w-4" />
                Invoices
+             </TabsTrigger>
+             <TabsTrigger value="applications" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-300">
+               <UserCheck className="mr-2 h-4 w-4" />
+               Agent Applications
              </TabsTrigger>
              <TabsTrigger value="analytics" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-300">
                <BarChart3 className="mr-2 h-4 w-4" />
