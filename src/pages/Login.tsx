@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Mail, Lock, ArrowLeft } from "lucide-react";
+import { Mail, Lock, ArrowLeft, Shield } from "lucide-react";
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -99,6 +99,15 @@ const Login = () => {
       navigate("/dashboard");
       setIsGoogleLoading(false);
     }, 1500);
+  };
+
+  const handleAdminLogin = () => {
+    localStorage.setItem("isAdmin", "true");
+    toast.success("Admin access granted!", {
+      duration: 3000,
+      description: "You have been logged in as administrator."
+    });
+    navigate("/admin");
   };
 
   return (
@@ -223,6 +232,18 @@ const Login = () => {
                 </>
               )}
             </Button>
+
+            <div className="mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAdminLogin}
+                className="w-full border-2 border-purple-300 text-purple-300 hover:bg-purple-600/10 hover:text-purple-200 py-3 font-semibold rounded-xl transition-all duration-300"
+              >
+                <Shield className="mr-2 h-5 w-5" />
+                Admin Access
+              </Button>
+            </div>
 
             <div className="mt-6 text-center">
               <p className="text-gray-300">

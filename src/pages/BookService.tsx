@@ -1,12 +1,48 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Send, CheckCircle, Shield, Zap, Calendar, MapPin } from "lucide-react";
+import { Send, CheckCircle, Shield, Zap, Calendar, MapPin, Home, LogIn, UserPlus } from "lucide-react";
 
 const BookService = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
+      {/* Header */}
+      <div className="bg-white/10 backdrop-blur-sm border-b border-white/20 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-2xl font-bold text-white">
+              IBIS<span className="text-blue-400">.</span>
+            </h1>
+          </div>
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/")}
+              className="text-white hover:text-blue-300 hover:bg-white/10 px-4 py-2 rounded-2xl transition-all duration-300"
+            >
+              <Home className="mr-2 h-4 w-4" />
+              Home
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/login")}
+              className="text-white hover:text-blue-300 hover:bg-white/10 px-4 py-2 rounded-2xl transition-all duration-300"
+            >
+              <LogIn className="mr-2 h-4 w-4" />
+              Login
+            </Button>
+            <Button
+              onClick={() => navigate("/register")}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl"
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              Register
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {/* Send Me Hero Section */}
       <div className="px-4 py-16">
         <div className="max-w-6xl mx-auto">
