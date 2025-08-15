@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { ArrowLeft, CreditCard, DollarSign, CheckCircle, Calendar, Clock, MapPin, Receipt, Building } from "lucide-react";
+import { ArrowLeft, CreditCard, DollarSign, CheckCircle, Calendar, Clock, MapPin, Receipt, Building, ExternalLink, Send } from "lucide-react";
 
 interface BookingData {
   serviceType: string;
@@ -26,20 +26,13 @@ const Billing = () => {
   const bookingData = location.state?.bookingData as BookingData;
   
   const [billingData, setBillingData] = useState({
-    cardNumber: "",
-    cardHolder: "",
-    expiryDate: "",
-    cvv: "",
     billingAddress: "",
     city: "",
     postalCode: "",
-    paymentMethod: "credit-card",
-    bankAccount: "",
-    accountHolder: "",
-    bankName: "",
-    payfastEmail: ""
+    email: ""
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("payfast");
 
   useEffect(() => {
     if (!bookingData) {
@@ -64,95 +57,54 @@ const Billing = () => {
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePayfastRedirect = () => {
     setIsLoading(true);
-
-    // Simulate payment processing
+    
+    // Simulate redirect to Payfast
     setTimeout(() => {
-      const booking = {
-        id: Date.now().toString(),
-        ...bookingData,
-        status: billingData.paymentMethod === "bank-transfer" ? "pending" : "confirmed",
-        createdAt: new Date().toISOString(),
-        estimatedCost: Math.floor(Math.random() * 100) + 50,
-        paymentStatus: billingData.paymentMethod === "bank-transfer" ? "pending" : "paid",
-        paymentMethod: billingData.paymentMethod,
-        billingAddress: `${billingData.billingAddress}, ${billingData.city}, ${billingData.postalCode}`,
-        bankDetails: billingData.paymentMethod === "bank-transfer" ? {
-          bankAccount: billingData.bankAccount,
-          accountHolder: billingData.accountHolder,
-          bankName: billingData.bankName
-        } : null,
-        payfastEmail: billingData.paymentMethod === "payfast" ? billingData.payfastEmail : null
-      };
-
-      // Get existing bookings
-      const existingBookings = JSON.parse(localStorage.getItem("bookings") || "[]");
-      existingBookings.push(booking);
-      localStorage.setItem("bookings", JSON.stringify(existingBookings));
-
-      if (billingData.paymentMethod === "bank-transfer") {
-        toast.success("Invoice generated! Please complete the bank transfer to confirm your booking.");
-        // Generate and show invoice
-        generateInvoice(booking);
-      } else {
-        toast.success("Payment successful! Your booking has been confirmed.");
-      }
+      // In a real implementation, this would redirect to Payfast's payment gateway
+      toast.success("Redirecting to PayFast...");
+      // window.location.href = "https://www.payfast.co.za/eng/process";
       
+      // For demo purposes, we'll just show a success message
+      toast.success("Payment completed via PayFast!");
       navigate("/dashboard");
       setIsLoading(false);
     }, 2000);
   };
 
-  const generateInvoice = (booking: any) => {
-    const invoiceNumber = `INV-${Date.now()}`;
-    const invoice = {
-      id: `inv-${Date.now()}`,
-      bookingId: booking.id,
-      invoiceNumber,
-      serviceType: booking.serviceType,
-      specificService: booking.specificService,
-      amount: booking.estimatedCost,
-      paymentMethod: "bank-transfer",
-      paymentStatus: "pending",
-      paymentDate: booking.createdAt,
-      billingAddress: booking.billingAddress,
-      description: booking.description,
-      date: booking.date,
-      time: booking.time,
-      location: booking.location,
-      bankDetails: booking.bankDetails
-    };
+  const handleSendInvoice = () => {
+    setIsLoading(true);
+    
+    // Generate invoice and send
+    setTimeout(() => {
+      const invoiceNumber = `INV-${Date.now()}`;
+      const invoice = {
+        id: `inv-${Date.now()}`,
+        invoiceNumber,
+        serviceType: bookingData.serviceType,
+        specificService: bookingData.specificService,
+        amount: estimatedCost,
+        paymentMethod: "bank-transfer",
+        paymentStatus: "pending",
+        paymentDate: new Date().toISOString(),
+        billingAddress: `${billingData.billingAddress}, ${billingData.city}, ${billingData.postalCode}`,
+        description: bookingData.description,
+        date: bookingData.date,
+        time: bookingData.time,
+        location: bookingData.location,
+        email: billingData.email
+      };
 
-    // Store invoice
-    const existingInvoices = JSON.parse(localStorage.getItem("invoices") || "[]");
-    existingInvoices.push(invoice);
-    localStorage.setItem("invoices", JSON.stringify(existingInvoices));
+      // Store invoice
+      const existingInvoices = JSON.parse(localStorage.getItem("invoices") || "[]");
+      existingInvoices.push(invoice);
+      localStorage.setItem("invoices", JSON.stringify(existingInvoices));
 
-    // Show invoice details
-    const invoiceDetails = `
-INVOICE ${invoiceNumber}
-
-Service Details:
-- Service: ${booking.specificService === "other" ? booking.customService : booking.specificService.replace('-', ' ')}
-- Date: ${new Date(booking.date).toLocaleDateString()}
-- Time: ${booking.time}
-- Location: ${booking.location}
-- Amount: R${booking.estimatedCost}
-
-Bank Transfer Details:
-- Bank: ${booking.bankDetails.bankName}
-- Account Number: ${booking.bankDetails.bankAccount}
-- Account Holder: ${booking.bankDetails.accountHolder}
-- Reference: ${invoiceNumber}
-
-Please include the invoice number as payment reference.
-    `;
-
-    // In a real app, this would generate a PDF
-    console.log("Invoice generated:", invoiceDetails);
-    toast.info("Invoice details logged to console. In production, this would generate a downloadable PDF.");
+      toast.success("Invoice sent successfully!");
+      navigate("/dashboard");
+      setIsLoading(false);
+    }, 2000);
   };
 
   if (!bookingData) {
@@ -216,7 +168,7 @@ Please include the invoice number as payment reference.
                     <DollarSign className="h-4 w-4 text-green-400" />
                     <div>
                       <p className="text-gray-300 text-sm">Estimated Cost</p>
-                      <p className="text-white font-semibold">${estimatedCost}</p>
+                      <p className="text-white font-semibold">R{estimatedCost}</p>
                     </div>
                   </div>
                 </div>
@@ -241,222 +193,163 @@ Please include the invoice number as payment reference.
               </CardContent>
             </Card>
 
-            {/* Billing Form */}
+            {/* Payment Options */}
             <Card className="bg-white/10 backdrop-blur-sm border-white/20 shadow-xl">
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
                   <CreditCard className="mr-2 h-5 w-5 text-blue-400" />
-                  Payment Information
+                  Payment Options
                 </CardTitle>
                 <CardDescription className="text-gray-300">
-                  Complete your payment to confirm the booking
+                  Choose your preferred payment method
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="paymentMethod" className="text-white font-semibold">Payment Method</Label>
-                    <Select value={billingData.paymentMethod} onValueChange={(value) => handleChange("paymentMethod", value)}>
-                      <SelectTrigger className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900">
-                        <SelectValue placeholder="Select payment method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="credit-card">Credit/Debit Card</SelectItem>
-                        <SelectItem value="payfast">PayFast</SelectItem>
-                        <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 bg-white/10 border border-white/20">
+                    <TabsTrigger 
+                      value="payfast" 
+                      className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-300"
+                    >
+                      PayFast
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="bank-transfer" 
+                      className="data-[state=active]:bg-green-600 data-[state=active]:text-white text-gray-300"
+                    >
+                      Bank Transfer
+                    </TabsTrigger>
+                  </TabsList>
 
-                  {billingData.paymentMethod === "credit-card" && (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="cardNumber" className="text-white font-semibold">Card Number</Label>
-                        <Input
-                          id="cardNumber"
-                          type="text"
-                          placeholder="1234 5678 9012 3456"
-                          value={billingData.cardNumber}
-                          onChange={(e) => handleChange("cardNumber", e.target.value)}
-                          className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900"
-                          required
-                          maxLength={19}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="cardHolder" className="text-white font-semibold">Card Holder</Label>
-                          <Input
-                            id="cardHolder"
-                            type="text"
-                            placeholder="John Doe"
-                            value={billingData.cardHolder}
-                            onChange={(e) => handleChange("cardHolder", e.target.value)}
-                            className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900"
-                            required
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="expiryDate" className="text-white font-semibold">Expiry Date</Label>
-                          <Input
-                            id="expiryDate"
-                            type="text"
-                            placeholder="MM/YY"
-                            value={billingData.expiryDate}
-                            onChange={(e) => handleChange("expiryDate", e.target.value)}
-                            className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900"
-                            required
-                            maxLength={5}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="cvv" className="text-white font-semibold">CVV</Label>
-                        <Input
-                          id="cvv"
-                          type="text"
-                          placeholder="123"
-                          value={billingData.cvv}
-                          onChange={(e) => handleChange("cvv", e.target.value)}
-                          className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900 w-32"
-                          required
-                          maxLength={4}
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  {billingData.paymentMethod === "payfast" && (
-                    <div className="space-y-2">
-                      <Label htmlFor="payfastEmail" className="text-white font-semibold">PayFast Email</Label>
-                      <Input
-                        id="payfastEmail"
-                        type="email"
-                        placeholder="your-email@example.com"
-                        value={billingData.payfastEmail}
-                        onChange={(e) => handleChange("payfastEmail", e.target.value)}
-                        className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900"
-                        required
-                      />
-                      <p className="text-gray-300 text-sm">You will be redirected to PayFast to complete your payment securely.</p>
-                    </div>
-                  )}
-
-                  {billingData.paymentMethod === "bank-transfer" && (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="bankName" className="text-white font-semibold">Bank Name</Label>
-                        <Input
-                          id="bankName"
-                          type="text"
-                          placeholder="e.g., Standard Bank, FNB, ABSA"
-                          value={billingData.bankName}
-                          onChange={(e) => handleChange("bankName", e.target.value)}
-                          className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900"
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="bankAccount" className="text-white font-semibold">Account Number</Label>
-                        <Input
-                          id="bankAccount"
-                          type="text"
-                          placeholder="Enter your account number"
-                          value={billingData.bankAccount}
-                          onChange={(e) => handleChange("bankAccount", e.target.value)}
-                          className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900"
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="accountHolder" className="text-white font-semibold">Account Holder Name</Label>
-                        <Input
-                          id="accountHolder"
-                          type="text"
-                          placeholder="Enter account holder name"
-                          value={billingData.accountHolder}
-                          onChange={(e) => handleChange("accountHolder", e.target.value)}
-                          className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900"
-                          required
-                        />
-                      </div>
-
+                  <TabsContent value="payfast" className="mt-6">
+                    <div className="space-y-6">
                       <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                         <div className="flex items-center space-x-2 mb-2">
-                          <Receipt className="h-4 w-4 text-blue-600" />
-                          <span className="text-blue-800 font-semibold">Invoice Generation</span>
+                          <ExternalLink className="h-4 w-4 text-blue-600" />
+                          <span className="text-blue-800 font-semibold">Secure Payment via PayFast</span>
                         </div>
                         <p className="text-blue-700 text-sm">
-                          An invoice will be generated with bank transfer details. Please include the invoice number as payment reference.
+                          You will be redirected to PayFast's secure payment gateway to complete your transaction.
                         </p>
                       </div>
-                    </>
-                  )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="billingAddress" className="text-white font-semibold">Billing Address</Label>
-                    <Input
-                      id="billingAddress"
-                      type="text"
-                      placeholder="Enter your billing address"
-                      value={billingData.billingAddress}
-                      onChange={(e) => handleChange("billingAddress", e.target.value)}
-                      className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900"
-                      required
-                    />
-                  </div>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="email" className="text-white font-semibold">Email Address</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            placeholder="your-email@example.com"
+                            value={billingData.email}
+                            onChange={(e) => handleChange("email", e.target.value)}
+                            className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900"
+                            required
+                          />
+                        </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="city" className="text-white font-semibold">City</Label>
-                      <Input
-                        id="city"
-                        type="text"
-                        placeholder="Enter city"
-                        value={billingData.city}
-                        onChange={(e) => handleChange("city", e.target.value)}
-                        className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900"
-                        required
-                      />
+                        <div className="p-4 bg-white/5 rounded-lg">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-300">Total Amount:</span>
+                            <span className="text-white font-bold text-xl">R{estimatedCost}</span>
+                          </div>
+                        </div>
+
+                        <Button
+                          onClick={handlePayfastRedirect}
+                          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                          disabled={isLoading || !billingData.email}
+                        >
+                          {isLoading ? "Redirecting..." : `Proceed to PayFast - R${estimatedCost}`}
+                        </Button>
+                      </div>
                     </div>
+                  </TabsContent>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="postalCode" className="text-white font-semibold">Postal Code</Label>
-                      <Input
-                        id="postalCode"
-                        type="text"
-                        placeholder="Enter postal code"
-                        value={billingData.postalCode}
-                        onChange={(e) => handleChange("postalCode", e.target.value)}
-                        className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900"
-                        required
-                      />
+                  <TabsContent value="bank-transfer" className="mt-6">
+                    <div className="space-y-6">
+                      <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Receipt className="h-4 w-4 text-green-600" />
+                          <span className="text-green-800 font-semibold">Bank Transfer Invoice</span>
+                        </div>
+                        <p className="text-green-700 text-sm">
+                          We'll generate an invoice with our bank details. Please include the invoice number as payment reference.
+                        </p>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="billingAddress" className="text-white font-semibold">Billing Address</Label>
+                          <Input
+                            id="billingAddress"
+                            type="text"
+                            placeholder="Enter your billing address"
+                            value={billingData.billingAddress}
+                            onChange={(e) => handleChange("billingAddress", e.target.value)}
+                            className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900"
+                            required
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="city" className="text-white font-semibold">City</Label>
+                            <Input
+                              id="city"
+                              type="text"
+                              placeholder="Enter city"
+                              value={billingData.city}
+                              onChange={(e) => handleChange("city", e.target.value)}
+                              className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900"
+                              required
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="postalCode" className="text-white font-semibold">Postal Code</Label>
+                            <Input
+                              id="postalCode"
+                              type="text"
+                              placeholder="Enter postal code"
+                              value={billingData.postalCode}
+                              onChange={(e) => handleChange("postalCode", e.target.value)}
+                              className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="email" className="text-white font-semibold">Email Address</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            placeholder="your-email@example.com"
+                            value={billingData.email}
+                            onChange={(e) => handleChange("email", e.target.value)}
+                            className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900"
+                            required
+                          />
+                        </div>
+
+                        <div className="p-4 bg-white/5 rounded-lg">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-300">Total Amount:</span>
+                            <span className="text-white font-bold text-xl">R{estimatedCost}</span>
+                          </div>
+                        </div>
+
+                        <Button
+                          onClick={handleSendInvoice}
+                          className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                          disabled={isLoading || !billingData.email || !billingData.billingAddress || !billingData.city || !billingData.postalCode}
+                        >
+                          {isLoading ? "Sending Invoice..." : `Send Invoice - R${estimatedCost}`}
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="p-4 bg-white/5 rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-300">Total Amount:</span>
-                      <span className="text-white font-bold text-xl">${estimatedCost}</span>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Processing..." : 
-                     billingData.paymentMethod === "bank-transfer" ? `Generate Invoice - R${estimatedCost}` :
-                     billingData.paymentMethod === "payfast" ? `Proceed to PayFast - R${estimatedCost}` :
-                     `Pay R${estimatedCost}`}
-                  </Button>
-                </form>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </div>

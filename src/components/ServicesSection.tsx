@@ -55,7 +55,7 @@ const ServicesSection = () => {
             const IconComponent = service.icon;
             return (
               <div
-                key={index}
+              key={index}
                 className="group relative"
                 style={{ animationDelay: `${index * 100}ms` }}
               >

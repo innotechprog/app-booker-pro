@@ -16,9 +16,9 @@ const BookService = () => {
             </h1>
           </div>
           <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/")}
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/")}
               className="text-white hover:text-blue-300 hover:bg-white/10 px-4 py-2 rounded-2xl transition-all duration-300"
             >
               <Home className="mr-2 h-4 w-4" />
@@ -38,10 +38,10 @@ const BookService = () => {
             >
               <UserPlus className="mr-2 h-4 w-4" />
               Register
-            </Button>
+        </Button>
           </div>
-        </div>
-      </div>
+                  </div>
+                </div>
 
       {/* Send Me Hero Section */}
       <div className="px-4 py-16">
@@ -68,9 +68,9 @@ const BookService = () => {
               <div className="flex items-center space-x-2 bg-yellow-600/20 px-4 py-2 rounded-full">
                 <Zap className="h-5 w-5 text-yellow-400" />
                 <span className="text-yellow-200">Fast & Efficient</span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
 
           {/* Service Features */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
@@ -198,8 +198,8 @@ const BookService = () => {
                 </ul>
                 <a href="#booking" className="text-blue-300 hover:text-blue-200 font-medium">Read more →</a>
               </div>
-            </div>
-          </div>
+                </div>
+              </div>
 
           {/* Areas of Operation */}
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 mb-16">
@@ -243,7 +243,7 @@ const BookService = () => {
                   <li>Alberton</li>
                 </ul>
               </div>
-              
+
               {/* West Rand */}
               <div className="bg-white/20 rounded-xl p-6 border border-white/20">
                 <h4 className="font-bold text-blue-300 text-lg mb-4">West Rand</h4>
@@ -255,7 +255,7 @@ const BookService = () => {
                   <li>Carletonville</li>
                 </ul>
               </div>
-              
+
               {/* Tshwane */}
               <div className="bg-white/20 rounded-xl p-6 border border-white/20">
                 <h4 className="font-bold text-blue-300 text-lg mb-4">Tshwane</h4>
@@ -268,16 +268,16 @@ const BookService = () => {
                 </ul>
               </div>
             </div>
-          </div>
+              </div>
 
           {/* Book Now Button */}
           <div className="text-center mb-16">
-            <Button 
+              <Button
               onClick={() => navigate('/booking')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-4 text-xl font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-            >
+              >
               Book Now
-            </Button>
+              </Button>
           </div>
         </div>
       </div>
