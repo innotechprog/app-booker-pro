@@ -26,6 +26,7 @@ import {
   Briefcase
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import SEO from "@/components/SEO";
 
 interface AgentApplication {
   id: string;
@@ -410,7 +411,9 @@ const AgentRegister = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center px-4 py-8">
+    <>
+      <SEO page="agentRegister" />
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-2xl">
         <Button
           variant="ghost"
@@ -1217,6 +1220,7 @@ const AgentRegister = () => {
         </Card>
       </div>
     </div>
+    </>
   );
 };
 

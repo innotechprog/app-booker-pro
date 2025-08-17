@@ -35,6 +35,7 @@ import {
   Building2,
   Briefcase
 } from "lucide-react";
+import SEO from "@/components/SEO";
 
 interface Booking {
   id: string;
@@ -257,7 +258,9 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
+    <>
+      <SEO page="dashboard" />
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
       {/* Header */}
       <div className="bg-white/10 backdrop-blur-sm border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4">
@@ -914,6 +917,7 @@ const Dashboard = () => {
          </DialogContent>
        </Dialog>
      </div>
+     </>
    );
  };
 

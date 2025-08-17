@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Mail, Lock, User, ArrowLeft, Phone } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import SEO from "@/components/SEO";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -127,7 +128,9 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center px-4 py-8">
+    <>
+      <SEO page="register" />
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
         <Button
           variant="ghost"
@@ -346,6 +349,7 @@ const Register = () => {
         </Card>
       </div>
     </div>
+    </>
   );
 };
 

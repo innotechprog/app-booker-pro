@@ -83,6 +83,41 @@ const SEO = ({
       keywords: "billing, payments, PayFast, bank transfer, invoice management, secure payments, IBIS billing",
       image: "/og-image-billing.jpg",
       url: "https://ibis.com/billing"
+    },
+    agentRegister: {
+      title: "Agent Registration - IBIS | Join Our Team",
+      description: "Become an IBIS agent or service provider. Join our team and help deliver exceptional services. Flexible registration process with comprehensive support.",
+      keywords: "agent registration, service provider registration, join IBIS, become an agent, IBIS careers, service provider application",
+      image: "/og-image-agent-register.jpg",
+      url: "https://ibis.com/agent-register"
+    },
+    adminDashboard: {
+      title: "Admin Dashboard - IBIS | System Administration",
+      description: "Administrative dashboard for IBIS system management. Monitor applications, manage users, and oversee service operations.",
+      keywords: "admin dashboard, system administration, IBIS admin, user management, application monitoring",
+      image: "/og-image-admin.jpg",
+      url: "https://ibis.com/admin"
+    },
+    agentDashboard: {
+      title: "Agent Dashboard - IBIS | Service Management",
+      description: "Agent dashboard for managing service requests, tracking assignments, and monitoring performance. Professional tools for IBIS agents.",
+      keywords: "agent dashboard, service management, agent tools, assignment tracking, performance monitoring",
+      image: "/og-image-agent-dashboard.jpg",
+      url: "https://ibis.com/agent-dashboard"
+    },
+    invoices: {
+      title: "Invoices - IBIS | Invoice Management",
+      description: "Manage your IBIS invoices and payment history. View, download, and track all your service invoices in one place.",
+      keywords: "invoices, invoice management, payment history, IBIS invoices, service invoices",
+      image: "/og-image-invoices.jpg",
+      url: "https://ibis.com/invoices"
+    },
+    notFound: {
+      title: "Page Not Found - IBIS | 404 Error",
+      description: "The page you're looking for doesn't exist. Return to IBIS homepage to access our services.",
+      keywords: "404, page not found, error page, IBIS services",
+      image: "/og-image-404.jpg",
+      url: "https://ibis.com/404"
     }
   };
 

@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ArrowLeft, Calendar, Clock, MapPin, Send } from "lucide-react";
+import SEO from "@/components/SEO";
 
 const Booking = () => {
   const [searchParams] = useSearchParams();
@@ -56,7 +57,9 @@ const Booking = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
+    <>
+      <SEO page="booking" />
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
       {/* Booking Form Section */}
       <div className="px-4 py-8">
         <div className="max-w-2xl mx-auto">
@@ -241,6 +244,7 @@ const Booking = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

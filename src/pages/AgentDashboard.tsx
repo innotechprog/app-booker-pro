@@ -37,6 +37,7 @@ import {
   XCircle,
   Hourglass
 } from "lucide-react";
+import SEO from "@/components/SEO";
 
 interface AgentApplication {
   id: string;
@@ -260,7 +261,9 @@ const AgentDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
+    <>
+      <SEO page="agentDashboard" />
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
       {/* Header */}
       <header className="bg-white/10 backdrop-blur-sm border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -675,6 +678,7 @@ const AgentDashboard = () => {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 };
 

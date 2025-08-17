@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { ArrowLeft, CreditCard, DollarSign, CheckCircle, Calendar, Clock, MapPin, Receipt, Building, ExternalLink, Send } from "lucide-react";
 import { bookingService, invoiceService, paymentService } from "@/lib/database";
 import { supabase } from "@/lib/supabase";
+import SEO from "@/components/SEO";
 
 interface BookingData {
   serviceType: string;
@@ -196,7 +197,9 @@ const Billing = () => {
   const estimatedCost = Math.floor(Math.random() * 100) + 50;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
+    <>
+      <SEO page="billing" />
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
       <div className="px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <Button
@@ -438,6 +441,7 @@ const Billing = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

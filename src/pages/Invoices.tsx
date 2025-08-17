@@ -22,6 +22,7 @@ import {
   Clock
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import SEO from "@/components/SEO";
 
 interface Invoice {
   id: string;
@@ -165,7 +166,9 @@ const Invoices = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
+    <>
+      <SEO page="invoices" />
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -430,6 +433,7 @@ const Invoices = () => {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 };
 
