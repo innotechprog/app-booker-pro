@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ChevronUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { 
   BookOpen, 
   Send, 
@@ -12,23 +13,30 @@ import {
   Paintbrush, 
   HardHat, 
   Home, 
-  Monitor 
+  Monitor,
+  GraduationCap,
+  Users,
+  FileText,
+  Globe
 } from "lucide-react";
 
 const ServicesSection = () => {
+  const navigate = useNavigate();
+
   const services = [
-    { name: "Tutoring", icon: BookOpen },
-    { name: "Send Me", icon: Send }, 
-    { name: "Courier", icon: Truck },
-    { name: "Travel & Tour", icon: Plane },
-    { name: "Mobile Carwash", icon: Car },
-    { name: "Mobile Salon / Barber", icon: Scissors },
-    { name: "Plumbing", icon: Wrench },
-    { name: "Solar Installation", icon: Sun },
-    { name: "Painting", icon: Paintbrush },
-    { name: "Paving", icon: HardHat },
-    { name: "Ceiling", icon: Home },
-    { name: "IT Solutions", icon: Monitor }
+    { name: "Education", icon: GraduationCap, route: "/education" },
+    { name: "Tutoring", icon: BookOpen, route: "/book-service" },
+    { name: "Send Me", icon: Send, route: "/book-service" }, 
+    { name: "Courier", icon: Truck, route: "/book-service" },
+    { name: "Travel & Tour", icon: Plane, route: "/book-service" },
+    { name: "Mobile Carwash", icon: Car, route: "/book-service" },
+    { name: "Mobile Salon / Barber", icon: Scissors, route: "/book-service" },
+    { name: "Plumbing", icon: Wrench, route: "/book-service" },
+    { name: "Solar Installation", icon: Sun, route: "/book-service" },
+    { name: "Painting", icon: Paintbrush, route: "/book-service" },
+    { name: "Paving", icon: HardHat, route: "/book-service" },
+    { name: "Ceiling", icon: Home, route: "/book-service" },
+    { name: "IT Solutions", icon: Monitor, route: "/book-service" }
   ];
 
   return (
@@ -61,7 +69,8 @@ const ServicesSection = () => {
               >
                 <Button
                   variant="outline"
-                  className="h-28 w-full bg-gradient-to-br from-gray-900 to-gray-800 hover:from-blue-900 hover:to-blue-800 text-white border-0 rounded-2xl font-medium text-sm transition-all duration-500 hover:scale-105 flex flex-col items-center justify-center space-y-3 p-4 shadow-lg hover:shadow-2xl group-hover:shadow-blue-500/25"
+                  className="h-28 w-full bg-gradient-to-br from-gray-900 to-gray-800 hover:from-blue-900 hover:to-blue-800 text-white border-0 rounded-2xl font-medium text-sm transition-all duration-500 hover:scale-105 flex flex-col items-center justify-center space-y-3 p-4 shadow-lg hover:shadow-2xl group-hover:shadow-blue-500/25 cursor-pointer"
+                  onClick={() => navigate(service.route)}
                 >
                   <div className="relative">
                     <IconComponent className="h-8 w-8 text-blue-400 group-hover:text-blue-300 transition-colors duration-300" />
@@ -87,6 +96,7 @@ const ServicesSection = () => {
             <Button 
               size="lg"
               className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+              onClick={() => navigate("/book-service")}
             >
               Get Started Today
             </Button>

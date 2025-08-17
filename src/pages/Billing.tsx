@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { ArrowLeft, CreditCard, DollarSign, CheckCircle, Calendar, Clock, MapPin, Receipt, Building, ExternalLink, Send } from "lucide-react";
+import { bookingService, invoiceService, paymentService } from "@/lib/database";
+import { supabase } from "@/lib/supabase";
 
 interface BookingData {
   serviceType: string;
@@ -33,6 +35,7 @@ const Billing = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("payfast");
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
     if (!bookingData) {
@@ -42,13 +45,18 @@ const Billing = () => {
     }
 
     // Check if user is authenticated
-    const isAuthenticated = localStorage.getItem("isAuthenticated");
-    if (!isAuthenticated) {
+    checkAuth();
+  }, [bookingData, navigate]);
+
+  const checkAuth = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       toast.error("Please log in to complete billing");
       navigate("/login");
       return;
     }
-  }, [bookingData, navigate]);
+    setCurrentUser(user);
+  };
 
   const handleChange = (field: string, value: string) => {
     setBillingData({
@@ -57,54 +65,128 @@ const Billing = () => {
     });
   };
 
-  const handlePayfastRedirect = () => {
-    setIsLoading(true);
-    
-    // Simulate redirect to Payfast
-    setTimeout(() => {
-      // In a real implementation, this would redirect to Payfast's payment gateway
-      toast.success("Redirecting to PayFast...");
-      // window.location.href = "https://www.payfast.co.za/eng/process";
-      
-      // For demo purposes, we'll just show a success message
-      toast.success("Payment completed via PayFast!");
-      navigate("/dashboard");
-      setIsLoading(false);
-    }, 2000);
-  };
+  const handlePayfastRedirect = async () => {
+    if (!currentUser) {
+      toast.error("Please log in to continue");
+      return;
+    }
 
-  const handleSendInvoice = () => {
     setIsLoading(true);
     
-    // Generate invoice and send
-    setTimeout(() => {
-      const invoiceNumber = `INV-${Date.now()}`;
-      const invoice = {
-        id: `inv-${Date.now()}`,
-        invoiceNumber,
-        serviceType: bookingData.serviceType,
-        specificService: bookingData.specificService,
-        amount: estimatedCost,
-        paymentMethod: "bank-transfer",
-        paymentStatus: "pending",
-        paymentDate: new Date().toISOString(),
-        billingAddress: `${billingData.billingAddress}, ${billingData.city}, ${billingData.postalCode}`,
-        description: bookingData.description,
+    try {
+      // Create booking in database
+      const booking = await bookingService.createBooking({
+        user_id: currentUser.id,
+        service_id: null, // Will be set based on service type
+        service_type: bookingData.serviceType,
+        specific_service: bookingData.specificService,
+        custom_service: bookingData.customService,
         date: bookingData.date,
         time: bookingData.time,
         location: bookingData.location,
-        email: billingData.email
-      };
+        description: bookingData.description,
+        urgency: bookingData.urgency as any,
+        contact_method: bookingData.contactMethod as any,
+        estimated_cost: estimatedCost,
+        payment_method: 'payfast',
+        billing_address: `${billingData.billingAddress}, ${billingData.city}, ${billingData.postalCode}`
+      });
 
-      // Store invoice
-      const existingInvoices = JSON.parse(localStorage.getItem("invoices") || "[]");
-      existingInvoices.push(invoice);
-      localStorage.setItem("invoices", JSON.stringify(existingInvoices));
+      // Create payment record
+      await paymentService.createPayment({
+        booking_id: booking.id,
+        amount: estimatedCost,
+        payment_method: 'payfast',
+        status: 'pending'
+      });
+
+      // Update booking payment status
+      await bookingService.updatePaymentStatus(booking.id, 'pending');
+
+      toast.success("Redirecting to PayFast...");
+      
+      // In a real implementation, this would redirect to Payfast's payment gateway
+      // window.location.href = "https://www.payfast.co.za/eng/process";
+      
+      // For demo purposes, we'll just show a success message
+      setTimeout(() => {
+        toast.success("Payment completed via PayFast!");
+        navigate("/dashboard");
+        setIsLoading(false);
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      toast.error("Failed to create booking. Please try again.");
+      setIsLoading(false);
+    }
+  };
+
+  const handleSendInvoice = async () => {
+    if (!currentUser) {
+      toast.error("Please log in to continue");
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      // Create booking in database
+      const booking = await bookingService.createBooking({
+        user_id: currentUser.id,
+        service_id: null, // Will be set based on service type
+        service_type: bookingData.serviceType,
+        specific_service: bookingData.specificService,
+        custom_service: bookingData.customService,
+        date: bookingData.date,
+        time: bookingData.time,
+        location: bookingData.location,
+        description: bookingData.description,
+        urgency: bookingData.urgency as any,
+        contact_method: bookingData.contactMethod as any,
+        estimated_cost: estimatedCost,
+        payment_method: 'bank_transfer',
+        billing_address: `${billingData.billingAddress}, ${billingData.city}, ${billingData.postalCode}`
+      });
+
+      // Create invoice
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 7); // Due in 7 days
+
+      const invoice = await invoiceService.createInvoice({
+        booking_id: booking.id,
+        amount: estimatedCost,
+        payment_method: 'bank_transfer',
+        due_date: dueDate.toISOString().split('T')[0],
+        bank_details: {
+          bank_name: "Standard Bank",
+          account_number: "1234567890",
+          account_holder: "IBIS Services",
+          reference: `INV-${Date.now()}`
+        }
+      });
+
+      // Create payment record
+      await paymentService.createPayment({
+        booking_id: booking.id,
+        invoice_id: invoice.id,
+        amount: estimatedCost,
+        payment_method: 'bank_transfer',
+        status: 'pending'
+      });
+
+      // Update booking payment status
+      await bookingService.updatePaymentStatus(booking.id, 'pending');
 
       toast.success("Invoice sent successfully!");
       navigate("/dashboard");
       setIsLoading(false);
-    }, 2000);
+
+    } catch (error) {
+      console.error('Error creating booking and invoice:', error);
+      toast.error("Failed to create invoice. Please try again.");
+      setIsLoading(false);
+    }
   };
 
   if (!bookingData) {
