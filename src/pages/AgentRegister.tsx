@@ -1066,7 +1066,6 @@ const AgentRegister = () => {
                                 ? "border-red-500 focus:border-red-500" 
                                 : "border-gray-200 focus:border-blue-500"
                             } rounded-xl`}
-                            required
                           />
                         </div>
                         {errors.taxClearance && (
@@ -1089,7 +1088,6 @@ const AgentRegister = () => {
                                 ? "border-red-500 focus:border-red-500" 
                                 : "border-gray-200 focus:border-blue-500"
                             } rounded-xl`}
-                            required
                           />
                         </div>
                         {errors.insurance && (
@@ -1112,7 +1110,6 @@ const AgentRegister = () => {
                                 ? "border-red-500 focus:border-red-500" 
                                 : "border-gray-200 focus:border-blue-500"
                             } rounded-xl`}
-                            required
                           />
                         </div>
                         {errors.profilePicture && (

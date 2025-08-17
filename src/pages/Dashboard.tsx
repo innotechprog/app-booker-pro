@@ -26,7 +26,14 @@ import {
   AlertCircle,
   CheckCircle,
   Info,
-  Receipt
+  Receipt,
+  Upload,
+  FileText,
+  Shield,
+  Fingerprint,
+  Camera,
+  Building2,
+  Briefcase
 } from "lucide-react";
 
 interface Booking {
@@ -61,6 +68,16 @@ const Dashboard = () => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [isProfileCompletionOpen, setIsProfileCompletionOpen] = useState(false);
+  const [userDocuments, setUserDocuments] = useState({
+    criminalRecord: "",
+    idDocument: "",
+    fingerprintCheck: "",
+    profilePicture: "",
+    businessRegistration: "",
+    taxClearance: "",
+    insurance: ""
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -147,6 +164,17 @@ const Dashboard = () => {
       ...editForm,
       [field]: value
     });
+  };
+
+  const handleDocumentUpload = (field: string, value: string) => {
+    setUserDocuments(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveDocuments = () => {
+    // Save documents to localStorage
+    localStorage.setItem("userDocuments", JSON.stringify(userDocuments));
+    toast.success("Documents uploaded successfully!");
+    setIsProfileCompletionOpen(false);
   };
 
   const handleBookingClick = (booking: Booking) => {
@@ -248,6 +276,15 @@ const Dashboard = () => {
                 <Home className="mr-1 sm:mr-2 h-4 w-4" />
                 <span className="hidden sm:inline">Home</span>
                 <span className="sm:hidden">Home</span>
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setIsProfileCompletionOpen(true)}
+                className="text-white hover:text-green-300 hover:bg-white/10 px-2 sm:px-4 py-2 rounded-xl transition-all duration-300 text-sm sm:text-base"
+              >
+                <Upload className="mr-1 sm:mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Complete Profile</span>
+                <span className="sm:hidden">Profile</span>
               </Button>
               <Button
                 variant="ghost"
@@ -691,6 +728,189 @@ const Dashboard = () => {
                </div>
              </div>
            )}
+         </DialogContent>
+       </Dialog>
+
+       {/* Profile Completion Dialog */}
+       <Dialog open={isProfileCompletionOpen} onOpenChange={setIsProfileCompletionOpen}>
+         <DialogContent className="bg-white/10 backdrop-blur-sm border-white/20 shadow-xl max-w-4xl max-h-[90vh] overflow-y-auto">
+           <DialogHeader>
+             <DialogTitle className="text-2xl font-bold text-white">
+               Complete Your Profile
+             </DialogTitle>
+           </DialogHeader>
+           
+           <div className="space-y-6">
+             <div className="bg-blue-900/20 border border-blue-500/30 rounded-xl p-4">
+               <div className="flex items-start space-x-3">
+                 <AlertCircle className="h-5 w-5 text-blue-300 mt-0.5 flex-shrink-0" />
+                 <div className="text-sm text-blue-200">
+                   <p className="font-semibold mb-1">Required Documents:</p>
+                   <p className="text-xs">Upload these documents to activate your service listings and complete your profile verification.</p>
+                 </div>
+               </div>
+             </div>
+
+             {/* Agent Documents */}
+             {user?.role === 'agent' && (
+               <div className="space-y-4">
+                 <h3 className="text-lg font-semibold text-white border-b border-white/20 pb-2">
+                   Agent Documents
+                 </h3>
+                 
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div className="space-y-2">
+                     <Label htmlFor="criminalRecord" className="text-white font-semibold">Criminal Record Check</Label>
+                     <div className="relative">
+                       <Shield className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                       <Input
+                         id="criminalRecord"
+                         name="criminalRecord"
+                         type="file"
+                         accept=".pdf,.jpg,.jpeg,.png"
+                         onChange={(e) => handleDocumentUpload('criminalRecord', e.target.files?.[0]?.name || '')}
+                         className="pl-10 border-2 border-gray-200 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 rounded-xl"
+                       />
+                     </div>
+                   </div>
+
+                   <div className="space-y-2">
+                     <Label htmlFor="idDocument" className="text-white font-semibold">ID Document</Label>
+                     <div className="relative">
+                       <FileText className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                       <Input
+                         id="idDocument"
+                         name="idDocument"
+                         type="file"
+                         accept=".pdf,.jpg,.jpeg,.png"
+                         onChange={(e) => handleDocumentUpload('idDocument', e.target.files?.[0]?.name || '')}
+                         className="pl-10 border-2 border-gray-200 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 rounded-xl"
+                       />
+                     </div>
+                   </div>
+
+                   <div className="space-y-2">
+                     <Label htmlFor="fingerprintCheck" className="text-white font-semibold">Fingerprint Check</Label>
+                     <div className="relative">
+                       <Fingerprint className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                       <Input
+                         id="fingerprintCheck"
+                         name="fingerprintCheck"
+                         type="file"
+                         accept=".pdf,.jpg,.jpeg,.png"
+                         onChange={(e) => handleDocumentUpload('fingerprintCheck', e.target.files?.[0]?.name || '')}
+                         className="pl-10 border-2 border-gray-200 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 rounded-xl"
+                       />
+                     </div>
+                   </div>
+
+                   <div className="space-y-2">
+                     <Label htmlFor="profilePicture" className="text-white font-semibold">Profile Picture</Label>
+                     <div className="relative">
+                       <Camera className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                       <Input
+                         id="profilePicture"
+                         name="profilePicture"
+                         type="file"
+                         accept=".jpg,.jpeg,.png"
+                         onChange={(e) => handleDocumentUpload('profilePicture', e.target.files?.[0]?.name || '')}
+                         className="pl-10 border-2 border-gray-200 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 rounded-xl"
+                       />
+                     </div>
+                   </div>
+                 </div>
+               </div>
+             )}
+
+             {/* Service Provider Documents */}
+             {user?.role === 'serviceProvider' && (
+               <div className="space-y-4">
+                 <h3 className="text-lg font-semibold text-white border-b border-white/20 pb-2">
+                   Business Documents
+                 </h3>
+                 
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div className="space-y-2">
+                     <Label htmlFor="businessRegistration" className="text-white font-semibold">Business Registration Certificate</Label>
+                     <div className="relative">
+                       <Briefcase className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                       <Input
+                         id="businessRegistration"
+                         name="businessRegistration"
+                         type="file"
+                         accept=".pdf,.jpg,.jpeg,.png"
+                         onChange={(e) => handleDocumentUpload('businessRegistration', e.target.files?.[0]?.name || '')}
+                         className="pl-10 border-2 border-gray-200 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 rounded-xl"
+                       />
+                     </div>
+                   </div>
+
+                   <div className="space-y-2">
+                     <Label htmlFor="taxClearance" className="text-white font-semibold">Tax Clearance Certificate</Label>
+                     <div className="relative">
+                       <FileText className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                       <Input
+                         id="taxClearance"
+                         name="taxClearance"
+                         type="file"
+                         accept=".pdf,.jpg,.jpeg,.png"
+                         onChange={(e) => handleDocumentUpload('taxClearance', e.target.files?.[0]?.name || '')}
+                         className="pl-10 border-2 border-gray-200 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 rounded-xl"
+                       />
+                     </div>
+                   </div>
+
+                   <div className="space-y-2">
+                     <Label htmlFor="insurance" className="text-white font-semibold">Insurance Certificate</Label>
+                     <div className="relative">
+                       <Shield className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                       <Input
+                         id="insurance"
+                         name="insurance"
+                         type="file"
+                         accept=".pdf,.jpg,.jpeg,.png"
+                         onChange={(e) => handleDocumentUpload('insurance', e.target.files?.[0]?.name || '')}
+                         className="pl-10 border-2 border-gray-200 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 rounded-xl"
+                       />
+                     </div>
+                   </div>
+
+                   <div className="space-y-2">
+                     <Label htmlFor="profilePicture" className="text-white font-semibold">Company Logo/Profile Picture</Label>
+                     <div className="relative">
+                       <Camera className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                       <Input
+                         id="profilePicture"
+                         name="profilePicture"
+                         type="file"
+                         accept=".jpg,.jpeg,.png"
+                         onChange={(e) => handleDocumentUpload('profilePicture', e.target.files?.[0]?.name || '')}
+                         className="pl-10 border-2 border-gray-200 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 rounded-xl"
+                       />
+                     </div>
+                   </div>
+                 </div>
+               </div>
+             )}
+
+             {/* Action Buttons */}
+             <div className="flex justify-end space-x-3 pt-4 border-t border-white/10">
+               <Button
+                 onClick={() => setIsProfileCompletionOpen(false)}
+                 variant="outline"
+                 className="border-2 border-gray-300 text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-300"
+               >
+                 Cancel
+               </Button>
+               <Button
+                 onClick={handleSaveDocuments}
+                 className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white transition-all duration-300"
+               >
+                 <Save className="mr-2 h-4 w-4" />
+                 Save Documents
+               </Button>
+             </div>
+           </div>
          </DialogContent>
        </Dialog>
      </div>
