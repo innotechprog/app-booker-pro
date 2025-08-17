@@ -43,7 +43,7 @@ const Hero = () => {
         </div>
         
         {/* Right Side - Hero Image */}
-        <div className="relative h-[600px] flex items-center justify-center">
+        <div className="relative h-[600px] flex items-center justify-center hidden lg:flex">
           <img 
             src={heroImage} 
             alt="IB Innovative Solutions Hero" 

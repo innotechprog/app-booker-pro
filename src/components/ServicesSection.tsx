@@ -24,19 +24,24 @@ const ServicesSection = () => {
   const navigate = useNavigate();
 
   const services = [
-    { name: "Education", icon: GraduationCap, route: "/education" },
-    { name: "Tutoring", icon: BookOpen, route: "/book-service" },
-    { name: "Send Me", icon: Send, route: "/book-service" }, 
-    { name: "Courier", icon: Truck, route: "/book-service" },
-    { name: "Travel & Tour", icon: Plane, route: "/book-service" },
-    { name: "Mobile Carwash", icon: Car, route: "/book-service" },
-    { name: "Mobile Salon / Barber", icon: Scissors, route: "/book-service" },
-    { name: "Plumbing", icon: Wrench, route: "/book-service" },
-    { name: "Solar Installation", icon: Sun, route: "/book-service" },
-    { name: "Painting", icon: Paintbrush, route: "/book-service" },
-    { name: "Paving", icon: HardHat, route: "/book-service" },
-    { name: "Ceiling", icon: Home, route: "/book-service" },
-    { name: "IT Solutions", icon: Monitor, route: "/book-service" }
+    { 
+      name: "Education", 
+      icon: GraduationCap, 
+      route: "/education",
+      description: "Comprehensive educational support including tutoring, university applications, and career guidance"
+    },
+    { 
+      name: "Send Me", 
+      icon: Send, 
+      route: "/book-service",
+      description: "Personal errand running, delivery services, and on-demand assistance for your daily needs"
+    },
+    { 
+      name: "IT Solutions", 
+      icon: Monitor, 
+      route: "/book-service",
+      description: "Professional IT services including web development, system maintenance, and technical support"
+    }
   ];
 
   return (
@@ -58,26 +63,28 @@ const ServicesSection = () => {
         </div>
         
         {/* Services Grid with enhanced styling */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {services.map((service, index) => {
             const IconComponent = service.icon;
             return (
               <div
-              key={index}
+                key={index}
                 className="group relative"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <Button
-                  variant="outline"
-                  className="h-28 w-full bg-gradient-to-br from-gray-900 to-gray-800 hover:from-blue-900 hover:to-blue-800 text-white border-0 rounded-2xl font-medium text-sm transition-all duration-500 hover:scale-105 flex flex-col items-center justify-center space-y-3 p-4 shadow-lg hover:shadow-2xl group-hover:shadow-blue-500/25 cursor-pointer"
+                <div
+                  className="h-full bg-gradient-to-br from-gray-900 to-gray-800 hover:from-blue-900 hover:to-blue-800 text-white border-0 rounded-2xl font-medium text-sm transition-all duration-500 hover:scale-105 flex flex-col items-center justify-center space-y-4 p-6 shadow-lg hover:shadow-2xl group-hover:shadow-blue-500/25 cursor-pointer"
                   onClick={() => navigate(service.route)}
                 >
                   <div className="relative">
-                    <IconComponent className="h-8 w-8 text-blue-400 group-hover:text-blue-300 transition-colors duration-300" />
-                    <div className="absolute -inset-2 bg-blue-400/20 rounded-full blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <IconComponent className="h-12 w-12 text-blue-400 group-hover:text-blue-300 transition-colors duration-300" />
+                    <div className="absolute -inset-3 bg-blue-400/20 rounded-full blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
-                  <span className="text-center leading-tight font-semibold">{service.name}</span>
-                </Button>
+                  <div className="text-center space-y-2">
+                    <h3 className="text-xl font-bold leading-tight">{service.name}</h3>
+                    <p className="text-sm text-gray-300 leading-relaxed">{service.description}</p>
+                  </div>
+                </div>
                 
                 {/* Hover effect overlay */}
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-600/0 to-blue-600/0 group-hover:from-blue-600/10 group-hover:to-blue-600/5 rounded-2xl transition-all duration-300 pointer-events-none"></div>
@@ -104,14 +111,7 @@ const ServicesSection = () => {
         </div>
       </div>
       
-      {/* Enhanced Scroll to Top Button */}
-      <Button
-        size="sm"
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl z-50 transition-all duration-300 hover:scale-110"
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-      >
-        <ChevronUp className="h-6 w-6" />
-      </Button>
+
     </section>
   );
 };
