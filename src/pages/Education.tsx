@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import SEO from "@/components/SEO";
 import { 
   GraduationCap, 
   BookOpen, 
@@ -558,41 +559,43 @@ const Education = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100">
-             {/* Header */}
-       <div className="bg-white shadow-sm border-b">
-         <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6">
-           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
-             <div className="flex items-center space-x-3 sm:space-x-4 w-full sm:w-auto">
-               <Button
-                 variant="ghost"
-                 onClick={() => navigate("/")}
-                 className="text-gray-600 hover:text-blue-600 p-2 sm:p-0"
-               >
-                 <ArrowLeft className="mr-1 sm:mr-2 h-4 w-4" />
-                 <span className="hidden sm:inline">Back to Home</span>
-                 <span className="sm:hidden">Back</span>
-               </Button>
-               <div className="flex items-center space-x-2 sm:space-x-3 flex-1 sm:flex-none">
-                 <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg sm:rounded-xl flex items-center justify-center">
-                   <GraduationCap className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
-                 </div>
-                                   <div className="min-w-0 flex-1">
-                    <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">Education Services</h1>
-                    <p className="text-xs sm:text-sm lg:text-base text-gray-600 truncate hidden sm:block">Empowering your educational journey</p>
-                  </div>
-               </div>
-             </div>
-             <Button
-               onClick={() => navigate("/booking")}
-               className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded-xl text-sm sm:text-base"
-             >
-               <span className="hidden sm:inline">Book Service</span>
-               <span className="sm:hidden">Book</span>
-             </Button>
-           </div>
-         </div>
-       </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
+      <SEO page="education" />
+      
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
+            <div className="flex items-center space-x-3 sm:space-x-4 w-full sm:w-auto">
+              <Button
+                variant="ghost"
+                onClick={() => navigate("/")}
+                className="text-gray-600 hover:text-blue-600 p-2 sm:p-0"
+              >
+                <ArrowLeft className="mr-1 sm:mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Back to Home</span>
+                <span className="sm:hidden">Back</span>
+              </Button>
+              <div className="flex items-center space-x-2 sm:space-x-3 flex-1 sm:flex-none">
+                <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg sm:rounded-xl flex items-center justify-center">
+                  <GraduationCap className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">Education Services</h1>
+                  <p className="text-xs sm:text-sm lg:text-base text-gray-600 truncate hidden sm:block">Empowering your educational journey</p>
+                </div>
+              </div>
+            </div>
+            <Button
+              onClick={() => navigate("/booking")}
+              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded-xl text-sm sm:text-base"
+            >
+              <span className="hidden sm:inline">Book Service</span>
+              <span className="sm:hidden">Book</span>
+            </Button>
+          </div>
+        </div>
+      </div>
 
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white py-20">

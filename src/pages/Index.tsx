@@ -3,10 +3,12 @@ import Hero from "@/components/Hero";
 import ServicesSection from "@/components/ServicesSection";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 
 const Index = () => {
   return (
     <Layout>
+      <SEO page="home" />
       <div className="bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 relative overflow-hidden">
         {/* Background decorative elements */}
         <div className="absolute inset-0 opacity-30">
