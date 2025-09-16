@@ -580,23 +580,25 @@ const Education = () => {
             )}
           </div>
       
-      <div className="text-center mt-12">
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">Need Help with Applications?</h3>
-          <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-            Our university application assistance service can help you navigate the application process, 
-            write compelling essays, and prepare for interviews.
-          </p>
-          <Button 
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl"
-            onClick={() => setSelectedCategory("applications")}
-          >
-            Get Application Help
-          </Button>
+          <div className="text-center mt-12">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Need Help with Applications?</h3>
+              <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+                Our university application assistance service can help you navigate the application process, 
+                write compelling essays, and prepare for interviews.
+              </p>
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl"
+                onClick={() => setSelectedCategory("applications")}
+              >
+                Get Application Help
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen">
