@@ -5,7 +5,7 @@ import SEO from "@/components/SEO";
 
 const BookService = () => {
   const navigate = useNavigate();
-
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 pb-20 md:pb-0">
       <SEO page="bookService" />
@@ -18,9 +18,9 @@ const BookService = () => {
               IBIS<span className="text-blue-400">.</span>
             </h1>
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <Button
-                variant="ghost"
-                onClick={() => navigate("/")}
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/")}
                 className="text-white hover:text-blue-300 hover:bg-white/10 px-2 sm:px-4 py-2 rounded-2xl transition-all duration-300 text-sm sm:text-base"
               >
                 <Home className="mr-1 sm:mr-2 h-4 w-4" />
@@ -34,11 +34,11 @@ const BookService = () => {
                 <LogIn className="mr-1 sm:mr-2 h-4 w-4" />
                 <span className="hidden sm:inline">Login</span>
                 <span className="sm:hidden">Login</span>
-              </Button>
+        </Button>
             </div>
           </div>
-        </div>
-      </div>
+                  </div>
+                </div>
 
       {/* Send Me Hero Section */}
       <div className="px-4 py-16">
@@ -273,12 +273,12 @@ const BookService = () => {
       {/* Fixed Bottom Navigation - Mobile Only */}
       <div className="fixed bottom-0 left-0 right-0 md:hidden z-50">
         <div className="flex items-center justify-center py-4 px-6">
-          <Button
+              <Button
             onClick={() => navigate("/booking")}
             className="max-w-xs bg-purple-600 hover:bg-purple-700 text-white py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 font-semibold text-base"
-          >
+              >
             Book Now
-          </Button>
+              </Button>
         </div>
       </div>
     </div>
