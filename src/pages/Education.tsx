@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import SEO from "@/components/SEO";
+import Footer from "@/components/Footer";
 import { 
   GraduationCap, 
   BookOpen, 
@@ -23,12 +25,14 @@ import {
   ArrowLeft,
   ExternalLink,
   Building2,
-  MapPinIcon
+  MapPinIcon,
+  Search
 } from "lucide-react";
 
 const Education = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [universitySearch, setUniversitySearch] = useState("");
 
   const categories = [
     { id: "all", name: "All Services", icon: GraduationCap },
@@ -418,96 +422,163 @@ const Education = () => {
     ? educationServices 
     : educationServices.filter(service => service.category === selectedCategory);
 
-  const renderUniversities = () => (
-    <div className="max-w-7xl mx-auto px-4 py-16">
-      <div className="text-center mb-12">
-        <h2 className="text-4xl font-bold text-gray-900 mb-4">South African Universities</h2>
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          Explore all public universities in South Africa and apply directly through their official websites
-        </p>
-      </div>
+  const renderUniversities = () => {
+    // Filter universities based on search term
+    const filteredUniversities = southAfricanUniversities.filter(university =>
+      university.name.toLowerCase().includes(universitySearch.toLowerCase()) ||
+      university.location.toLowerCase().includes(universitySearch.toLowerCase()) ||
+      university.programs.some(program => 
+        program.toLowerCase().includes(universitySearch.toLowerCase())
+      )
+    );
+
+    return (
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700"></div>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 py-20">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full mb-6">
+              <Building2 className="h-10 w-10 text-white" />
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">South African Universities</h2>
+            <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed">
+              Explore all public universities in South Africa and apply directly through their official websites
+            </p>
+            <div className="mt-6 flex items-center justify-center space-x-4 text-white/80">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-white rounded-full"></div>
+                <span className="text-sm font-medium">26 Public Universities</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-white rounded-full"></div>
+                <span className="text-sm font-medium">Direct Applications</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-white rounded-full"></div>
+                <span className="text-sm font-medium">Official Links</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className="max-w-2xl mx-auto mb-12">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search universities by name, location, or programs..."
+                value={universitySearch}
+                onChange={(e) => setUniversitySearch(e.target.value)}
+                className="pl-12 pr-4 py-4 text-lg bg-white/95 backdrop-blur-sm border-0 rounded-2xl shadow-lg focus:ring-2 focus:ring-white/50 focus:bg-white transition-all duration-300"
+              />
+            </div>
+            {universitySearch && (
+              <p className="text-center text-white/80 mt-4">
+                Showing {filteredUniversities.length} of {southAfricanUniversities.length} universities
+              </p>
+            )}
+          </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {southAfricanUniversities.map((university) => {
-          const IconComponent = university.icon;
-          return (
-            <Card key={university.id} className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg">
-              <CardHeader className="pb-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-                      <IconComponent className="h-6 w-6 text-white" />
-                    </div>
-                    <div className="flex-1">
-                                             <CardTitle className="text-lg font-bold text-gray-100 group-hover:text-blue-300 transition-colors">
-                         {university.name}
-                       </CardTitle>
-                       <div className="flex items-center space-x-2 mt-1">
-                         <MapPinIcon className="h-4 w-4 text-gray-300" />
-                         <span className="text-sm text-gray-300">{university.location}</span>
-                       </div>
-                    </div>
-                  </div>
-                  <Badge className={`${
-                    university.type === "Public" 
-                      ? "bg-blue-100 text-blue-800" 
-                      : "bg-green-100 text-green-800"
-                  }`}>
-                    {university.type}
-                  </Badge>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-4">
-                                 <div className="space-y-2">
-                   <div className="flex justify-between text-sm">
-                     <span className="text-gray-300">Established:</span>
-                     <span className="font-medium text-gray-100">{university.established}</span>
-                   </div>
-                   <div className="flex justify-between text-sm">
-                     <span className="text-gray-300">Global Ranking:</span>
-                     <span className="font-medium text-gray-100">{university.ranking}</span>
-                   </div>
-                 </div>
-                
-                                 <div className="space-y-2">
-                   <h4 className="font-semibold text-gray-100 text-sm">Programs:</h4>
-                   <div className="flex flex-wrap gap-1">
-                     {university.programs.slice(0, 4).map((program, index) => (
-                       <Badge key={index} variant="outline" className="text-xs text-gray-200 border-gray-400">
-                         {program}
-                       </Badge>
-                     ))}
-                     {university.programs.length > 4 && (
-                       <Badge variant="outline" className="text-xs text-gray-200 border-gray-400">
-                         +{university.programs.length - 4} more
-                       </Badge>
-                     )}
-                   </div>
-                 </div>
-                
-                <div className="flex space-x-2 pt-4 border-t">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredUniversities.length > 0 ? (
+              filteredUniversities.map((university) => {
+                const IconComponent = university.icon;
+                return (
+                  <Card key={university.id} className="group hover:shadow-2xl transition-all duration-300 border-0 shadow-xl bg-white/95 backdrop-blur-sm">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                            <IconComponent className="h-6 w-6 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <CardTitle className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                              {university.name}
+                            </CardTitle>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <MapPinIcon className="h-4 w-4 text-gray-500" />
+                              <span className="text-sm text-gray-600">{university.location}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <Badge className={`${
+                          university.type === "Public" 
+                            ? "bg-blue-100 text-blue-800" 
+                            : "bg-green-100 text-green-800"
+                        }`}>
+                          {university.type}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Established:</span>
+                          <span className="font-medium text-gray-900">{university.established}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Global Ranking:</span>
+                          <span className="font-medium text-gray-900">{university.ranking}</span>
+                        </div>
+                      </div>
+                     
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-gray-900 text-sm">Programs:</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {university.programs.slice(0, 4).map((program, index) => (
+                            <Badge key={index} variant="outline" className="text-xs text-gray-600 border-gray-300">
+                              {program}
+                            </Badge>
+                          ))}
+                          {university.programs.length > 4 && (
+                            <Badge variant="outline" className="text-xs text-gray-600 border-gray-300">
+                              +{university.programs.length - 4} more
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                     
+                      <div className="flex space-x-2 pt-4 border-t border-gray-200">
+                        <Button 
+                          variant="outline"
+                          className="flex-1 text-blue-600 border-blue-600 hover:bg-blue-50"
+                          onClick={() => window.open(university.website, '_blank')}
+                        >
+                          <Globe className="mr-2 h-4 w-4" />
+                          Website
+                        </Button>
+                        <Button 
+                          className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                          onClick={() => window.open(university.applicationUrl, '_blank')}
+                        >
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          Apply Now
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-8 shadow-xl">
+                  <Search className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">No universities found</h3>
+                  <p className="text-gray-600 mb-4">
+                    No universities match your search for "{universitySearch}"
+                  </p>
                   <Button 
-                    variant="outline"
-                    className="flex-1 text-blue-600 border-blue-600 hover:bg-blue-50"
-                    onClick={() => window.open(university.website, '_blank')}
+                    variant="outline" 
+                    onClick={() => setUniversitySearch("")}
+                    className="text-blue-600 border-blue-600 hover:bg-blue-50"
                   >
-                    <Globe className="mr-2 h-4 w-4" />
-                    Website
-                  </Button>
-                  <Button 
-                    className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-                    onClick={() => window.open(university.applicationUrl, '_blank')}
-                  >
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Apply Now
+                    Clear Search
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+              </div>
+            )}
+          </div>
       
       <div className="text-center mt-12">
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8">
@@ -602,98 +673,89 @@ const Education = () => {
       {/* Content based on selected category */}
       {selectedCategory === "universities" ? (
         <div className="space-y-16">
-          {/* University Application Services */}
+          {/* Universities List */}
+          {renderUniversities()}
+          
+          {/* University Application Services - Bottom Section */}
           <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-b from-gray-50 to-white"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50"></div>
             <div className="relative z-10 max-w-6xl mx-auto px-6 py-20">
-              <div className="text-center mb-12">
-                <h3 className="text-3xl font-bold text-gray-900 mb-4">Application Services</h3>
-                <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                  Get expert help with your university and scholarship applications
+              <div className="text-center mb-16">
+                <h3 className="text-4xl font-bold text-gray-900 mb-6">Need Help with Applications?</h3>
+                <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                  Our expert team can guide you through the entire application process, from university applications to scholarship opportunities.
                 </p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {filteredServices.map((service) => {
-              const IconComponent = service.icon;
-              return (
-                <Card key={service.id} className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-                          <IconComponent className="h-6 w-6 text-white" />
+                  const IconComponent = service.icon;
+                  return (
+                    <div key={service.id} className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                      <div className="flex items-start space-x-6 mb-6">
+                        <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+                          <IconComponent className="h-8 w-8 text-white" />
                         </div>
-                        <div>
-                                                   <CardTitle className="text-xl font-bold text-gray-100 group-hover:text-blue-300 transition-colors">
-                           {service.title}
-                         </CardTitle>
-                         <div className="flex items-center space-x-2 mt-1">
-                           <div className="flex items-center space-x-1">
-                             <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                             <span className="text-sm font-medium text-gray-100">{service.rating}</span>
-                           </div>
-                           <span className="text-gray-400">•</span>
-                           <span className="text-sm text-gray-300">{service.reviews} reviews</span>
-                         </div>
+                        <div className="flex-1">
+                          <h4 className="text-2xl font-bold text-gray-900 mb-2">{service.title}</h4>
+                          <div className="flex items-center space-x-4 mb-3">
+                            <div className="flex items-center space-x-1">
+                              <Star className="h-5 w-5 text-yellow-400 fill-current" />
+                              <span className="font-semibold text-gray-900">{service.rating}</span>
+                            </div>
+                            <span className="text-gray-400">•</span>
+                            <span className="text-gray-600">{service.reviews} reviews</span>
+                            {service.popular && (
+                              <Badge className="bg-green-100 text-green-800 ml-2">Popular</Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      {service.popular && (
-                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-                          Popular
-                        </Badge>
-                      )}
+                      
+                      <p className="text-gray-600 text-lg leading-relaxed mb-6">
+                        {service.description}
+                      </p>
+                      
+                      <div className="mb-6">
+                        <h5 className="font-semibold text-gray-900 mb-3">What's Included:</h5>
+                        <div className="grid grid-cols-2 gap-2">
+                          {service.features.map((feature, index) => (
+                            <div key={index} className="flex items-center space-x-2">
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                              <span className="text-gray-600">{feature}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 rounded-xl">
+                        <div className="text-center">
+                          <Clock className="h-5 w-5 text-blue-500 mx-auto mb-1" />
+                          <span className="text-sm text-gray-600">{service.duration}</span>
+                        </div>
+                        <div className="text-center">
+                          <DollarSign className="h-5 w-5 text-green-500 mx-auto mb-1" />
+                          <span className="text-sm font-semibold text-gray-900">{service.price}</span>
+                        </div>
+                        <div className="text-center">
+                          <MapPin className="h-5 w-5 text-purple-500 mx-auto mb-1" />
+                          <span className="text-sm text-gray-600">{service.location}</span>
+                        </div>
+                      </div>
+                      
+                      <Button 
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                        onClick={() => navigate("/booking", { state: { service: service.title } })}
+                      >
+                        <span>Get Started</span>
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                      </Button>
                     </div>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-4">
-                                       <CardDescription className="text-gray-300 leading-relaxed">
-                     {service.description}
-                   </CardDescription>
-                    
-                                         <div className="space-y-3">
-                       <h4 className="font-semibold text-gray-100">Features:</h4>
-                       <div className="grid grid-cols-2 gap-2">
-                         {service.features.map((feature, index) => (
-                           <div key={index} className="flex items-center space-x-2">
-                             <CheckCircle className="h-4 w-4 text-green-400" />
-                             <span className="text-sm text-gray-300">{feature}</span>
-                           </div>
-                         ))}
-                       </div>
-                     </div>
-                    
-                                         <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-600">
-                       <div className="flex items-center space-x-2">
-                         <Clock className="h-4 w-4 text-gray-300" />
-                         <span className="text-sm text-gray-300">{service.duration}</span>
-                       </div>
-                       <div className="flex items-center space-x-2">
-                         <DollarSign className="h-4 w-4 text-gray-300" />
-                         <span className="text-sm font-medium text-gray-100">{service.price}</span>
-                       </div>
-                       <div className="flex items-center space-x-2">
-                         <MapPin className="h-4 w-4 text-gray-300" />
-                         <span className="text-sm text-gray-300">{service.location}</span>
-                       </div>
-                     </div>
-                    
-                    <Button 
-                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 rounded-xl group-hover:shadow-lg transition-all duration-300"
-                      onClick={() => navigate("/booking", { state: { service: service.title } })}
-                    >
-                      <span>Book This Service</span>
-                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                  );
+                })}
               </div>
             </div>
           </div>
-          
-          {/* Universities List */}
-          {renderUniversities()}
         </div>
       ) : (
         /* Services Grid */
@@ -803,6 +865,9 @@ const Education = () => {
           </div>
         </div>
       </div>
+      
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };
