@@ -49,11 +49,6 @@ const ServicesSection = () => {
       <div className="max-w-6xl mx-auto">
         {/* Enhanced header with better styling */}
         <div className="text-center mb-16">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-6">
-            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-              <div className="w-4 h-4 bg-blue-600 rounded-full"></div>
-            </div>
-          </div>
           <h2 className="text-5xl font-bold text-gray-900 mb-6 bg-gradient-to-r from-gray-900 to-blue-600 bg-clip-text text-transparent">
             Our Services
           </h2>

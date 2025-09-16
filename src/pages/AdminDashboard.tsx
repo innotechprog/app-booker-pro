@@ -1392,9 +1392,6 @@ const AdminDashboard = () => {
                {/* User Header */}
                <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
                  <div className="flex items-center space-x-4">
-                   <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center">
-                     {getRoleIcon(selectedUser.role)}
-                   </div>
                    <div>
                      <h3 className="text-xl font-bold text-white">{selectedUser.name}</h3>
                      <p className="text-gray-300">{selectedUser.email}</p>

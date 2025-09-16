@@ -72,9 +72,6 @@ const BookService = () => {
           {/* Service Features */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center">
-              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Calendar className="h-8 w-8 text-white" />
-              </div>
               <h3 className="text-xl font-bold text-white mb-2">Flexible Scheduling</h3>
               <p className="text-gray-300">
                 Book services at your convenience with flexible scheduling options to fit your busy lifestyle.
@@ -82,9 +79,6 @@ const BookService = () => {
             </div>
             
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center">
-              <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MapPin className="h-8 w-8 text-white" />
-              </div>
               <h3 className="text-xl font-bold text-white mb-2">Wide Coverage</h3>
               <p className="text-gray-300">
                 We serve multiple locations with reliable agents ready to help you with various tasks and errands.
@@ -92,9 +86,6 @@ const BookService = () => {
             </div>
             
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center">
-              <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Shield className="h-8 w-8 text-white" />
-              </div>
               <h3 className="text-xl font-bold text-white mb-2">Verified Agents</h3>
               <p className="text-gray-300">
                 All our agents are thoroughly vetted and trained to provide you with the best service experience.

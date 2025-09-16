@@ -255,9 +255,6 @@ const Invoices = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                        {getPaymentMethodIcon(invoice.paymentMethod)}
-                      </div>
                       <div>
                         <h3 className="text-lg font-semibold text-white">{invoice.invoiceNumber}</h3>
                         <p className="text-gray-300 text-sm">{invoice.serviceType}</p>

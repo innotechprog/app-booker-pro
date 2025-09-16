@@ -13,59 +13,71 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <header className="w-full px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex items-center">
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-          IBIS<span className="text-primary">.</span>
-        </h1>
-      </div>
-      
-      {/* Desktop Navigation */}
-      <nav className="hidden md:flex items-center space-x-6 lg:space-x-8">
-        <a href="#home" className="text-foreground hover:text-primary transition-colors font-medium">
-          Home
-        </a>
-        <a href="#about" className="text-foreground hover:text-primary transition-colors font-medium">
-          About
-        </a>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="text-foreground hover:text-primary p-0 h-auto font-normal">
-              Solutions
-              <ChevronDown className="ml-1 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem asChild>
-              <Link to="/book-service" className="w-full cursor-pointer">Send Me</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem>Errand Running</DropdownMenuItem>
-            <DropdownMenuItem>Delivery Services</DropdownMenuItem>
-            <DropdownMenuItem>Personal Assistance</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <a href="#contact" className="text-foreground hover:text-primary transition-colors font-medium">
-          Contact
-        </a>
-      </nav>
+    <header className="w-full px-4 sm:px-6 py-3 sm:py-4 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/40 border-b border-white/10">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+            IBIS<span className="text-primary">.</span>
+          </h1>
+        </div>
+        
+        {/* Desktop Navigation - Centered */}
+        <nav className="hidden md:flex items-center space-x-6 lg:space-x-8">
+          <a href="#home" className="text-foreground hover:text-primary transition-colors font-medium">
+            Home
+          </a>
+          <a href="#about" className="text-foreground hover:text-primary transition-colors font-medium">
+            About
+          </a>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="text-foreground hover:text-primary transition-colors font-medium flex items-center">
+                Solutions
+                <ChevronDown className="ml-1 h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem asChild>
+                <Link to="/education" className="w-full cursor-pointer">Education</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/book-service" className="w-full cursor-pointer">Send Me</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/book-service" className="w-full cursor-pointer">IT Solutions</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <a href="#contact" className="text-foreground hover:text-primary transition-colors font-medium">
+            Contact
+          </a>
+        </nav>
 
-      {/* Mobile Menu Button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="md:hidden p-2"
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-      >
-        {isMobileMenuOpen ? (
-          <X className="h-5 w-5" />
-        ) : (
-          <Menu className="h-5 w-5" />
-        )}
-      </Button>
+        {/* Send Me Button */}
+        <div className="hidden md:flex items-center">
+          <Button asChild className="bg-transparent hover:bg-white/20 text-white hover:text-white border border-white hover:border-white rounded-full px-6 py-2">
+            <Link to="/book-service">Send Me</Link>
+          </Button>
+        </div>
+
+        {/* Mobile Menu Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="md:hidden p-2"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          {isMobileMenuOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <Menu className="h-5 w-5" />
+          )}
+        </Button>
+      </div>
 
       {/* Mobile Navigation */}
       {isMobileMenuOpen && (
-        <div className="absolute top-full left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t border-border md:hidden z-50">
+        <div className="absolute top-full left-0 right-0 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/40 border-t border-white/10 md:hidden z-50">
           <nav className="flex flex-col space-y-4 p-4">
             <a 
               href="#home" 
@@ -109,6 +121,13 @@ const Header = () => {
             >
               Contact
             </a>
+            <div className="pt-4 border-t border-border">
+              <Button asChild className="w-full bg-transparent hover:bg-white/20 text-white hover:text-white border border-white hover:border-white rounded-full">
+                <Link to="/book-service" onClick={() => setIsMobileMenuOpen(false)}>
+                  Send Me
+                </Link>
+              </Button>
+            </div>
           </nav>
         </div>
       )}

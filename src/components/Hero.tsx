@@ -4,9 +4,20 @@ import heroImage from "@/images/hero.png";
 
 const Hero = () => {
   return (
-    <section className="min-h-[80vh] flex items-center px-6 py-6">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-        {/* Left Side - Text Content */}
+    <section 
+      className="min-h-[80vh] flex items-center justify-center px-6 py-6 relative"
+      style={{
+        backgroundImage: `url(${heroImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      {/* Overlay for better text readability */}
+      <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+      
+      {/* Centered Content */}
+      <div className="relative z-10 max-w-4xl mx-auto text-center">
         <div className="space-y-8">
           <div className="space-y-4">
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
@@ -18,11 +29,11 @@ const Hero = () => {
             </h2>
           </div>
           
-          <p className="text-lg text-gray-300 max-w-2xl leading-relaxed">
+          <p className="text-lg text-gray-200 max-w-2xl mx-auto leading-relaxed">
             We are committed to provide you with best solutions that is beyond your expectation.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
               variant="secondary"
@@ -40,15 +51,6 @@ const Hero = () => {
               Whatsapp us
             </Button>
           </div>
-        </div>
-        
-        {/* Right Side - Hero Image */}
-        <div className="relative h-[600px] flex items-center justify-center hidden lg:flex">
-          <img 
-            src={heroImage} 
-            alt="IB Innovative Solutions Hero" 
-            className="w-full h-full object-contain max-w-lg"
-          />
         </div>
       </div>
     </section>

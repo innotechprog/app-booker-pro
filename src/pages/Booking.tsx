@@ -75,9 +75,6 @@ const Booking = () => {
           <Card className="bg-white/10 backdrop-blur-sm border-white/20 shadow-xl">
             <CardHeader>
               <div className="flex items-center space-x-3 mb-4">
-                <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                  <Send className="h-6 w-6 text-white" />
-                </div>
                 <div>
                   <CardTitle className="text-2xl font-bold text-white">
                     Book Send Me Service

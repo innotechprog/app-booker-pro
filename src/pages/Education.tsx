@@ -32,11 +32,8 @@ const Education = () => {
 
   const categories = [
     { id: "all", name: "All Services", icon: GraduationCap },
-    { id: "tutorials", name: "Tutorials", icon: BookOpen },
-    { id: "applications", name: "University Applications", icon: FileText },
-    { id: "universities", name: "Universities", icon: Building2 },
-    { id: "consulting", name: "Educational Consulting", icon: Users },
-    { id: "online", name: "Online Learning", icon: Globe }
+    { id: "online", name: "Online Learning & Tutorials", icon: Globe },
+    { id: "universities", name: "Universities & Applications", icon: Building2 }
   ];
 
      const southAfricanUniversities = [
@@ -334,7 +331,7 @@ const Education = () => {
     {
       id: 1,
       title: "Academic Tutoring",
-      category: "tutorials",
+      category: "online",
       description: "One-on-one and group tutoring sessions for all subjects and grade levels",
       features: ["Math & Science", "Languages", "Test Preparation", "Homework Help"],
       duration: "1-2 hours per session",
@@ -348,7 +345,7 @@ const Education = () => {
     {
       id: 2,
       title: "University Application Assistance",
-      category: "applications",
+      category: "universities",
       description: "Complete guidance for university applications, essays, and documentation",
       features: ["Application Review", "Essay Writing", "Document Preparation", "Interview Prep"],
       duration: "2-4 weeks",
@@ -362,7 +359,7 @@ const Education = () => {
     {
       id: 3,
       title: "Study Skills Workshop",
-      category: "tutorials",
+      category: "online",
       description: "Learn effective study techniques, time management, and exam strategies",
       features: ["Note-taking Methods", "Memory Techniques", "Time Management", "Stress Management"],
       duration: "4-6 hours",
@@ -370,20 +367,6 @@ const Education = () => {
       rating: 4.7,
       reviews: 203,
       location: "Workshop Venues",
-      icon: Users,
-      popular: false
-    },
-    {
-      id: 4,
-      title: "Career Counseling",
-      category: "consulting",
-      description: "Professional guidance for career planning and educational pathways",
-      features: ["Career Assessment", "Pathway Planning", "Skills Development", "Industry Insights"],
-      duration: "1-2 hours per session",
-      price: "R500-800/session",
-      rating: 4.6,
-      reviews: 67,
-      location: "Online & In-person",
       icon: Users,
       popular: false
     },
@@ -404,7 +387,7 @@ const Education = () => {
     {
       id: 6,
       title: "Scholarship Application Support",
-      category: "applications",
+      category: "universities",
       description: "Expert assistance with scholarship applications and financial aid",
       features: ["Scholarship Research", "Application Review", "Essay Writing", "Documentation"],
       duration: "1-3 weeks",
@@ -418,7 +401,7 @@ const Education = () => {
     {
       id: 7,
       title: "Language Learning Programs",
-      category: "tutorials",
+      category: "online",
       description: "Comprehensive language courses for all proficiency levels",
       features: ["English", "Afrikaans", "Zulu", "French", "Spanish", "German"],
       duration: "8-12 weeks",
@@ -429,20 +412,6 @@ const Education = () => {
       icon: BookOpen,
       popular: false
     },
-    {
-      id: 8,
-      title: "Educational Technology Consulting",
-      category: "consulting",
-      description: "Guidance on implementing educational technology in institutions",
-      features: ["Platform Selection", "Training Programs", "Integration Support", "Best Practices"],
-      duration: "Ongoing",
-      price: "R800-1500/hour",
-      rating: 4.5,
-      reviews: 23,
-      location: "On-site & Online",
-      icon: Globe,
-      popular: false
-    }
   ];
 
   const filteredServices = selectedCategory === "all" 
@@ -559,104 +528,92 @@ const Education = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
+    <div className="min-h-screen">
       <SEO page="education" />
       
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
-            <div className="flex items-center space-x-3 sm:space-x-4 w-full sm:w-auto">
-              <Button
-                variant="ghost"
-                onClick={() => navigate("/")}
-                className="text-gray-600 hover:text-blue-600 p-2 sm:p-0"
-              >
-                <ArrowLeft className="mr-1 sm:mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Back to Home</span>
-                <span className="sm:hidden">Back</span>
-              </Button>
-              <div className="flex items-center space-x-2 sm:space-x-3 flex-1 sm:flex-none">
-                <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg sm:rounded-xl flex items-center justify-center">
-                  <GraduationCap className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">Education Services</h1>
-                  <p className="text-xs sm:text-sm lg:text-base text-gray-600 truncate hidden sm:block">Empowering your educational journey</p>
-                </div>
-              </div>
-            </div>
-            <Button
-              onClick={() => navigate("/booking")}
-              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded-xl text-sm sm:text-base"
-            >
-              <span className="hidden sm:inline">Book Service</span>
-              <span className="sm:hidden">Book</span>
-            </Button>
-          </div>
-        </div>
-      </div>
-
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <h2 className="text-5xl font-bold mb-6">
-            Transform Your Educational Journey
-          </h2>
-          <p className="text-xl text-blue-100 max-w-3xl mx-auto mb-8">
-            From academic tutoring to university applications, we provide comprehensive educational support to help you achieve your goals.
+      <div className="bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 relative overflow-hidden py-20">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-6 text-center relative z-10">
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
+            Education Services
+          </h1>
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed mb-8">
+            Comprehensive educational support including university applications, tutorials, and academic guidance to help you achieve your goals.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <div className="flex items-center space-x-2 bg-white/20 px-4 py-2 rounded-full">
-              <CheckCircle className="h-5 w-5" />
-              <span>Expert Tutors</span>
+            <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+              <CheckCircle className="h-5 w-5 text-white" />
+              <span className="text-white">Expert Tutors</span>
             </div>
-            <div className="flex items-center space-x-2 bg-white/20 px-4 py-2 rounded-full">
-              <CheckCircle className="h-5 w-5" />
-              <span>Proven Results</span>
+            <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+              <CheckCircle className="h-5 w-5 text-white" />
+              <span className="text-white">Proven Results</span>
             </div>
-            <div className="flex items-center space-x-2 bg-white/20 px-4 py-2 rounded-full">
-              <CheckCircle className="h-5 w-5" />
-              <span>Flexible Learning</span>
+            <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+              <CheckCircle className="h-5 w-5 text-white" />
+              <span className="text-white">Flexible Learning</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Categories Filter */}
-      <div className="bg-white py-8 border-b">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-wrap justify-center gap-4">
-            {categories.map((category) => {
-              const IconComponent = category.icon;
-              return (
-                <Button
-                  key={category.id}
-                  variant={selectedCategory === category.id ? "default" : "outline"}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-xl transition-all duration-300 ${
-                    selectedCategory === category.id
-                      ? "bg-blue-600 text-white shadow-lg"
-                      : "hover:bg-blue-50 hover:border-blue-300"
-                  }`}
-                >
-                  <IconComponent className="h-4 w-4" />
-                  <span>{category.name}</span>
-                </Button>
-              );
-            })}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-white to-gray-50"></div>
+        <div className="relative z-10 py-16 px-6">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Education Services</h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Choose from our comprehensive range of educational services designed to support your academic journey
+              </p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-4">
+              {categories.map((category) => {
+                const IconComponent = category.icon;
+                return (
+                  <Button
+                    key={category.id}
+                    variant={selectedCategory === category.id ? "default" : "outline"}
+                    onClick={() => setSelectedCategory(category.id)}
+                    className={`flex items-center space-x-2 px-6 py-3 rounded-xl transition-all duration-300 ${
+                      selectedCategory === category.id
+                        ? "bg-blue-600 text-white shadow-lg"
+                        : "hover:bg-blue-50 hover:border-blue-300"
+                    }`}
+                  >
+                    <IconComponent className="h-4 w-4" />
+                    <span>{category.name}</span>
+                  </Button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Content based on selected category */}
       {selectedCategory === "universities" ? (
-        renderUniversities()
-      ) : (
-        /* Services Grid */
-        <div className="max-w-7xl mx-auto px-4 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredServices.map((service) => {
+        <div className="space-y-16">
+          {/* University Application Services */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-b from-gray-50 to-white"></div>
+            <div className="relative z-10 max-w-6xl mx-auto px-6 py-20">
+              <div className="text-center mb-12">
+                <h3 className="text-3xl font-bold text-gray-900 mb-4">Application Services</h3>
+                <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                  Get expert help with your university and scholarship applications
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredServices.map((service) => {
               const IconComponent = service.icon;
               return (
                 <Card key={service.id} className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg">
@@ -731,26 +688,118 @@ const Education = () => {
                 </Card>
               );
             })}
+              </div>
+            </div>
+          </div>
+          
+          {/* Universities List */}
+          {renderUniversities()}
+        </div>
+      ) : (
+        /* Services Grid */
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-gray-50 to-white"></div>
+          <div className="relative z-10 max-w-6xl mx-auto px-6 py-20">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredServices.map((service) => {
+              const IconComponent = service.icon;
+              return (
+                <Card key={service.id} className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                          <IconComponent className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-xl font-bold text-gray-100 group-hover:text-blue-300 transition-colors">
+                            {service.title}
+                          </CardTitle>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <div className="flex items-center space-x-1">
+                              <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                              <span className="text-sm font-medium text-gray-100">{service.rating}</span>
+                            </div>
+                            <span className="text-gray-400">•</span>
+                            <span className="text-sm text-gray-300">{service.reviews} reviews</span>
+                          </div>
+                        </div>
+                      </div>
+                      {service.popular && (
+                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                          Popular
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-4">
+                    <CardDescription className="text-gray-300 leading-relaxed">
+                      {service.description}
+                    </CardDescription>
+                    
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-gray-100">Features:</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {service.features.map((feature, index) => (
+                          <div key={index} className="flex items-center space-x-2">
+                            <CheckCircle className="h-4 w-4 text-green-400" />
+                            <span className="text-sm text-gray-300">{feature}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-600">
+                      <div className="flex items-center space-x-2">
+                        <Clock className="h-4 w-4 text-gray-300" />
+                        <span className="text-sm text-gray-300">{service.duration}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <DollarSign className="h-4 w-4 text-gray-300" />
+                        <span className="text-sm font-medium text-gray-100">{service.price}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="h-4 w-4 text-gray-300" />
+                        <span className="text-sm text-gray-300">{service.location}</span>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 rounded-xl group-hover:shadow-lg transition-all duration-300"
+                      onClick={() => navigate("/booking", { state: { service: service.title } })}
+                    >
+                      <span>Book This Service</span>
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+            </div>
           </div>
         </div>
       )}
 
       {/* Contact Section */}
-      <div className="bg-gray-900 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <h3 className="text-3xl font-bold mb-6">Ready to Start Your Educational Journey?</h3>
-          <p className="text-gray-300 max-w-2xl mx-auto mb-8">
-            Contact our education specialists to discuss your needs and find the perfect learning solution for you.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6">
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl">
-              <Phone className="mr-2 h-4 w-4" />
-              Call Us
-            </Button>
-            <Button variant="outline" className="border-white text-white hover:bg-white hover:text-gray-900 px-8 py-3 rounded-xl">
-              <Mail className="mr-2 h-4 w-4" />
-              Email Us
-            </Button>
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-white to-gray-100"></div>
+        <div className="relative z-10 py-20 px-6">
+          <div className="max-w-6xl mx-auto text-center">
+            <h3 className="text-4xl font-bold text-gray-900 mb-6">Ready to Start Your Educational Journey?</h3>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
+              Contact our education specialists to discuss your needs and find the perfect learning solution for you.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl">
+                <Phone className="mr-2 h-4 w-4" />
+                Call Us
+              </Button>
+              <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-3 rounded-xl">
+                <Mail className="mr-2 h-4 w-4" />
+                Email Us
+              </Button>
+            </div>
           </div>
         </div>
       </div>
