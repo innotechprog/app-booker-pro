@@ -22,8 +22,7 @@ import {
   Code,
   MapPin,
   Phone,
-  Mail,
-  Lock
+  Mail
 } from "lucide-react";
 
 const Tutorials = () => {
@@ -60,67 +59,6 @@ const Tutorials = () => {
     { id: "life-skills", name: "Life Skills", icon: Users, description: "Life Orientation, Career Guidance, Personal Development" }
   ];
 
-  const schools = [
-    { id: "uct", name: "University of Cape Town", location: "Cape Town", rating: 4.9 },
-    { id: "wits", name: "University of the Witwatersrand", location: "Johannesburg", rating: 4.8 },
-    { id: "stellies", name: "Stellenbosch University", location: "Stellenbosch", rating: 4.7 },
-    { id: "up", name: "University of Pretoria", location: "Pretoria", rating: 4.6 },
-    { id: "ukzn", name: "University of KwaZulu-Natal", location: "Durban", rating: 4.5 },
-    { id: "ru", name: "Rhodes University", location: "Grahamstown", rating: 4.4 },
-    { id: "nwu", name: "North-West University", location: "Potchefstroom", rating: 4.3 },
-    { id: "unisa", name: "University of South Africa", location: "Pretoria", rating: 4.2 }
-  ];
-
-  const sampleTutorials = [
-    {
-      id: 1,
-      title: "Introduction to Algebra",
-      description: "Basic algebraic concepts and problem-solving techniques",
-      duration: "45 minutes",
-      difficulty: "Beginner",
-      school: "University of Cape Town",
-      tutor: "Dr. Sarah Johnson",
-      rating: 4.9,
-      views: 1250,
-      free: true
-    },
-    {
-      id: 2,
-      title: "Quadratic Equations",
-      description: "Understanding and solving quadratic equations step by step",
-      duration: "60 minutes",
-      difficulty: "Intermediate",
-      school: "University of the Witwatersrand",
-      tutor: "Prof. Michael Chen",
-      rating: 4.8,
-      views: 980,
-      free: true
-    },
-    {
-      id: 3,
-      title: "Advanced Calculus",
-      description: "Limits, derivatives, and integration techniques",
-      duration: "90 minutes",
-      difficulty: "Advanced",
-      school: "Stellenbosch University",
-      tutor: "Dr. Emma Williams",
-      rating: 4.9,
-      views: 2100,
-      free: false
-    },
-    {
-      id: 4,
-      title: "Statistics and Probability",
-      description: "Data analysis and probability distributions",
-      duration: "75 minutes",
-      difficulty: "Intermediate",
-      school: "University of Pretoria",
-      tutor: "Prof. David Brown",
-      rating: 4.7,
-      views: 1650,
-      free: false
-    }
-  ];
 
   const tutorialPackages = [
     {
@@ -160,30 +98,6 @@ const Tutorials = () => {
     }
   };
 
-  const handleSchoolSelection = (schoolId: string) => {
-    setSelectedSchools(prev => 
-      prev.includes(schoolId) 
-        ? prev.filter(id => id !== schoolId)
-        : [...prev, schoolId]
-    );
-  };
-
-  const handleBookTutorial = () => {
-    if (selectedGrade && selectedSubject) {
-      navigate("/booking", { 
-        state: { 
-          service: `Tutorial - ${subjects.find(s => s.id === selectedSubject)?.name} (${grades.find(g => g.id === selectedGrade)?.name})`,
-          grade: selectedGrade,
-          subject: selectedSubject,
-          schools: selectedSchools
-        } 
-      });
-    }
-  };
-
-  const handleUpgrade = () => {
-    setShowPaywall(true);
-  };
 
   return (
     <div className="min-h-screen">
