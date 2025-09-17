@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -611,6 +611,11 @@ const Education = () => {
         </div>
         
         <div className="max-w-7xl mx-auto px-6 text-center relative z-10">
+          <div className="flex justify-end mb-4">
+            <Button asChild variant="outline" className="border-white text-white hover:bg-white hover:text-gray-900">
+              <Link to="/learner/login">Login</Link>
+            </Button>
+          </div>
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
             Education Services
           </h1>

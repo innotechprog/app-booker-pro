@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -107,6 +107,11 @@ const Tutorials = () => {
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700"></div>
         <div className="relative z-10 max-w-7xl mx-auto px-4 py-20">
+          <div className="flex justify-end mb-4">
+            <Button asChild variant="outline" className="border-white text-white hover:bg-white hover:text-gray-900">
+              <Link to="/learner/login">Login</Link>
+            </Button>
+          </div>
           <div className="text-center mb-16">
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">Online Tutorials</h1>
             <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed">

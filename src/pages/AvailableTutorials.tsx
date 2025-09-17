@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import SEO from "@/components/SEO";
 import Footer from "@/components/Footer";
-import { ArrowLeft, Search, Star, Clock, Users, MapPin, CheckCircle } from "lucide-react";
+import { ArrowLeft, Search, Star, Clock, Users, MapPin, Eye } from "lucide-react";
 
 interface TutorialItem {
   id: number;
@@ -17,15 +17,16 @@ interface TutorialItem {
   tutor: string;
   rating: number;
   topics: string[];
+  views: number;
 }
 
 const mockTutorials: TutorialItem[] = [
-  { id: 1, title: "Introduction to Algebra", duration: "45 min", difficulty: "Beginner", school: "University of Cape Town", tutor: "Dr. Sarah Johnson", rating: 4.9, topics: ["algebra", "variables", "equations"] },
-  { id: 2, title: "Quadratic Equations", duration: "60 min", difficulty: "Intermediate", school: "University of the Witwatersrand", tutor: "Prof. Michael Chen", rating: 4.8, topics: ["quadratic", "parabola", "factorisation"] },
-  { id: 3, title: "Advanced Calculus", duration: "90 min", difficulty: "Advanced", school: "Stellenbosch University", tutor: "Dr. Emma Williams", rating: 4.9, topics: ["calculus", "derivatives", "integrals", "limits"] },
-  { id: 4, title: "Statistics and Probability", duration: "75 min", difficulty: "Intermediate", school: "University of Pretoria", tutor: "Prof. David Brown", rating: 4.7, topics: ["statistics", "probability", "distributions"] },
-  { id: 5, title: "Functions & Graphs", duration: "55 min", difficulty: "Intermediate", school: "University of Cape Town", tutor: "Dr. Sarah Johnson", rating: 4.8, topics: ["functions", "graphs", "transformations"] },
-  { id: 6, title: "Trigonometry Basics", duration: "50 min", difficulty: "Beginner", school: "University of the Witwatersrand", tutor: "Prof. Michael Chen", rating: 4.6, topics: ["trigonometry", "sine", "cosine", "angles"] },
+  { id: 1, title: "Introduction to Algebra", duration: "45 min", difficulty: "Beginner", school: "University of Cape Town", tutor: "Dr. Sarah Johnson", rating: 4.9, topics: ["algebra", "variables", "equations"], views: 1250 },
+  { id: 2, title: "Quadratic Equations", duration: "60 min", difficulty: "Intermediate", school: "University of the Witwatersrand", tutor: "Prof. Michael Chen", rating: 4.8, topics: ["quadratic", "parabola", "factorisation"], views: 980 },
+  { id: 3, title: "Advanced Calculus", duration: "90 min", difficulty: "Advanced", school: "Stellenbosch University", tutor: "Dr. Emma Williams", rating: 4.9, topics: ["calculus", "derivatives", "integrals", "limits"], views: 2100 },
+  { id: 4, title: "Statistics and Probability", duration: "75 min", difficulty: "Intermediate", school: "University of Pretoria", tutor: "Prof. David Brown", rating: 4.7, topics: ["statistics", "probability", "distributions"], views: 1650 },
+  { id: 5, title: "Functions & Graphs", duration: "55 min", difficulty: "Intermediate", school: "University of Cape Town", tutor: "Dr. Sarah Johnson", rating: 4.8, topics: ["functions", "graphs", "transformations"], views: 1190 },
+  { id: 6, title: "Trigonometry Basics", duration: "50 min", difficulty: "Beginner", school: "University of the Witwatersrand", tutor: "Prof. Michael Chen", rating: 4.6, topics: ["trigonometry", "sine", "cosine", "angles"], views: 860 },
 ];
 
 const AvailableTutorials = () => {
@@ -35,32 +36,70 @@ const AvailableTutorials = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return mockTutorials;
-    return mockTutorials.filter(t =>
-      t.tutor.toLowerCase().includes(q) ||
-      t.school.toLowerCase().includes(q) ||
-      t.title.toLowerCase().includes(q) ||
-      t.topics.some(topic => topic.toLowerCase().includes(q))
-    );
+    const tokens = query
+      .split(/[,\s]+/)
+      .map(s => s.trim().toLowerCase())
+      .filter(Boolean);
+    if (tokens.length === 0) return mockTutorials;
+    return mockTutorials.filter(t => {
+      const fields = [
+        t.title.toLowerCase(),
+        t.tutor.toLowerCase(),
+        t.school.toLowerCase(),
+        ...t.topics.map(tp => tp.toLowerCase())
+      ];
+      // AND: every token must match at least one field
+      return tokens.every(tok => fields.some(f => f.includes(tok)));
+    });
   }, [query]);
 
   // Build suggestion list from current query across title, tutor, school, topics
   const suggestions = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return [] as string[];
+    const raw = query;
+    const endedWithSpace = /\s$/.test(raw);
+    const parts = raw.split(/[\s,]+/).filter(Boolean);
+    const current = endedWithSpace ? '' : (parts[parts.length - 1] || '');
     const pool: string[] = [];
+    // Build a pool of all possible suggestion strings
     mockTutorials.forEach(t => {
-      if (t.title.toLowerCase().includes(q)) pool.push(t.title);
-      if (t.tutor.toLowerCase().includes(q)) pool.push(t.tutor);
-      if (t.school.toLowerCase().includes(q)) pool.push(t.school);
-      t.topics.forEach(tp => { if (tp.toLowerCase().includes(q)) pool.push(tp); });
+      pool.push(t.title, t.tutor, t.school, ...t.topics);
     });
-    // unique, keep order, limit
-    const seen = new Set<string>();
-    const unique = pool.filter(v => { if (seen.has(v)) return false; seen.add(v); return true; });
-    return unique.slice(0, 8);
+    // unique preserve order
+    const seenAll = new Set<string>();
+    const allUnique = pool.filter(v => { if (seenAll.has(v)) return false; seenAll.add(v); return true; });
+    // If current token is empty, show generic top suggestions
+    if (!current) {
+      return allUnique.slice(0, 8);
+    }
+    // Otherwise, filter by current partial token
+    const lc = current.toLowerCase();
+    const filtered = allUnique.filter(v => v.toLowerCase().includes(lc));
+    return filtered.slice(0, 8);
   }, [query]);
+
+  // Replace the last partial token with the chosen token; if user ended with a space, append.
+  const applyToken = (token: string) => {
+    const raw = query;
+    const endedWithSpace = /\s$/.test(raw);
+    const parts = raw.split(/[\s,]+/).filter(Boolean);
+    // If duplicate, still replace last partial to clean it up
+    if (parts.length === 0) {
+      setQuery(token + ' ');
+      setShowSuggestions(false);
+      return;
+    }
+    if (endedWithSpace) {
+      const next = (raw + token + ' ').replace(/\s+/g, ' ');
+      setQuery(next.trimStart());
+      setShowSuggestions(false);
+      return;
+    }
+    const newParts = [...parts];
+    newParts[newParts.length - 1] = token;
+    const next = newParts.join(' ') + ' ';
+    setQuery(next);
+    setShowSuggestions(false);
+  };
 
   return (
     <div className="min-h-screen">
@@ -104,7 +143,7 @@ const AvailableTutorials = () => {
                       key={s}
                       type="button"
                       className="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-800"
-                      onClick={() => { setQuery(s); setShowSuggestions(false); }}
+                      onMouseDown={() => applyToken(s)}
                     >
                       {s}
                     </button>
@@ -113,7 +152,21 @@ const AvailableTutorials = () => {
               )}
             </div>
             {query && (
-              <p className="text-sm text-gray-500 mt-2">Showing {filtered.length} of {mockTutorials.length} tutorials</p>
+              <>
+                <p className="text-sm text-gray-500 mt-2">Showing {filtered.length} of {mockTutorials.length} tutorials</p>
+                {/* Visible filter tokens with borders */}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {query
+                    .split(/[\s,]+/)
+                    .map(t => t.trim())
+                    .filter(Boolean)
+                    .map((tok, idx) => (
+                      <Badge key={`${tok}-${idx}`} variant="outline" className="border border-gray-300 text-gray-700 bg-white">
+                        {tok}
+                      </Badge>
+                    ))}
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -132,7 +185,7 @@ const AvailableTutorials = () => {
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div>
-                      <CardTitle className="text-xl font-bold text-gray-900">{t.title}</CardTitle>
+                      <CardTitle className="text-xl font-bold text-gray-900 cursor-pointer hover:underline" onClick={() => applyToken(t.title)}>{t.title}</CardTitle>
                       <div className="flex items-center space-x-2 mt-2">
                         <Badge variant="outline" className="border-gray-300 text-gray-700">{t.difficulty}</Badge>
                         <div className="flex items-center space-x-1 text-gray-700">
@@ -141,37 +194,36 @@ const AvailableTutorials = () => {
                         </div>
                       </div>
                     </div>
-                    {isSelected(t.id) && (
-                      <Badge className="bg-blue-600 text-white">Selected</Badge>
-                    )}
+                    
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm text-gray-800">
                   <div className="flex items-center space-x-2">
                     <Users className="h-4 w-4" />
-                    <span>{t.tutor}</span>
+                    <button type="button" className="text-left hover:underline" onClick={() => applyToken(t.tutor)}>{t.tutor}</button>
                   </div>
                   <div className="flex items-center space-x-2">
                     <MapPin className="h-4 w-4" />
-                    <span>{t.school}</span>
+                    <button type="button" className="text-left hover:underline" onClick={() => applyToken(t.school)}>{t.school}</button>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Clock className="h-4 w-4" />
                     <span>{t.duration}</span>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <Eye className="h-4 w-4" />
+                    <span>{t.views.toLocaleString()} views</span>
+                  </div>
                   <div className="flex flex-wrap gap-2 pt-2">
                     {t.topics.map((topic) => (
-                      <Badge key={topic} variant="outline" className="text-xs border-gray-300 text-gray-700">
-                        {topic}
-                      </Badge>
+                      <button key={topic} type="button" onClick={() => applyToken(topic)}>
+                        <Badge variant="outline" className="text-xs border-gray-300 text-gray-700 hover:bg-gray-100">
+                          {topic}
+                        </Badge>
+                      </button>
                     ))}
                   </div>
-                  {isSelected(t.id) && (
-                    <div className="flex items-center space-x-2 text-green-600">
-                      <CheckCircle className="h-4 w-4" />
-                      <span>Included in your selection</span>
-                    </div>
-                  )}
+                  
                 </CardContent>
               </Card>
             ))}
