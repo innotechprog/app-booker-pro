@@ -15,6 +15,8 @@ import Invoices from "./pages/Invoices";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Education from "./pages/Education";
+import Tutorials from "./pages/Tutorials";
+import AvailableTutorials from "./pages/AvailableTutorials";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +40,8 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/education" element={<Education />} />
+            <Route path="/tutorials/available" element={<AvailableTutorials />} />
+            <Route path="/tutorials" element={<Tutorials />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

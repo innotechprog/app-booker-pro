@@ -35,6 +35,13 @@ const SEO = ({
       image: "/og-image-education.jpg",
       url: "https://ibis.com/education"
     },
+    tutorials: {
+      title: "Online Tutorials - IBIS | Personalized Tutoring for All Grades & Subjects",
+      description: "Get expert tutoring for any grade (1-12) and subject. Personalized learning with flexible scheduling, comprehensive curriculum coverage, and progress tracking. Choose from Basic, Standard, or Premium packages.",
+      keywords: "online tutorials, tutoring, personalized learning, grade 1-12, university tutoring, mathematics, english, science, history, art, music, computer science, homework help, test preparation, South Africa",
+      image: "/og-image-tutorials.jpg",
+      url: "https://ibis.com/tutorials"
+    },
     bookService: {
       title: "Send Me Services - IBIS | Personal Assistance & Errand Running",
       description: "Your trusted helping hand for all your errands and tasks. Professional delivery services, personal assistance, household tasks, and business support across Gauteng, South Africa.",

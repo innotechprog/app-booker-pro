@@ -274,7 +274,7 @@ const Education = () => {
        name: "Tshwane University of Technology (TUT)",
        location: "Pretoria, Gauteng",
        website: "https://www.tut.ac.za",
-       applicationUrl: "https://www.tut.ac.za/apply",
+       applicationUrl: "https://applications-prod.tut.ac.za/",
        type: "Public",
        established: 2004,
        ranking: "Top 2000 globally",
@@ -437,9 +437,6 @@ const Education = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700"></div>
         <div className="relative z-10 max-w-7xl mx-auto px-4 py-20">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full mb-6">
-              <Building2 className="h-10 w-10 text-white" />
-            </div>
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">South African Universities</h2>
             <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed">
               Explore all public universities in South Africa and apply directly through their official websites
@@ -469,7 +466,7 @@ const Education = () => {
                 placeholder="Search universities by name, location, or programs..."
                 value={universitySearch}
                 onChange={(e) => setUniversitySearch(e.target.value)}
-                className="pl-12 pr-4 py-4 text-lg bg-white/95 backdrop-blur-sm border-0 rounded-2xl shadow-lg focus:ring-2 focus:ring-white/50 focus:bg-white transition-all duration-300"
+                className="pl-12 pr-4 py-4 text-lg bg-white/95 backdrop-blur-sm border-0 rounded-2xl shadow-lg focus:ring-2 focus:ring-white/50 focus:bg-white transition-all duration-300 text-gray-900 placeholder-gray-500"
               />
             </div>
             {universitySearch && (
@@ -549,7 +546,7 @@ const Education = () => {
                           Website
                         </Button>
                         <Button 
-                          className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                          className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:!bg-gradient-to-r hover:!from-blue-800 hover:!to-purple-800 text-white hover:!text-white"
                           onClick={() => window.open(university.applicationUrl, '_blank')}
                         >
                           <ExternalLink className="mr-2 h-4 w-4" />
@@ -659,7 +656,7 @@ const Education = () => {
                     className={`flex items-center space-x-2 px-6 py-3 rounded-xl transition-all duration-300 ${
                       selectedCategory === category.id
                         ? "bg-blue-600 text-white shadow-lg"
-                        : "hover:bg-blue-50 hover:border-blue-300"
+                        : "hover:!bg-blue-100 hover:!border-blue-400 hover:!text-blue-700"
                     }`}
                   >
                     <IconComponent className="h-4 w-4" />
@@ -746,10 +743,16 @@ const Education = () => {
                       </div>
                       
                       <Button 
-                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                        onClick={() => navigate("/booking", { state: { service: service.title } })}
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:!bg-gradient-to-r hover:!from-blue-800 hover:!to-purple-800 text-white hover:!text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                        onClick={() => {
+                          if (service.title === "Academic Tutoring") {
+                            navigate("/tutorials");
+                          } else {
+                            navigate("/booking", { state: { service: service.title } });
+                          }
+                        }}
                       >
-                        <span>Get Started</span>
+                        <span>{service.title === "Academic Tutoring" ? "Choose Grade & Subject" : "Get Started"}</span>
                         <ArrowRight className="ml-2 h-5 w-5" />
                       </Button>
                     </div>
@@ -830,10 +833,16 @@ const Education = () => {
                     </div>
                     
                     <Button 
-                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 rounded-xl group-hover:shadow-lg transition-all duration-300"
-                      onClick={() => navigate("/booking", { state: { service: service.title } })}
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:!bg-gradient-to-r hover:!from-blue-800 hover:!to-purple-800 text-white hover:!text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                      onClick={() => {
+                        if (service.title === "Academic Tutoring") {
+                          navigate("/tutorials");
+                        } else {
+                          navigate("/booking", { state: { service: service.title } });
+                        }
+                      }}
                     >
-                      <span>Book This Service</span>
+                      <span>{service.title === "Academic Tutoring" ? "Choose Grade & Subject" : "Book This Service"}</span>
                       <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </CardContent>
@@ -859,7 +868,7 @@ const Education = () => {
                 <Phone className="mr-2 h-4 w-4" />
                 Call Us
               </Button>
-              <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-3 rounded-xl">
+              <Button variant="outline" className="border-white text-white hover:bg-white hover:text-gray-900 hover:border-white px-8 py-3 rounded-xl transition-all duration-300">
                 <Mail className="mr-2 h-4 w-4" />
                 Email Us
               </Button>

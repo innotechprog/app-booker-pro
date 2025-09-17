@@ -452,7 +452,7 @@ const Dashboard = () => {
                         </div>
                         <div className="flex items-center text-gray-300">
                           <span className="mr-2">💰</span>
-                          Estimated: ${booking.estimatedCost}
+                          Estimated: R{booking.estimatedCost}
                         </div>
                       </div>
                       <p className="text-white mb-4">{booking.description}</p>
