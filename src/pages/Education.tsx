@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,8 +31,31 @@ import {
 
 const Education = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [universitySearch, setUniversitySearch] = useState("");
+
+  // Handle URL parameters and hash fragments
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const category = urlParams.get('category');
+    const hash = location.hash.substring(1); // Remove the # symbol
+    
+    if (category && ['all', 'online', 'universities'].includes(category)) {
+      setSelectedCategory(category);
+    } else if (hash === 'universities') {
+      setSelectedCategory('universities');
+    }
+  }, [location]);
+
+  // Update URL when category changes
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    const newUrl = categoryId === 'all' 
+      ? '/education' 
+      : `/education?category=${categoryId}`;
+    navigate(newUrl, { replace: true });
+  };
 
   const categories = [
     { id: "all", name: "All Services", icon: GraduationCap },
@@ -70,7 +93,7 @@ const Education = () => {
        name: "Stellenbosch University",
        location: "Stellenbosch, Western Cape",
        website: "https://www.sun.ac.za",
-       applicationUrl: "https://www.sun.ac.za/english/maties/apply",
+       applicationUrl: "https://student.sun.ac.za//signup",
        type: "Public",
        established: 1866,
        ranking: "Top 400 globally",
@@ -94,7 +117,7 @@ const Education = () => {
        name: "University of Johannesburg (UJ)",
        location: "Johannesburg, Gauteng",
        website: "https://www.uj.ac.za",
-       applicationUrl: "https://www.uj.ac.za/apply",
+       applicationUrl: "https://registration.uj.ac.za/pls/prodi41/gen.gw1pkg.gw1startup?x_processcode=ITS_OAP",
        type: "Public",
        established: 2005,
        ranking: "Top 600 globally",
@@ -106,7 +129,7 @@ const Education = () => {
        name: "University of KwaZulu-Natal (UKZN)",
        location: "Durban, KwaZulu-Natal",
        website: "https://www.ukzn.ac.za",
-       applicationUrl: "https://www.ukzn.ac.za/apply/",
+       applicationUrl: "https://www.cao.ac.za/Apply.aspx?content=Apply",
        type: "Public",
        established: 2004,
        ranking: "Top 700 globally",
@@ -142,7 +165,7 @@ const Education = () => {
        name: "North-West University (NWU)",
        location: "Potchefstroom, North West",
        website: "https://www.nwu.ac.za",
-       applicationUrl: "https://www.nwu.ac.za/applications",
+       applicationUrl: "https://studies.nwu.ac.za/undergraduate-studies/application",
        type: "Public",
        established: 2004,
        ranking: "Top 1000 globally",
@@ -154,7 +177,7 @@ const Education = () => {
        name: "University of Limpopo",
        location: "Polokwane, Limpopo",
        website: "https://www.ul.ac.za",
-       applicationUrl: "https://www.ul.ac.za/index.php?Entity=Apply",
+       applicationUrl: "https://ulc-prod-webserver.ul.ac.za/pls/prodi41/gen.gw1pkg.gw1view",
        type: "Public",
        established: 2005,
        ranking: "Top 1500 globally",
@@ -166,7 +189,7 @@ const Education = () => {
        name: "University of Venda",
        location: "Thohoyandou, Limpopo",
        website: "https://www.univen.ac.za",
-       applicationUrl: "https://www.univen.ac.za/apply",
+       applicationUrl: "https://univenierp01.univen.ac.za/pls/prodi41/gen.gw1pkg.gw1startup?x_processcode=ITS_OAP",
        type: "Public",
        established: 1982,
        ranking: "Top 2000 globally",
@@ -178,7 +201,7 @@ const Education = () => {
        name: "University of Fort Hare",
        location: "Alice, Eastern Cape",
        website: "https://www.ufh.ac.za",
-       applicationUrl: "https://www.ufh.ac.za/apply/",
+       applicationUrl: "https://ienabler.ufh.ac.za/pls/prodi41/w99pkg.mi_login",
        type: "Public",
        established: 1916,
        ranking: "Top 2500 globally",
@@ -190,7 +213,7 @@ const Education = () => {
        name: "University of the Western Cape (UWC)",
        location: "Cape Town, Western Cape",
        website: "https://www.uwc.ac.za",
-       applicationUrl: "https://www.uwc.ac.za/study/undergraduate/apply",
+       applicationUrl: "https://www.uwc.ac.za/admission-and-financial-aid/apply",
        type: "Public",
        established: 1959,
        ranking: "Top 1000 globally",
@@ -202,7 +225,7 @@ const Education = () => {
        name: "University of Zululand",
        location: "KwaDlangezwa, KwaZulu-Natal",
        website: "https://www.unizulu.ac.za",
-       applicationUrl: "https://www.unizulu.ac.za/apply",
+       applicationUrl: "https://www.cao.ac.za/Apply.aspx?content=Apply",
        type: "Public",
        established: 1960,
        ranking: "Top 3000 globally",
@@ -214,7 +237,7 @@ const Education = () => {
        name: "Walter Sisulu University",
        location: "Mthatha, Eastern Cape",
        website: "https://www.wsu.ac.za",
-       applicationUrl: "https://apply.wsu.ac.za/",
+       applicationUrl: "https://wsu.ac.za/index.php/en/undergraduate-programmes/new-students/admission-requirement",
        type: "Public",
        established: 2005,
        ranking: "Top 3500 globally",
@@ -226,7 +249,7 @@ const Education = () => {
        name: "Cape Peninsula University of Technology (CPUT)",
        location: "Cape Town, Western Cape",
        website: "https://www.cput.ac.za",
-       applicationUrl: "https://www.cput.ac.za/apply",
+       applicationUrl: "https://alecto.cput.ac.za/pls/prodi41/gen.gw1pkg.gw1startup?x_processcode=ITS_OAP",
        type: "Public",
        established: 2005,
        ranking: "Top 2000 globally",
@@ -250,7 +273,7 @@ const Education = () => {
        name: "Durban University of Technology (DUT)",
        location: "Durban, KwaZulu-Natal",
        website: "https://www.dut.ac.za",
-       applicationUrl: "https://www.dut.ac.za/apply",
+       applicationUrl: "https://www.cao.ac.za/Apply.aspx?content=Apply",
        type: "Public",
        established: 2002,
        ranking: "Top 3000 globally",
@@ -262,7 +285,7 @@ const Education = () => {
        name: "Mangosuthu University of Technology (MUT)",
        location: "Durban, KwaZulu-Natal",
        website: "https://www.mut.ac.za",
-       applicationUrl: "https://www.mut.ac.za/apply",
+       applicationUrl: "https://www.cao.ac.za/Apply.aspx?content=Apply",
        type: "Public",
        established: 1979,
        ranking: "Top 3500 globally",
@@ -310,7 +333,7 @@ const Education = () => {
        name: "Sol Plaatje University",
        location: "Kimberley, Northern Cape",
        website: "https://www.spu.ac.za",
-       applicationUrl: "https://www.spu.ac.za/apply",
+       applicationUrl: "https://applications-prod.spu.ac.za/",
        type: "Public",
        established: 2014,
        ranking: "New University",
@@ -322,7 +345,7 @@ const Education = () => {
        name: "University of Mpumalanga",
        location: "Mbombela, Mpumalanga",
        website: "https://www.ump.ac.za",
-       applicationUrl: "https://www.ump.ac.za/apply",
+       applicationUrl: "https://www.ump.ac.za/Study-with-us/Application-Process/Online-Applications.aspx",
        type: "Public",
        established: 2014,
        ranking: "New University",
@@ -437,7 +460,21 @@ const Education = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700"></div>
         <div className="relative z-10 max-w-7xl mx-auto px-4 py-20">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">South African Universities</h2>
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+              <a 
+                href="/education?category=universities" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleCategoryChange('universities');
+                  setTimeout(() => {
+                    document.getElementById('universities')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
+                }}
+                className="hover:text-blue-200 transition-colors duration-300 cursor-pointer"
+              >
+                South African Universities
+              </a>
+            </h2>
             <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed">
               Explore all public universities in South Africa and apply directly through their official websites
             </p>
@@ -539,7 +576,7 @@ const Education = () => {
                       <div className="flex space-x-2 pt-4 border-t border-gray-200">
                         <Button 
                           variant="outline"
-                          className="flex-1 text-blue-600 border-blue-600 hover:bg-blue-50"
+                          className="flex-1 text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-800"
                           onClick={() => window.open(university.website, '_blank')}
                         >
                           <Globe className="mr-2 h-4 w-4" />
@@ -657,7 +694,7 @@ const Education = () => {
                   <Button
                     key={category.id}
                     variant={selectedCategory === category.id ? "default" : "outline"}
-                    onClick={() => setSelectedCategory(category.id)}
+                    onClick={() => handleCategoryChange(category.id)}
                     className={`flex items-center space-x-2 px-6 py-3 rounded-xl transition-all duration-300 ${
                       selectedCategory === category.id
                         ? "bg-blue-600 text-white shadow-lg"
@@ -676,7 +713,7 @@ const Education = () => {
 
       {/* Content based on selected category */}
       {selectedCategory === "universities" ? (
-        <div className="space-y-16">
+        <div id="universities" className="space-y-16">
           {/* Universities List */}
           {renderUniversities()}
           

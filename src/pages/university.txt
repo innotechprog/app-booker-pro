@@ -4,33 +4,33 @@ university<div class="row" id="universities-list"></div>
 const universities = [
   // Traditional Universities (12)
   { name: "University of Cape Town (UCT)", location: "Cape Town, Western Cape", logo: "uct.svg", link: "https://applyonline.uct.ac.za/" },
-  { name: "University of Fort Hare (UFH)", location: "Alice and East London, Eastern Cape", logo: "ufh.svg", link: "https://www.ufh.ac.za/apply/" },
+  { name: "University of Fort Hare (UFH)", location: "Alice and East London, Eastern Cape", logo: "ufh.svg", link: "https://ienabler.ufh.ac.za/pls/prodi41/w99pkg.mi_login" },
   { name: "University of the Free State (UFS)", location: "Bloemfontein and QwaQwa, Free State", logo: "ufs.svg", link: "https://apply.ufs.ac.za/" },
-  { name: "University of KwaZulu-Natal (UKZN)", location: "Durban, Pietermaritzburg, KwaZulu-Natal", logo: "ukzn.svg", link: "https://www.ukzn.ac.za/apply/" },
-  { name: "University of Limpopo", location: "Polokwane and Turfloop, Limpopo", logo: "ul.svg", link: "https://www.ul.ac.za/index.php?Entity=Apply" },
-  { name: "North-West University (NWU)", location: "Mafikeng, Potchefstroom, Vanderbijlpark", logo: "nwu.svg", link: "https://www.nwu.ac.za/applications" },
+  { name: "University of KwaZulu-Natal (UKZN)", location: "Durban, Pietermaritzburg, KwaZulu-Natal", logo: "ukzn.svg", link: "https://www.cao.ac.za/Apply.aspx?content=Apply" },
+  { name: "University of Limpopo", location: "Polokwane and Turfloop, Limpopo", logo: "ul.svg", link: "https://ulc-prod-webserver.ul.ac.za/pls/prodi41/gen.gw1pkg.gw1view" },
+  { name: "North-West University (NWU)", location: "Mafikeng, Potchefstroom, Vanderbijlpark", logo: "nwu.svg", link: "https://studies.nwu.ac.za/undergraduate-studies/application" },
   { name: "University of Pretoria (UP)", location: "Pretoria, Gauteng", logo: "up.svg", link: "https://www.up.ac.za/online-application" },
   { name: "Rhodes University", location: "Grahamstown, Eastern Cape", logo: "rhodes.svg", link: "https://ross.ru.ac.za/" },
   { name: "Sefako Makgatho Health Sciences University (SMU)", location: "Ga-Rankuwa, Pretoria", logo: "smu.svg", link: "https://www.smu.ac.za/apply/" },
   { name: "Stellenbosch University", location: "Stellenbosch, Western Cape", logo: "sun.svg", link: "https://student.sun.ac.za//signup" },
-  { name: "University of the Western Cape (UWC)", location: "Bellville, Western Cape", logo: "uwc.svg", link: "https://www.uwc.ac.za/study/undergraduate/apply" },
+  { name: "University of the Western Cape (UWC)", location: "Bellville, Western Cape", logo: "uwc.svg", link: "https://www.uwc.ac.za/admission-and-financial-aid/apply" },
   { name: "University of the Witwatersrand (Wits)", location: "Johannesburg, Gauteng", logo: "wits.svg", link: "https://www.wits.ac.za/applications/" },
 
   // Comprehensive Universities (6)
   { name: "University of Johannesburg (UJ)", location: "Johannesburg and Soweto, Gauteng", logo: "uj.svg", link: "https://registration.uj.ac.za/pls/prodi41/gen.gw1pkg.gw1startup?x_processcode=ITS_OAP" },
   { name: "Nelson Mandela University (NMU)", location: "Port Elizabeth and George, Eastern Cape", logo: "nmu.svg", link: "https://apply.nmu.ac.za/" },
   { name: "University of South Africa (Unisa)", location: "Nationwide (Headquartered in Pretoria)", logo: "unisa.svg", link: "https://www.unisa.ac.za/apply" },
-  { name: "University of Venda (Univen)", location: "Thohoyandou, Limpopo", logo: "univen.svg", link: "https://www.univen.ac.za/apply" },
-  { name: "Walter Sisulu University (WSU)", location: "East London, Butterworth, Mthatha, Queenstown, Eastern Cape", logo: "wsu.svg", link: "https://apply.wsu.ac.za/" },
-  { name: "University of Zululand (UniZulu)", location: "Empangeni, KwaZulu-Natal", logo: "unizulu.svg", link: "https://www.unizulu.ac.za/apply" },
+  { name: "University of Venda (Univen)", location: "Thohoyandou, Limpopo", logo: "univen.svg", link: "https://univenierp01.univen.ac.za/pls/prodi41/gen.gw1pkg.gw1startup?x_processcode=ITS_OAP" },
+  { name: "Walter Sisulu University (WSU)", location: "East London, Butterworth, Mthatha, Queenstown, Eastern Cape", logo: "wsu.svg", link: "https://wsu.ac.za/index.php/en/undergraduate-programmes/new-students/admission-requirement" },
+  { name: "University of Zululand (UniZulu)", location: "Empangeni, KwaZulu-Natal", logo: "unizulu.svg", link: "https://www.cao.ac.za/Apply.aspx?content=Apply" },
 
   // Universities of Technology (8)
-  { name: "Cape Peninsula University of Technology (CPUT)", location: "Bellville and Cape Town, Western Cape", logo: "cput.svg", link: "https://www.cput.ac.za/apply" },
+  { name: "Cape Peninsula University of Technology (CPUT)", location: "Bellville and Cape Town, Western Cape", logo: "cput.svg", link: "https://alecto.cput.ac.za/pls/prodi41/gen.gw1pkg.gw1startup?x_processcode=ITS_OAP" },
   { name: "Central University of Technology (CUT)", location: "Bloemfontein and Welkom, Free State", logo: "cut.svg", link: "https://www.cut.ac.za/apply" },
-  { name: "Durban University of Technology (DUT)", location: "Durban and Pietermaritzburg, KwaZulu-Natal", logo: "dut.svg", link: "https://www.dut.ac.za/apply" },
-  { name: "Mangosuthu University of Technology (MUT)", location: "Umlazi, KwaZulu-Natal", logo: "mut.svg", link: "https://www.mut.ac.za/apply" },
-  { name: "University of Mpumalanga (UMP)", location: "Mbombela, Mpumalanga", logo: "ump.svg", link: "https://www.ump.ac.za/apply" },
-  { name: "Sol Plaatje University (SPU)", location: "Kimberley, Northern Cape", logo: "spu.svg", link: "https://www.spu.ac.za/apply" },
+  { name: "Durban University of Technology (DUT)", location: "Durban and Pietermaritzburg, KwaZulu-Natal", logo: "dut.svg", link: "https://www.cao.ac.za/Apply.aspx?content=Apply" },
+  { name: "Mangosuthu University of Technology (MUT)", location: "Umlazi, KwaZulu-Natal", logo: "mut.svg", link: "https://www.cao.ac.za/Apply.aspx?content=Apply" },
+  { name: "University of Mpumalanga (UMP)", location: "Mbombela, Mpumalanga", logo: "ump.svg", link: "https://www.ump.ac.za/Study-with-us/Application-Process/Online-Applications.aspx" },
+  { name: "Sol Plaatje University (SPU)", location: "Kimberley, Northern Cape", logo: "spu.svg", link: "https://applications-prod.spu.ac.za/" },
   { name: "Tshwane University of Technology (TUT)", location: "Pretoria, Mbombela, Polokwane, Ga-Rankuwa, Soshanguve, Witbank", logo: "tut.svg", link: "https://www.tut.ac.za/apply" },
   { name: "Vaal University of Technology (VUT)", location: "Vanderbijlpark, Secunda, Kempton Park, Klerksdorp, Upington", logo: "vut.svg", link: "https://www.vut.ac.za/apply" }
 ];
