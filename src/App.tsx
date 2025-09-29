@@ -17,6 +17,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Education from "./pages/Education";
 import Tutorials from "./pages/Tutorials";
 import AvailableTutorials from "./pages/AvailableTutorials";
+import TutorProfile from "./pages/TutorProfile";
 import LearnerRegister from "./pages/LearnerRegister";
 import LearnerLogin from "./pages/LearnerLogin";
 import LearnerDashboard from "./pages/LearnerDashboard";
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/education" element={<Education />} />
             <Route path="/tutorials/available" element={<AvailableTutorials />} />
+            <Route path="/tutor/:tutorId" element={<TutorProfile />} />
             <Route path="/tutorials" element={<Tutorials />} />
             <Route path="/learner/register" element={<LearnerRegister />} />
             <Route path="/learner/login" element={<LearnerLogin />} />

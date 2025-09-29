@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+import { AccessLevel, getUserAccessLevel, canAccess } from "@/utils/accessControl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +42,7 @@ const Education = () => {
     const category = urlParams.get('category');
     const hash = location.hash.substring(1); // Remove the # symbol
     
-    if (category && ['all', 'online', 'universities'].includes(category)) {
+    if (category && ['all', 'tutorials', 'universities'].includes(category)) {
       setSelectedCategory(category);
     } else if (hash === 'universities') {
       setSelectedCategory('universities');
@@ -59,8 +60,8 @@ const Education = () => {
 
   const categories = [
     { id: "all", name: "All Services", icon: GraduationCap },
-    { id: "online", name: "Online Learning & Tutorials", icon: Globe },
-    { id: "universities", name: "Universities & Applications", icon: Building2 }
+    { id: "tutorials", name: "Tutorials", icon: BookOpen },
+    { id: "universities", name: "Universities", icon: Building2 }
   ];
 
      const southAfricanUniversities = [
@@ -358,7 +359,7 @@ const Education = () => {
     {
       id: 1,
       title: "Academic Tutoring",
-      category: "online",
+      category: "tutorials",
       description: "One-on-one and group tutoring sessions for all subjects and grade levels",
       features: ["Math & Science", "Languages", "Test Preparation", "Homework Help"],
       duration: "1-2 hours per session",
@@ -384,34 +385,6 @@ const Education = () => {
       popular: true
     },
     {
-      id: 3,
-      title: "Study Skills Workshop",
-      category: "online",
-      description: "Learn effective study techniques, time management, and exam strategies",
-      features: ["Note-taking Methods", "Memory Techniques", "Time Management", "Stress Management"],
-      duration: "4-6 hours",
-      price: "R800-1200",
-      rating: 4.7,
-      reviews: 203,
-      location: "Workshop Venues",
-      icon: Users,
-      popular: false
-    },
-    {
-      id: 5,
-      title: "Online Course Development",
-      category: "online",
-      description: "Custom online courses and learning materials for institutions and individuals",
-      features: ["Course Design", "Content Creation", "Interactive Elements", "Assessment Tools"],
-      duration: "2-8 weeks",
-      price: "R5000-15000",
-      rating: 4.8,
-      reviews: 34,
-      location: "Online",
-      icon: Globe,
-      popular: false
-    },
-    {
       id: 6,
       title: "Scholarship Application Support",
       category: "universities",
@@ -424,20 +397,6 @@ const Education = () => {
       location: "Online",
       icon: FileText,
       popular: true
-    },
-    {
-      id: 7,
-      title: "Language Learning Programs",
-      category: "online",
-      description: "Comprehensive language courses for all proficiency levels",
-      features: ["English", "Afrikaans", "Zulu", "French", "Spanish", "German"],
-      duration: "8-12 weeks",
-      price: "R1200-2000",
-      rating: 4.7,
-      reviews: 178,
-      location: "Online & In-person",
-      icon: BookOpen,
-      popular: false
     },
   ];
 
@@ -675,6 +634,57 @@ const Education = () => {
           </div>
         </div>
       </div>
+
+      {/* Enhanced Features for Logged-in Users */}
+      {canAccess(AccessLevel.REGISTERED) && (
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 py-16">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Welcome back! 🎓
+              </h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                As a registered user, you have access to enhanced features and personalized learning experiences.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <Card className="text-center p-6 border-2 border-green-200 bg-white/80">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BookOpen className="h-8 w-8 text-green-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Personalized Tutorials</h3>
+                <p className="text-gray-600 mb-4">Access tutorials tailored to your grade level and learning preferences.</p>
+                <Button asChild className="bg-green-600 hover:bg-green-700 text-white">
+                  <Link to="/tutorials/available">Browse Tutorials</Link>
+                </Button>
+              </Card>
+
+              <Card className="text-center p-6 border-2 border-blue-200 bg-white/80">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users className="h-8 w-8 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Track Progress</h3>
+                <p className="text-gray-600 mb-4">Monitor your learning journey and see your achievements.</p>
+                <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Link to="/learner">View Dashboard</Link>
+                </Button>
+              </Card>
+
+              <Card className="text-center p-6 border-2 border-purple-200 bg-white/80">
+                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Star className="h-8 w-8 text-purple-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Premium Features</h3>
+                <p className="text-gray-600 mb-4">Unlock advanced features and get priority support.</p>
+                <Button asChild variant="outline" className="border-purple-600 text-purple-600 hover:bg-purple-50">
+                  <Link to="/learner">Upgrade Now</Link>
+                </Button>
+              </Card>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Categories Filter */}
       <div className="relative">

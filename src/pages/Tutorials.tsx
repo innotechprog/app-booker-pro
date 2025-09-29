@@ -31,18 +31,10 @@ const Tutorials = () => {
   const [selectedSubject, setSelectedSubject] = useState("");
 
   const grades = [
-    { id: "grade-1", name: "Grade 1", level: "Foundation Phase" },
-    { id: "grade-2", name: "Grade 2", level: "Foundation Phase" },
-    { id: "grade-3", name: "Grade 3", level: "Foundation Phase" },
-    { id: "grade-4", name: "Grade 4", level: "Intermediate Phase" },
-    { id: "grade-5", name: "Grade 5", level: "Intermediate Phase" },
-    { id: "grade-6", name: "Grade 6", level: "Intermediate Phase" },
-    { id: "grade-7", name: "Grade 7", level: "Senior Phase" },
-    { id: "grade-8", name: "Grade 8", level: "Senior Phase" },
-    { id: "grade-9", name: "Grade 9", level: "Senior Phase" },
-    { id: "grade-10", name: "Grade 10", level: "FET Phase" },
-    { id: "grade-11", name: "Grade 11", level: "FET Phase" },
-    { id: "grade-12", name: "Grade 12", level: "FET Phase" },
+    { id: "grade-1-3", name: "Grades 1-3", level: "Foundation Phase" },
+    { id: "grade-4-6", name: "Grades 4-6", level: "Intermediate Phase" },
+    { id: "grade-7-9", name: "Grades 7-9", level: "Senior Phase" },
+    { id: "grade-10-12", name: "Grades 10-12", level: "FET Phase" },
     { id: "university", name: "University Level", level: "Tertiary Education" }
   ];
 
@@ -51,12 +43,7 @@ const Tutorials = () => {
     { id: "english", name: "English", icon: BookOpen, description: "Language, Literature, Writing, Comprehension" },
     { id: "science", name: "Natural Sciences", icon: Microscope, description: "Physics, Chemistry, Biology, Earth Sciences" },
     { id: "history", name: "History", icon: Globe, description: "World History, South African History, Geography" },
-    { id: "art", name: "Creative Arts", icon: Palette, description: "Visual Arts, Drama, Music, Design" },
-    { id: "music", name: "Music", icon: Music, description: "Theory, Performance, Composition, History" },
-    { id: "computer", name: "Computer Science", icon: Code, description: "Programming, IT, Digital Literacy, Coding" },
-    { id: "languages", name: "Additional Languages", icon: Globe, description: "Afrikaans, Zulu, French, Spanish, German" },
-    { id: "business", name: "Business Studies", icon: Users, description: "Economics, Accounting, Entrepreneurship" },
-    { id: "life-skills", name: "Life Skills", icon: Users, description: "Life Orientation, Career Guidance, Personal Development" }
+    { id: "languages", name: "Additional Languages", icon: Globe, description: "Afrikaans, Zulu, French, Spanish, German" }
   ];
 
 

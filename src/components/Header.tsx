@@ -1,16 +1,48 @@
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Menu, X } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useState } from "react";
+import { ChevronDown, Menu, X, User, LogOut, BookOpen, GraduationCap, Settings } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
+  const navigate = useNavigate();
+
+  // Check if user is logged in
+  useEffect(() => {
+    const checkLoginStatus = () => {
+      const learnerData = localStorage.getItem('learnerData');
+      if (learnerData) {
+        setIsLoggedIn(true);
+        setUserData(JSON.parse(learnerData));
+      } else {
+        setIsLoggedIn(false);
+        setUserData(null);
+      }
+    };
+
+    checkLoginStatus();
+    
+    // Listen for storage changes (when user logs in/out in another tab)
+    window.addEventListener('storage', checkLoginStatus);
+    
+    return () => window.removeEventListener('storage', checkLoginStatus);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('learnerData');
+    setIsLoggedIn(false);
+    setUserData(null);
+    navigate('/');
+  };
 
   return (
     <header className="w-full px-4 sm:px-6 py-3 sm:py-4 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/40 border-b border-white/10">
@@ -21,43 +53,103 @@ const Header = () => {
           </h1>
         </div>
         
-        {/* Desktop Navigation - Centered */}
-        <nav className="hidden md:flex items-center space-x-6 lg:space-x-8">
-          <a href="#home" className="text-foreground hover:text-primary transition-colors font-medium">
-            Home
-          </a>
-          <a href="#about" className="text-foreground hover:text-primary transition-colors font-medium">
-            About
-          </a>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="text-foreground hover:text-primary transition-colors font-medium flex items-center">
-                Solutions
-                <ChevronDown className="ml-1 h-4 w-4" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem asChild>
-                <Link to="/education" className="w-full cursor-pointer">Education</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/book-service" className="w-full cursor-pointer">Send Me</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/book-service" className="w-full cursor-pointer">IT Solutions</Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <a href="#contact" className="text-foreground hover:text-primary transition-colors font-medium">
-            Contact
-          </a>
+        {/* Desktop Navigation - Conditional based on login status */}
+        <nav className="hidden md:flex items-center space-x-8">
+          {isLoggedIn ? (
+            <>
+              <Link to="/education" className="text-foreground hover:text-primary transition-colors font-medium">
+                Education
+              </Link>
+              <Link to="/tutorials" className="text-foreground hover:text-primary transition-colors font-medium">
+                Tutorials
+              </Link>
+              <Link to="/tutorials/available" className="text-foreground hover:text-primary transition-colors font-medium">
+                Browse Tutorials
+              </Link>
+              <Link to="/learner" className="text-foreground hover:text-primary transition-colors font-medium">
+                My Dashboard
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link to="/education" className="text-foreground hover:text-primary transition-colors font-medium">
+                Education
+              </Link>
+              <Link to="/tutorials" className="text-foreground hover:text-primary transition-colors font-medium">
+                Tutorials
+              </Link>
+              <a href="#contact" className="text-foreground hover:text-primary transition-colors font-medium">
+                Contact
+              </a>
+            </>
+          )}
         </nav>
 
-        {/* Send Me Button */}
-        <div className="hidden md:flex items-center">
-          <Button asChild className="bg-transparent hover:bg-white/20 text-white hover:text-white border border-white hover:border-white rounded-full px-6 py-2">
-            <Link to="/book-service">Send Me</Link>
-          </Button>
+        {/* Right side - Login/User Profile */}
+        <div className="hidden md:flex items-center space-x-4">
+          {isLoggedIn ? (
+            <>
+              {/* User Profile Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center space-x-2 text-foreground hover:text-primary">
+                    <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                      <User className="h-4 w-4" />
+                    </div>
+                    <span className="font-medium">{userData?.name || 'User'}</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-2 py-1.5">
+                    <p className="text-sm font-medium">{userData?.name || 'User'}</p>
+                    <p className="text-xs text-muted-foreground">{userData?.email || 'user@example.com'}</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/learner" className="w-full cursor-pointer">
+                      <User className="mr-2 h-4 w-4" />
+                      My Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/tutorials/available" className="w-full cursor-pointer">
+                      <BookOpen className="mr-2 h-4 w-4" />
+                      Browse Tutorials
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/education" className="w-full cursor-pointer">
+                      <GraduationCap className="mr-2 h-4 w-4" />
+                      Education Services
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              {/* Send Me Button */}
+              <Button asChild className="bg-transparent hover:bg-white/20 text-white hover:text-white border border-white hover:border-white rounded-full px-6 py-2">
+                <Link to="/book-service">Send Me</Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              {/* Login Button */}
+              <Button asChild variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white">
+                <Link to="/learner/login">Login</Link>
+              </Button>
+              
+              {/* Send Me Button */}
+              <Button asChild className="bg-transparent hover:bg-white/20 text-white hover:text-white border border-white hover:border-white rounded-full px-6 py-2">
+                <Link to="/book-service">Send Me</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -75,64 +167,105 @@ const Header = () => {
         </Button>
       </div>
 
-      {/* Mobile Navigation */}
+      {/* Mobile Navigation - Conditional based on login status */}
       {isMobileMenuOpen && (
         <div className="absolute top-full left-0 right-0 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/40 border-t border-white/10 md:hidden z-50">
           <nav className="flex flex-col space-y-4 p-4">
-            <a 
-              href="#home" 
-              className="text-foreground hover:text-primary transition-colors font-medium py-2"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Home
-            </a>
-            <a 
-              href="#about" 
-              className="text-foreground hover:text-primary transition-colors font-medium py-2"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              About
-            </a>
-            <div className="space-y-2">
-              <div className="text-foreground font-medium py-2">Solutions</div>
-              <div className="pl-4 space-y-2">
+            {isLoggedIn ? (
+              <>
                 <Link 
-                  to="/book-service" 
-                  className="block text-foreground hover:text-primary transition-colors py-1"
+                  to="/education" 
+                  className="text-foreground hover:text-primary transition-colors font-medium py-2"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  Send Me
+                  Education
                 </Link>
-                <a href="#" className="block text-foreground hover:text-primary transition-colors py-1">
-                  Errand Running
-                </a>
-                <a href="#" className="block text-foreground hover:text-primary transition-colors py-1">
-                  Delivery Services
-                </a>
-                <a href="#" className="block text-foreground hover:text-primary transition-colors py-1">
-                  Personal Assistance
-                </a>
-              </div>
-            </div>
-            <a 
-              href="#contact" 
-              className="text-foreground hover:text-primary transition-colors font-medium py-2"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Contact
-            </a>
-            <div className="pt-4 border-t border-border">
-              <Button asChild className="w-full bg-transparent hover:bg-white/20 text-white hover:text-white border border-white hover:border-white rounded-full">
-                <Link to="/book-service" onClick={() => setIsMobileMenuOpen(false)}>
-                  Send Me
+                <Link 
+                  to="/tutorials" 
+                  className="text-foreground hover:text-primary transition-colors font-medium py-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Tutorials
                 </Link>
-              </Button>
-            </div>
+                <Link 
+                  to="/tutorials/available" 
+                  className="text-foreground hover:text-primary transition-colors font-medium py-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Browse Tutorials
+                </Link>
+                <Link 
+                  to="/learner" 
+                  className="text-foreground hover:text-primary transition-colors font-medium py-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  My Dashboard
+                </Link>
+                <div className="pt-4 border-t border-border space-y-3">
+                  <div className="px-2 py-1">
+                    <p className="text-sm font-medium text-foreground">{userData?.name || 'User'}</p>
+                    <p className="text-xs text-muted-foreground">{userData?.email || 'user@example.com'}</p>
+                  </div>
+                  <Button 
+                    onClick={() => {
+                      handleLogout();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    variant="outline" 
+                    className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </Button>
+                  <Button asChild className="w-full bg-transparent hover:bg-white/20 text-white hover:text-white border border-white hover:border-white rounded-full">
+                    <Link to="/book-service" onClick={() => setIsMobileMenuOpen(false)}>
+                      Send Me
+                    </Link>
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <Link 
+                  to="/education" 
+                  className="text-foreground hover:text-primary transition-colors font-medium py-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Education
+                </Link>
+                <Link 
+                  to="/tutorials" 
+                  className="text-foreground hover:text-primary transition-colors font-medium py-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Tutorials
+                </Link>
+                <a 
+                  href="#contact" 
+                  className="text-foreground hover:text-primary transition-colors font-medium py-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Contact
+                </a>
+                <div className="pt-4 border-t border-border space-y-3">
+                  <Button asChild variant="outline" className="w-full border-primary text-primary hover:bg-primary hover:text-white">
+                    <Link to="/learner/login" onClick={() => setIsMobileMenuOpen(false)}>
+                      Login
+                    </Link>
+                  </Button>
+                  <Button asChild className="w-full bg-transparent hover:bg-white/20 text-white hover:text-white border border-white hover:border-white rounded-full">
+                    <Link to="/book-service" onClick={() => setIsMobileMenuOpen(false)}>
+                      Send Me
+                    </Link>
+                  </Button>
+                </div>
+              </>
+            )}
           </nav>
         </div>
       )}
     </header>
   );
-};
-
+  };
+  
 export default Header;
