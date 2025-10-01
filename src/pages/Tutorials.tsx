@@ -30,6 +30,8 @@ const Tutorials = () => {
   const [selectedGrade, setSelectedGrade] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
 
+  const isLearnerLoggedIn = () => (localStorage.getItem('learnerData') || localStorage.getItem('learner_current')) !== null;
+  
   const grades = [
     { id: "grade-1-3", name: "Grades 1-3", level: "Foundation Phase" },
     { id: "grade-4-6", name: "Grades 4-6", level: "Intermediate Phase" },
@@ -94,11 +96,13 @@ const Tutorials = () => {
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700"></div>
         <div className="relative z-10 max-w-7xl mx-auto px-4 py-20">
-          <div className="flex justify-end mb-4">
-            <Button asChild variant="outline" className="border-white text-white hover:bg-white hover:text-gray-900">
-              <Link to="/learner/login">Login</Link>
-            </Button>
-          </div>
+          {!isLearnerLoggedIn() && (
+            <div className="flex justify-end mb-4">
+              <Button asChild variant="outline" className="border-white text-white hover:bg-white hover:text-gray-900">
+                <Link to="/learner/login">Login</Link>
+              </Button>
+            </div>
+          )}
           <div className="text-center mb-16">
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">Online Tutorials</h1>
             <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed">
@@ -302,7 +306,7 @@ const Tutorials = () => {
       </div>
 
       {/* Footer */}
-      <Footer />
+      {!isLearnerLoggedIn() && <Footer />}
     </div>
   );
 };

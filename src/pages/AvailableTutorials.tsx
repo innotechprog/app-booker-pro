@@ -12,7 +12,9 @@ import Footer from "@/components/Footer";
 import { ArrowLeft, Search, Star, Clock, Users, MapPin, Eye, Play, Filter, User, BookOpen, TrendingUp, Calendar, Award, MessageCircle, Bot, Send, ThumbsUp, ThumbsDown } from "lucide-react";
 import { TutorialItem, mockTutorials, getPersonalizedTutorials } from "@/data/tutorials";
 
-const AvailableTutorials = () => {
+type AvailableTutorialsProps = { hideHeader?: boolean };
+
+const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => {
   const navigate = useNavigate();
   const { state } = useLocation() as { state?: { grade?: string; subject?: string } };
   const [query, setQuery] = useState("");
@@ -34,7 +36,7 @@ const AvailableTutorials = () => {
 
   // Check if learner is logged in
   const isLearnerLoggedIn = () => {
-    return localStorage.getItem('learnerData') !== null;
+    return (localStorage.getItem('learnerData') || localStorage.getItem('learner_current')) !== null;
   };
 
   // Handle booking session with authentication check
@@ -223,47 +225,49 @@ const AvailableTutorials = () => {
     <div className="min-h-screen bg-gray-50">
       <SEO title="Available Tutorials" />
       
-      {/* Header Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <Button 
-                variant="ghost" 
-                onClick={() => navigate(-1)}
-                className="text-white hover:bg-white/20 mb-4"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
-              </Button>
-              <h1 className="text-4xl font-bold mb-2">Available Tutorials</h1>
-              <p className="text-blue-100 text-lg">
-                Discover expert-led tutorials tailored to your learning needs
-              </p>
+      {/* Header Section (hidden when embedded in learner portal) */}
+      {!hideHeader && (
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => navigate(-1)}
+                  className="text-white hover:bg-white/20 mb-4"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back
+                </Button>
+                <h1 className="text-4xl font-bold mb-2">Available Tutorials</h1>
+                <p className="text-blue-100 text-lg">
+                  Discover expert-led tutorials tailored to your learning needs
+                </p>
+              </div>
             </div>
-          </div>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold">{mockTutorials.length}</div>
-              <div className="text-blue-200">Total Tutorials</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold">{uniqueTutors.length}</div>
-              <div className="text-blue-200">Expert Tutors</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold">{popularTutorials}</div>
-              <div className="text-blue-200">Popular</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold">{recentTutorials}</div>
-              <div className="text-blue-200">Recently Added</div>
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="text-3xl font-bold">{mockTutorials.length}</div>
+                <div className="text-white/80">Total Tutorials</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold">{uniqueTutors.length}</div>
+                <div className="text-white/80">Expert Tutors</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold">{popularTutorials}</div>
+                <div className="text-white/80">Popular</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold">{recentTutorials}</div>
+                <div className="text-white/80">Recently Added</div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Controls Section */}
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -305,7 +309,7 @@ const AvailableTutorials = () => {
 
           {/* Sort Dropdown */}
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full lg:w-48">
+            <SelectTrigger className="w-full lg:w-48 bg-white text-gray-900">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
@@ -488,13 +492,13 @@ const AvailableTutorials = () => {
                   </Button>
                 </div>
                 {tutorial.isPopular && (
-                  <Badge className="absolute top-2 left-2 bg-orange-500">
+                  <Badge className="absolute top-2 left-2 bg-orange-500 text-white">
                     <TrendingUp className="mr-1 h-3 w-3" />
                     Popular
                   </Badge>
                 )}
                 {tutorial.isRecent && (
-                  <Badge className="absolute top-2 right-2 bg-green-500">
+                  <Badge className="absolute top-2 right-2 bg-green-500 text-white">
                     <Calendar className="mr-1 h-3 w-3" />
                     New
                   </Badge>
@@ -503,7 +507,7 @@ const AvailableTutorials = () => {
 
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge variant="secondary" className="text-xs text-gray-900">
                     {tutorial.subject}
                   </Badge>
                   <div className="flex items-center text-yellow-500">
@@ -512,15 +516,15 @@ const AvailableTutorials = () => {
                   </div>
                 </div>
 
-                <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                <h3 className="font-semibold text-gray-900 mb-2">
                   {tutorial.title}
                 </h3>
 
-                <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                <p className="text-sm text-gray-700 mb-3">
                   {tutorial.description}
                 </p>
 
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                <div className="flex items-center justify-between text-xs text-gray-700 mb-3">
                   <div className="flex items-center">
                     <Clock className="h-3 w-3 mr-1" />
                     {tutorial.duration}
@@ -531,11 +535,11 @@ const AvailableTutorials = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                  <Badge variant="outline" className="text-xs">
+                <div className="flex items-center justify-between text-xs text-gray-700 mb-3">
+                  <Badge variant="outline" className="text-xs border-gray-300 text-gray-700">
                     {tutorial.grade}
                   </Badge>
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-xs border-gray-300 text-gray-700">
                     {tutorial.difficulty}
                   </Badge>
                 </div>
@@ -548,18 +552,18 @@ const AvailableTutorials = () => {
                   />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-900">{tutorial.tutor}</p>
-                    <p className="text-xs text-gray-500">{tutorial.school}</p>
+                    <p className="text-xs text-gray-700">{tutorial.school}</p>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap gap-1 mb-3">
                   {tutorial.topics.slice(0, 3).map((topic, index) => (
-                    <Badge key={index} variant="outline" className="text-xs">
+                    <Badge key={index} variant="outline" className="text-xs border-gray-300 text-gray-700">
                       {topic}
                     </Badge>
                   ))}
                   {tutorial.topics.length > 3 && (
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-xs border-gray-300 text-gray-700">
                       +{tutorial.topics.length - 3} more
                     </Badge>
                   )}
@@ -748,9 +752,12 @@ const AvailableTutorials = () => {
                     </div>
                   ) : (
                     <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-blue-800">
+                      <p className="text-sm text-blue-800 mb-3">
                         Please register to ask questions and participate in discussions.
                       </p>
+                      <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
+                        <a href="/learner/register">Register</a>
+                      </Button>
                     </div>
                   )}
 
@@ -829,7 +836,7 @@ const AvailableTutorials = () => {
         </DialogContent>
       </Dialog>
 
-      <Footer />
+      {!isLearnerLoggedIn() && <Footer />}
     </div>
   );
 };

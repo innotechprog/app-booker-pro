@@ -21,6 +21,12 @@ import TutorProfile from "./pages/TutorProfile";
 import LearnerRegister from "./pages/LearnerRegister";
 import LearnerLogin from "./pages/LearnerLogin";
 import LearnerDashboard from "./pages/LearnerDashboard";
+import LearnerDashboardHome from "./pages/LearnerDashboardHome";
+import LearnerProfilePage from "./pages/LearnerProfilePage";
+import LearnerTutorialsPage from "./pages/LearnerTutorialsPage";
+import LearnerTutorsPage from "./pages/LearnerTutorsPage";
+import LearnerNotesPage from "./pages/LearnerNotesPage";
+import LearnerSubjectsPage from "./pages/LearnerSubjectsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,7 +55,13 @@ const App = () => (
             <Route path="/tutorials" element={<Tutorials />} />
             <Route path="/learner/register" element={<LearnerRegister />} />
             <Route path="/learner/login" element={<LearnerLogin />} />
-            <Route path="/learner" element={<LearnerDashboard />} />
+            <Route path="/learner" element={<LearnerDashboardHome />} />
+            <Route path="/learner/dashboard" element={<LearnerDashboardHome />} />
+            <Route path="/learner/profile" element={<LearnerProfilePage />} />
+            <Route path="/learner/tutorials" element={<LearnerTutorialsPage />} />
+            <Route path="/learner/tutors" element={<LearnerTutorsPage />} />
+            <Route path="/learner/notes" element={<LearnerNotesPage />} />
+            <Route path="/learner/subjects" element={<LearnerSubjectsPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

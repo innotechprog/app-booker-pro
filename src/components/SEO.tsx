@@ -22,7 +22,7 @@ const SEO = ({
   // Default SEO data for different pages
   const seoData = {
     home: {
-      title: "IB Innovative Solutions - Trusted Solutions You Can Trust Everyday",
+      title: "IB Innovative Solutions - Solutions You Can Trust Everyday",
       description: "IBIS provides comprehensive professional services including education support, IT solutions, and personal assistance. Get reliable, secure, and efficient services across Gauteng, South Africa.",
       keywords: "IBIS, IB Innovative Solutions, professional services, education support, IT solutions, personal assistance, errand running, delivery services, tutoring, university applications, South Africa, Gauteng, Johannesburg, Pretoria",
       image: "/og-image-home.jpg",
@@ -188,7 +188,7 @@ const SEO = ({
           "alternateName": "IBIS",
           "url": "https://ibis.com",
           "logo": "https://ibis.com/logo.png",
-          "description": "Trusted solutions you can trust everyday. Comprehensive professional services including education support, IT solutions, and personal assistance.",
+          "description": "Solutions you can trust everyday. Comprehensive professional services including education support, IT solutions, and personal assistance.",
           "address": {
             "@type": "PostalAddress",
             "addressRegion": "Gauteng",

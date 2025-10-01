@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import SEO from "@/components/SEO";
+import Layout from "@/components/Layout";
 import Footer from "@/components/Footer";
 import { 
   GraduationCap, 
@@ -35,6 +36,8 @@ const Education = () => {
   const location = useLocation();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [universitySearch, setUniversitySearch] = useState("");
+
+  const isLearnerLoggedIn = () => (localStorage.getItem('learnerData') || localStorage.getItem('learner_current')) !== null;
 
   // Handle URL parameters and hash fragments
   useEffect(() => {
@@ -594,7 +597,7 @@ const Education = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <Layout>
       <SEO page="education" />
       
       {/* Hero Section */}
@@ -607,11 +610,14 @@ const Education = () => {
         </div>
         
         <div className="max-w-7xl mx-auto px-6 text-center relative z-10">
-          <div className="flex justify-end mb-4">
-            <Button asChild variant="outline" className="border-white text-white hover:bg-white hover:text-gray-900">
-              <Link to="/learner/login">Login</Link>
-            </Button>
-          </div>
+          {/* Hide Login button for logged-in learners */}
+          {!isLearnerLoggedIn() && (
+            <div className="flex justify-end mb-4">
+              <Button asChild variant="outline" className="border-white text-white hover:bg-white hover:text-gray-900">
+                <Link to="/learner/login">Login</Link>
+              </Button>
+            </div>
+          )}
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
             Education Services
           </h1>
@@ -930,8 +936,8 @@ const Education = () => {
       </div>
       
       {/* Footer */}
-      <Footer />
-    </div>
+      {!isLearnerLoggedIn() && <Footer />}
+    </Layout>
   );
 };
 

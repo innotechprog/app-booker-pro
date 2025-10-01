@@ -10,6 +10,17 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
+// Helper function to generate initials from name
+const getInitials = (name: string): string => {
+  if (!name || name === "User") return "U";
+  
+  const words = name.trim().split(/\s+/);
+  if (words.length === 1) {
+    return words[0].substring(0, 2).toUpperCase();
+  }
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+};
+
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -19,10 +30,14 @@ const Header = () => {
   // Check if user is logged in
   useEffect(() => {
     const checkLoginStatus = () => {
-      const learnerData = localStorage.getItem('learnerData');
-      if (learnerData) {
+      const rawLearnerData = localStorage.getItem('learnerData') || localStorage.getItem('learner_current');
+      if (rawLearnerData) {
         setIsLoggedIn(true);
-        setUserData(JSON.parse(learnerData));
+        try {
+          setUserData(JSON.parse(rawLearnerData));
+        } catch {
+          setUserData({});
+        }
       } else {
         setIsLoggedIn(false);
         setUserData(null);
@@ -39,6 +54,7 @@ const Header = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('learnerData');
+    localStorage.removeItem('learner_current');
     setIsLoggedIn(false);
     setUserData(null);
     navigate('/');
@@ -47,14 +63,14 @@ const Header = () => {
   return (
     <header className="w-full px-4 sm:px-6 py-3 sm:py-4 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/40 border-b border-white/10">
       <div className="flex items-center justify-between">
-        <div className="flex items-center">
+      <div className="flex items-center">
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-            IBIS<span className="text-primary">.</span>
-          </h1>
-        </div>
-        
+          IBIS<span className="text-primary">.</span>
+        </h1>
+      </div>
+      
         {/* Desktop Navigation - Conditional based on login status */}
-        <nav className="hidden md:flex items-center space-x-8">
+      <nav className="hidden md:flex items-center space-x-8">
           {isLoggedIn ? (
             <>
               <Link to="/education" className="text-foreground hover:text-primary transition-colors font-medium">
@@ -66,8 +82,20 @@ const Header = () => {
               <Link to="/tutorials/available" className="text-foreground hover:text-primary transition-colors font-medium">
                 Browse Tutorials
               </Link>
-              <Link to="/learner" className="text-foreground hover:text-primary transition-colors font-medium">
-                My Dashboard
+              <Link to="/learner/dashboard" className="text-foreground hover:text-primary transition-colors font-medium">
+                Dashboard
+              </Link>
+              <Link to="/learner/profile" className="text-foreground hover:text-primary transition-colors font-medium">
+                Profile
+              </Link>
+              <Link to="/learner/tutorials" className="text-foreground hover:text-primary transition-colors font-medium">
+                My Tutorials
+              </Link>
+              <Link to="/learner/tutors" className="text-foreground hover:text-primary transition-colors font-medium">
+                Tutors
+              </Link>
+              <Link to="/learner/notes" className="text-foreground hover:text-primary transition-colors font-medium">
+                Notes
               </Link>
             </>
           ) : (
@@ -90,16 +118,18 @@ const Header = () => {
           {isLoggedIn ? (
             <>
               {/* User Profile Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center space-x-2 text-foreground hover:text-primary">
-                    <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-                      <User className="h-4 w-4" />
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm font-semibold">
+                        {getInitials(userData?.name || userData?.fullName || 'User')}
+                      </span>
                     </div>
-                    <span className="font-medium">{userData?.name || 'User'}</span>
+                    <span className="font-medium">{userData?.name || userData?.fullName || 'User'}</span>
                     <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
+            </Button>
+          </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <div className="px-2 py-1.5">
                     <p className="text-sm font-medium">{userData?.name || 'User'}</p>
@@ -107,7 +137,7 @@ const Header = () => {
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link to="/learner" className="w-full cursor-pointer">
+                    <Link to="/learner/dashboard" className="w-full cursor-pointer">
                       <User className="mr-2 h-4 w-4" />
                       My Dashboard
                     </Link>
@@ -129,8 +159,8 @@ const Header = () => {
                     <LogOut className="mr-2 h-4 w-4" />
                     Logout
                   </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+          </DropdownMenuContent>
+        </DropdownMenu>
               
               {/* Send Me Button */}
               <Button asChild className="bg-transparent hover:bg-white/20 text-white hover:text-white border border-white hover:border-white rounded-full px-6 py-2">
@@ -173,13 +203,7 @@ const Header = () => {
           <nav className="flex flex-col space-y-4 p-4">
             {isLoggedIn ? (
               <>
-                <Link 
-                  to="/education" 
-                  className="text-foreground hover:text-primary transition-colors font-medium py-2"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Education
-                </Link>
+                <Link to="/education" className="text-foreground hover:text-primary transition-colors font-medium py-2" onClick={() => setIsMobileMenuOpen(false)}>Education</Link>
                 <Link 
                   to="/tutorials" 
                   className="text-foreground hover:text-primary transition-colors font-medium py-2"
@@ -194,13 +218,11 @@ const Header = () => {
                 >
                   Browse Tutorials
                 </Link>
-                <Link 
-                  to="/learner" 
-                  className="text-foreground hover:text-primary transition-colors font-medium py-2"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  My Dashboard
-                </Link>
+                <Link to="/learner/dashboard" className="text-foreground hover:text-primary transition-colors font-medium py-2" onClick={() => setIsMobileMenuOpen(false)}>Dashboard</Link>
+                <Link to="/learner/profile" className="text-foreground hover:text-primary transition-colors font-medium py-2" onClick={() => setIsMobileMenuOpen(false)}>Profile</Link>
+                <Link to="/learner/tutorials" className="text-foreground hover:text-primary transition-colors font-medium py-2" onClick={() => setIsMobileMenuOpen(false)}>My Tutorials</Link>
+                <Link to="/learner/tutors" className="text-foreground hover:text-primary transition-colors font-medium py-2" onClick={() => setIsMobileMenuOpen(false)}>Tutors</Link>
+                <Link to="/learner/notes" className="text-foreground hover:text-primary transition-colors font-medium py-2" onClick={() => setIsMobileMenuOpen(false)}>Notes</Link>
                 <div className="pt-4 border-t border-border space-y-3">
                   <div className="px-2 py-1">
                     <p className="text-sm font-medium text-foreground">{userData?.name || 'User'}</p>
@@ -245,8 +267,8 @@ const Header = () => {
                   className="text-foreground hover:text-primary transition-colors font-medium py-2"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  Contact
-                </a>
+          Contact
+        </a>
                 <div className="pt-4 border-t border-border space-y-3">
                   <Button asChild variant="outline" className="w-full border-primary text-primary hover:bg-primary hover:text-white">
                     <Link to="/learner/login" onClick={() => setIsMobileMenuOpen(false)}>
@@ -261,11 +283,11 @@ const Header = () => {
                 </div>
               </>
             )}
-          </nav>
+      </nav>
         </div>
       )}
     </header>
   );
-  };
-  
+};
+
 export default Header;

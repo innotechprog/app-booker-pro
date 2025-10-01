@@ -25,7 +25,7 @@ const Hero = () => {
             </h1>
             
             <h2 className="text-2xl md:text-3xl text-white font-medium">
-              Trusted solutions you can trust everyday.
+              Solutions you can trust everyday.
             </h2>
           </div>
           

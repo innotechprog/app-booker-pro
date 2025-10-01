@@ -35,8 +35,8 @@ const Index = () => {
         </div>
       </div>
       
-      {/* Footer */}
-      <Footer />
+      {/* Footer hidden for logged-in learners */}
+      {localStorage.getItem('learnerData') === null && <Footer />}
     </Layout>
   );
 };

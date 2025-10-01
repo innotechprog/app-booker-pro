@@ -1109,7 +1109,8 @@ const TutorProfile = () => {
         </DialogContent>
       </Dialog>
 
-      <Footer />
+      {/* Footer hidden for logged-in learners */}
+      {localStorage.getItem('learnerData') === null && <Footer />}
     </div>
   );
 };

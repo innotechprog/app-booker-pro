@@ -27,14 +27,16 @@ const BookService = () => {
                 <span className="hidden sm:inline">Home</span>
                 <span className="sm:hidden">Home</span>
               </Button>
-              <Button
-                onClick={() => navigate("/login")}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-6 py-2 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl text-sm sm:text-base"
-              >
-                <LogIn className="mr-1 sm:mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Login</span>
-                <span className="sm:hidden">Login</span>
+              {(localStorage.getItem('learnerData') === null && localStorage.getItem('learner_current') === null) && (
+                <Button
+                  onClick={() => navigate("/login")}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-6 py-2 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl text-sm sm:text-base"
+                >
+                  <LogIn className="mr-1 sm:mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Login</span>
+                  <span className="sm:hidden">Login</span>
         </Button>
+              )}
             </div>
           </div>
                   </div>
