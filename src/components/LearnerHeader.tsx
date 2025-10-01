@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, User, LogOut, Notebook, BookOpen, Users, FileText, Bell, Calendar } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Helper function to generate initials from name
 const getInitials = (name: string): string => {
@@ -16,43 +17,30 @@ const getInitials = (name: string): string => {
 
 const LearnerHeader = () => {
   const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userName, setUserName] = useState<string>("Learner");
   const [unreadCount, setUnreadCount] = useState(0);
 
+  const userName = user?.fullName || user?.name || user?.email || "Learner";
+
   useEffect(() => {
-    const check = () => {
-      const raw = localStorage.getItem('learnerData') || localStorage.getItem('learner_current');
-      if (raw) {
-        setIsLoggedIn(true);
-        try {
-          const obj = JSON.parse(raw);
-          setUserName(obj.fullName || obj.name || obj.email || "Learner");
-          
-          // Check notifications
-          const notifications = JSON.parse(localStorage.getItem(`notifications_${obj.email}`) || "[]");
-          const unread = notifications.filter((n: any) => !n.read).length;
-          setUnreadCount(unread);
-        } catch {
-          setUserName("Learner");
-        }
-      } else {
-        setIsLoggedIn(false);
+    // Check notifications count
+    const checkNotifications = () => {
+      if (user?.email) {
+        const notifications = JSON.parse(localStorage.getItem(`notifications_${user.email}`) || "[]");
+        const unread = notifications.filter((n: any) => !n.read).length;
+        setUnreadCount(unread);
       }
     };
-    check();
-    const interval = setInterval(check, 3000); // Check every 3 seconds
-    window.addEventListener('storage', check);
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('storage', check);
-    };
-  }, []);
+    
+    checkNotifications();
+    const interval = setInterval(checkNotifications, 3000);
+    
+    return () => clearInterval(interval);
+  }, [user]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('learnerData');
-    localStorage.removeItem('learner_current');
+  const handleLogout = async () => {
+    await logout();
     navigate('/learner/login');
   };
 
@@ -71,7 +59,7 @@ const LearnerHeader = () => {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          {isLoggedIn && (
+          {isAuthenticated && (
             <>
               <Link to="/learner/dashboard">
                 <Button variant="ghost" size="icon" className="relative">
@@ -95,7 +83,7 @@ const LearnerHeader = () => {
               </div>
             </>
           )}
-          <Button variant="outline" size="sm" onClick={handleLogout} className="border-gray-300 text-gray-700 hover:bg-gray-50">
+          <Button variant="outline" size="sm" onClick={handleLogout} className="bg-[whitesmoke] border-gray-300 text-gray-700 hover:bg-gray-200">
             <LogOut className="h-4 w-4 mr-2" /> Logout
           </Button>
         </div>
@@ -108,7 +96,7 @@ const LearnerHeader = () => {
 
       {isMobileMenuOpen && (
         <div className="md:hidden mt-3 border-t border-gray-200">
-          {isLoggedIn && (
+          {isAuthenticated && (
             <div className="flex items-center justify-center py-3 border-b border-gray-200">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
                 <span className="text-white text-sm font-semibold">
@@ -123,7 +111,7 @@ const LearnerHeader = () => {
             <Link to="/learner/tutorials" onClick={()=>setIsMobileMenuOpen(false)} className="py-2 text-gray-700 hover:text-blue-600">Tutorials</Link>
             <Link to="/learner/tutors" onClick={()=>setIsMobileMenuOpen(false)} className="py-2 text-gray-700 hover:text-blue-600">Tutors</Link>
             <Link to="/learner/notes" onClick={()=>setIsMobileMenuOpen(false)} className="py-2 text-gray-700 hover:text-blue-600">Notes</Link>
-            <Button variant="outline" onClick={handleLogout} className="mt-2 border-gray-300 text-gray-700 hover:bg-gray-50">Logout</Button>
+            <Button variant="outline" onClick={handleLogout} className="mt-2 bg-[whitesmoke] border-gray-300 text-gray-700 hover:bg-gray-200">Logout</Button>
           </nav>
         </div>
       )}

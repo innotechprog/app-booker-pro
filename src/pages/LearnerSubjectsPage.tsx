@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import SEO from "@/components/SEO";
 import LearnerLayout from "@/components/LearnerLayout";
+import { useAuth } from "@/contexts/AuthContext";
+import { learnerAPI, subjectsAPI } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -80,12 +82,16 @@ const AVAILABLE_SUBJECTS = [
 
 const LearnerSubjectsPage = () => {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const [profile, setProfile] = useState<any>(null);
+  const [userSubjects, setUserSubjects] = useState<any[]>([]);
+  const [availableSubjects, setAvailableSubjects] = useState<any[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [newSubject, setNewSubject] = useState("");
   const [showAddSubject, setShowAddSubject] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [subjectSearchQuery, setSubjectSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
 
   // Sample subject content data
   const subjectContent = {
@@ -132,76 +138,97 @@ const LearnerSubjectsPage = () => {
   };
 
   useEffect(() => {
-    const c = localStorage.getItem("learner_current");
-    if (!c) {
+    if (!isAuthenticated) {
       navigate("/learner/login");
       return;
     }
-    const { email } = JSON.parse(c);
-    const learners = JSON.parse(localStorage.getItem("learners") || "[]");
-    const p = learners.find((l: any) => l.email === email);
-    setProfile(p);
-  }, [navigate]);
 
-  const addSubjectFromList = (subjectName: string) => {
-    const currentSubjects = profile?.subjects || [];
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        
+        // Load user profile
+        const profileResponse = await learnerAPI.getProfile();
+        if (profileResponse.success) {
+          setProfile(profileResponse.profile);
+        }
+
+        // Load user subjects
+        const subjectsResponse = await learnerAPI.getSubjects();
+        if (subjectsResponse.success) {
+          setUserSubjects(subjectsResponse.subjects);
+        }
+
+        // Load available subjects
+        const availableResponse = await subjectsAPI.getAll();
+        if (availableResponse.success) {
+          setAvailableSubjects(availableResponse.subjects);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [isAuthenticated, navigate]);
+
+  const addSubjectFromList = async (subjectName: string) => {
+    const currentSubjects = userSubjects.map(s => s.name);
     if (currentSubjects.includes(subjectName)) {
       alert("This subject is already added!");
       return;
     }
-    const updatedProfile = {
-      ...profile,
-      subjects: [...currentSubjects, subjectName]
-    };
-    setProfile(updatedProfile);
 
-    // Save to localStorage
-    const c = localStorage.getItem("learner_current");
-    if (c) {
-      const { email } = JSON.parse(c);
-      const learners = JSON.parse(localStorage.getItem("learners") || "[]");
-      const idx = learners.findIndex((l: any) => l.email === email);
-      if (idx >= 0) {
-        learners[idx] = updatedProfile;
-        localStorage.setItem("learners", JSON.stringify(learners));
+    try {
+      const response = await learnerAPI.addSubject(subjectName);
+      if (response.success) {
+        // Reload user subjects
+        const subjectsResponse = await learnerAPI.getSubjects();
+        if (subjectsResponse.success) {
+          setUserSubjects(subjectsResponse.subjects);
+        }
       }
+    } catch (error) {
+      console.error('Error adding subject:', error);
+      alert('Failed to add subject. Please try again.');
     }
 
     setSubjectSearchQuery("");
     setShowAddSubject(false);
   };
 
-  const removeSubject = (subject: string) => {
-    const updatedProfile = {
-      ...profile,
-      subjects: (profile?.subjects || []).filter((s: string) => s !== subject)
-    };
-    setProfile(updatedProfile);
+  const removeSubject = async (subjectName: string) => {
+    const subject = userSubjects.find(s => s.name === subjectName);
+    if (!subject) return;
 
-    // Save to localStorage
-    const c = localStorage.getItem("learner_current");
-    if (c) {
-      const { email } = JSON.parse(c);
-      const learners = JSON.parse(localStorage.getItem("learners") || "[]");
-      const idx = learners.findIndex((l: any) => l.email === email);
-      if (idx >= 0) {
-        learners[idx] = updatedProfile;
-        localStorage.setItem("learners", JSON.stringify(learners));
+    try {
+      const response = await learnerAPI.removeSubject(subject.id);
+      if (response.success) {
+        // Reload user subjects
+        const subjectsResponse = await learnerAPI.getSubjects();
+        if (subjectsResponse.success) {
+          setUserSubjects(subjectsResponse.subjects);
+        }
       }
+    } catch (error) {
+      console.error('Error removing subject:', error);
+      alert('Failed to remove subject. Please try again.');
     }
 
-    if (selectedSubject === subject) {
+    if (selectedSubject === subjectName) {
       setSelectedSubject(null);
     }
   };
 
-  const subjects = profile?.subjects || [];
-  const filteredSubjects = subjects.filter((s: string) =>
-    s.toLowerCase().includes(searchQuery.toLowerCase())
+  const subjects = userSubjects.map(s => s.name);
+  const filteredSubjects = userSubjects.filter((s: any) =>
+    s.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Filter available subjects for add dropdown
-  const availableToAdd = AVAILABLE_SUBJECTS.filter(
+  const availableToAdd = availableSubjects.filter(
     (s) => 
       !subjects.includes(s.name) && 
       (s.name.toLowerCase().includes(subjectSearchQuery.toLowerCase()) ||
@@ -209,12 +236,14 @@ const LearnerSubjectsPage = () => {
   );
 
   const getSubjectEmoji = (subject: string) => {
-    const subjectData = AVAILABLE_SUBJECTS.find(s => s.name === subject);
+    const subjectData = availableSubjects.find(s => s.name === subject) || 
+                       AVAILABLE_SUBJECTS.find(s => s.name === subject);
     return subjectData?.emoji || '📖';
   };
 
   const getSubjectCategory = (subject: string) => {
-    const subjectData = AVAILABLE_SUBJECTS.find(s => s.name === subject);
+    const subjectData = availableSubjects.find(s => s.name === subject) || 
+                       AVAILABLE_SUBJECTS.find(s => s.name === subject);
     return subjectData?.category || 'Other';
   };
 
@@ -231,6 +260,19 @@ const LearnerSubjectsPage = () => {
     ];
     return colors[index % colors.length];
   };
+
+  if (loading) {
+    return (
+      <LearnerLayout>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading your subjects...</p>
+          </div>
+        </div>
+      </LearnerLayout>
+    );
+  }
 
   return (
     <LearnerLayout>
@@ -337,24 +379,24 @@ const LearnerSubjectsPage = () => {
                     </div>
                   ) : (
                     <div className="divide-y divide-gray-100">
-                      {filteredSubjects.map((subject: string, idx: number) => (
+                      {filteredSubjects.map((subject: any, idx: number) => (
                         <div
-                          key={idx}
+                          key={subject.id}
                           className={`p-4 cursor-pointer transition-all hover:bg-gray-50 ${
-                            selectedSubject === subject ? 'bg-blue-50 border-l-4 border-blue-600' : ''
+                            selectedSubject === subject.name ? 'bg-blue-50 border-l-4 border-blue-600' : ''
                           }`}
-                          onClick={() => setSelectedSubject(subject)}
+                          onClick={() => setSelectedSubject(subject.name)}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3 flex-1">
                               <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${getSubjectColor(idx)} flex items-center justify-center text-2xl`}>
-                                {getSubjectEmoji(subject)}
+                                {getSubjectEmoji(subject.name)}
                               </div>
                               <div className="flex-1">
-                                <p className="font-semibold text-gray-900">{subject}</p>
+                                <p className="font-semibold text-gray-900">{subject.name}</p>
                                 <div className="flex items-center gap-2 mt-1">
-                                  <Badge variant="outline" className="text-xs">{getSubjectCategory(subject)}</Badge>
-                                  <span className="text-xs text-gray-500">0% complete</span>
+                                  <Badge variant="outline" className="text-xs">{getSubjectCategory(subject.name)}</Badge>
+                                  <span className="text-xs text-gray-500">{subject.progress || 0}% complete</span>
                                 </div>
                               </div>
                             </div>
@@ -363,7 +405,7 @@ const LearnerSubjectsPage = () => {
                               size="icon"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                removeSubject(subject);
+                                removeSubject(subject.name);
                               }}
                               className="text-gray-400 hover:text-red-600"
                             >
@@ -488,7 +530,7 @@ const LearnerSubjectsPage = () => {
                                 )}
                               </div>
                             </div>
-                            <Button size="sm" className="bg-white hover:bg-gray-50 text-blue-600 border border-blue-600">
+                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
                               {tutorial.completed ? 'Review' : 'Start'}
                             </Button>
                           </div>
@@ -564,7 +606,7 @@ const LearnerSubjectsPage = () => {
                                   </span>
                                 </div>
                               </div>
-                              <Button size="sm" className="bg-white hover:bg-gray-50 text-red-600 border border-red-600">
+                              <Button size="sm" className="bg-red-600 hover:bg-red-700">
                                 Watch
                               </Button>
                             </div>
@@ -604,7 +646,7 @@ const LearnerSubjectsPage = () => {
                                   </span>
                                 </div>
                               </div>
-                              <Button size="sm" className="bg-white hover:bg-gray-50 text-purple-600 border border-purple-600">
+                              <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
                                 Listen
                               </Button>
                             </div>

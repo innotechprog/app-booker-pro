@@ -5,39 +5,49 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SEO from "@/components/SEO";
+import { useAuth } from "@/contexts/AuthContext";
 
 const grades = [
-  { id: "grade-1", name: "Grade 1" },
-  { id: "grade-2", name: "Grade 2" },
-  { id: "grade-3", name: "Grade 3" },
-  { id: "grade-4", name: "Grade 4" },
-  { id: "grade-5", name: "Grade 5" },
-  { id: "grade-6", name: "Grade 6" },
-  { id: "grade-7", name: "Grade 7" },
-  { id: "grade-8", name: "Grade 8" },
-  { id: "grade-9", name: "Grade 9" },
-  { id: "grade-10", name: "Grade 10" },
-  { id: "grade-11", name: "Grade 11" },
-  { id: "grade-12", name: "Grade 12" },
-  { id: "university", name: "University" }
+  { id: "Grade 1", name: "Grade 1" },
+  { id: "Grade 2", name: "Grade 2" },
+  { id: "Grade 3", name: "Grade 3" },
+  { id: "Grade 4", name: "Grade 4" },
+  { id: "Grade 5", name: "Grade 5" },
+  { id: "Grade 6", name: "Grade 6" },
+  { id: "Grade 7", name: "Grade 7" },
+  { id: "Grade 8", name: "Grade 8" },
+  { id: "Grade 9", name: "Grade 9" },
+  { id: "Grade 10", name: "Grade 10" },
+  { id: "Grade 11", name: "Grade 11" },
+  { id: "Grade 12", name: "Grade 12" },
+  { id: "University", name: "University" }
 ];
 
 const LearnerRegister = () => {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [form, setForm] = useState({
     fullName: "",
     email: "",
     password: "",
     grade: "",
   });
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const learners = JSON.parse(localStorage.getItem("learners") || "[]");
-    learners.push({ ...form, id: Date.now() });
-    localStorage.setItem("learners", JSON.stringify(learners));
-    localStorage.setItem("learner_current", JSON.stringify({ email: form.email }));
-    navigate("/learner");
+    setError("");
+    setIsLoading(true);
+
+    try {
+      await register(form);
+      navigate("/learner/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Registration failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -69,7 +79,10 @@ const LearnerRegister = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" className="w-full h-12">Register</Button>
+              {error && <p className="text-sm text-red-600">{error}</p>}
+              <Button type="submit" className="w-full h-12" disabled={isLoading}>
+                {isLoading ? 'Creating Account...' : 'Register'}
+              </Button>
             </form>
             <p className="text-sm text-gray-600 mt-4">Already have an account? <Link to="/learner/login" className="text-blue-600 hover:underline">Login</Link></p>
           </CardContent>

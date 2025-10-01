@@ -4,19 +4,28 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import SEO from "@/components/SEO";
+import { useAuth } from "@/contexts/AuthContext";
 
 const LearnerLogin = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const learners = JSON.parse(localStorage.getItem("learners") || "[]");
-    const user = learners.find((l: any) => l.email === form.email && l.password === form.password);
-    if (!user) { setError("Invalid credentials"); return; }
-    localStorage.setItem("learner_current", JSON.stringify({ email: user.email }));
-    navigate("/learner");
+    setError("");
+    setIsLoading(true);
+
+    try {
+      await login(form.email, form.password);
+      navigate("/learner/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Invalid credentials. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -36,7 +45,9 @@ const LearnerLogin = () => {
                 <Input type="password" placeholder="Password" value={form.password} onChange={(e)=>setForm(f=>({...f, password: e.target.value}))} required className="h-12" />
               </div>
               {error && <p className="text-sm text-red-600">{error}</p>}
-              <Button type="submit" className="w-full h-12">Login</Button>
+              <Button type="submit" className="w-full h-12" disabled={isLoading}>
+                {isLoading ? 'Logging in...' : 'Login'}
+              </Button>
             </form>
             <p className="text-sm text-gray-600 mt-4">No account? <Link to="/learner/register" className="text-blue-600 hover:underline">Register</Link></p>
           </CardContent>

@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { PackageProvider } from "@/contexts/PackageContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -12,6 +14,7 @@ import BookService from "./pages/BookService";
 import Booking from "./pages/Booking";
 import Billing from "./pages/Billing";
 import Invoices from "./pages/Invoices";
+import Packages from "./pages/Packages";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Education from "./pages/Education";
@@ -34,10 +37,12 @@ const queryClient = new QueryClient();
 const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+      <AuthProvider>
+        <PackageProvider>
+          <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
@@ -47,6 +52,7 @@ const App = () => (
             <Route path="/booking" element={<Booking />} />
             <Route path="/billing" element={<Billing />} />
             <Route path="/invoices" element={<Invoices />} />
+            <Route path="/packages" element={<Packages />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/education" element={<Education />} />
@@ -66,7 +72,9 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-      </TooltipProvider>
+        </TooltipProvider>
+        </PackageProvider>
+      </AuthProvider>
     </QueryClientProvider>
   </HelmetProvider>
 );
