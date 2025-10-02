@@ -135,7 +135,7 @@ const Invoices = () => {
   };
 
   if (loading) {
-    return (
+  return (
       <LearnerLayout>
         <div className="min-h-screen bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -156,8 +156,8 @@ const Invoices = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Invoices</h1>
             <p className="text-gray-600">Manage your invoices and payment history</p>
-          </div>
-
+              </div>
+              
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Card className="bg-white border-gray-200 shadow-sm">
@@ -171,7 +171,7 @@ const Invoices = () => {
                     <p className="text-2xl font-bold text-gray-900">
                       {invoices.filter(inv => inv.status === 'paid').length}
                     </p>
-                  </div>
+              </div>
                 </div>
               </CardContent>
             </Card>
@@ -187,10 +187,10 @@ const Invoices = () => {
                     <p className="text-2xl font-bold text-gray-900">
                       {invoices.filter(inv => inv.status === 'pending').length}
                     </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
             <Card className="bg-white border-gray-200 shadow-sm">
               <CardContent className="pt-6">
@@ -220,16 +220,16 @@ const Invoices = () => {
                   <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No invoices found</h3>
                   <p className="text-gray-500">You don't have any invoices yet.</p>
-                </CardContent>
-              </Card>
-            ) : (
+              </CardContent>
+            </Card>
+          ) : (
               invoices.map((invoice) => (
                 <Card key={invoice.id} className="bg-white border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-3">
                         {getStatusIcon(invoice.status)}
-                        <div>
+                      <div>
                           <h3 className="text-lg font-semibold text-gray-900">
                             {invoice.invoiceNumber}
                           </h3>
@@ -243,7 +243,7 @@ const Invoices = () => {
                         {getStatusBadge(invoice.status)}
                       </div>
                     </div>
-
+                    
                     <Separator className="my-4" />
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -274,8 +274,8 @@ const Invoices = () => {
                           </p>
                         </div>
                       </div>
-                    </div>
-
+                      </div>
+                      
                     <div className="flex justify-end space-x-2">
                       <Button
                         variant="outline"
@@ -295,14 +295,14 @@ const Invoices = () => {
                         <Download className="h-4 w-4" />
                         <span>Download</span>
                       </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       </div>
+                </div>
     </LearnerLayout>
   );
 };

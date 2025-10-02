@@ -1,447 +1,713 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { toast } from "sonner";
-import { ArrowLeft, CreditCard, DollarSign, CheckCircle, Calendar, Clock, MapPin, Receipt, Building, ExternalLink, Send } from "lucide-react";
-import { bookingService, invoiceService, paymentService } from "@/lib/database";
-import { supabase } from "@/lib/supabase";
-import SEO from "@/components/SEO";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import LearnerLayout from "@/components/LearnerLayout";
 
-interface BookingData {
-  serviceType: string;
-  date: string;
-  time: string;
-  location: string;
-  description: string;
-  urgency: string;
-  contactMethod: string;
-  specificService: string;
-  customService: string;
+interface BillingInfo {
+  id: string;
+  packageName: string;
+  price: number;
+  originalPrice?: number;
+  duration: string;
+  startDate: string;
+  endDate?: string;
+  status: 'active' | 'expired' | 'upcoming' | 'cancelled';
+  paymentMethod: string;
+  nextBillingDate?: string;
 }
 
 const Billing = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const bookingData = location.state?.bookingData as BookingData;
-  
-  const [billingData, setBillingData] = useState({
-    billingAddress: "",
-    city: "",
-    postalCode: "",
-    email: ""
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("payfast");
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { isAuthenticated, user } = useAuth();
+  const [billingHistory, setBillingHistory] = useState<BillingInfo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeSubscription, setActiveSubscription] = useState<BillingInfo | null>(null);
 
   useEffect(() => {
-    if (!bookingData) {
-      toast.error("No booking data found");
-      navigate("/booking");
-      return;
-    }
+    const loadBillingData = async () => {
+      setLoading(true);
+      
+      // Mock billing data - replace with actual API calls
+      const mockBillingHistory: BillingInfo[] = [
+        {
+          id: "1",
+          packageName: "Free Package",
+          price: 0,
+          duration: "Forever Free",
+          startDate: "2024-01-01",
+          status: 'active',
+          paymentMethod: "None"
+        },
+        {
+          id: "2",
+          packageName: "Premium Package",
+          price: 2999.00,
+          originalPrice: 4499.00,
+          duration: "3 Months",
+          startDate: "2024-01-15",
+          endDate: "2024-04-15",
+          status: 'expired',
+          paymentMethod: "PayFast",
+          nextBillingDate: "2024-04-15"
+        },
+        {
+          id: "3",
+          packageName: "Enterprise Package",
+          price: 5999.00,
+          duration: "6 Months",
+          startDate: "2024-03-01",
+          endDate: "2024-09-01",
+          status: 'upcoming',
+          paymentMethod: "Bank Transfer - Ref: EDU-123456",
+          nextBillingDate: "2024-09-01"
+        }
+      ];
 
-    // Check if user is authenticated
-    checkAuth();
-  }, [bookingData, navigate]);
+      // Find active subscription
+      const active = mockBillingHistory.find(item => item.status === 'active');
+      setActiveSubscription(active || null);
+      
+      setBillingHistory(mockBillingHistory);
+      setLoading(false);
+    };
 
-  const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast.error("Please log in to complete billing");
-      navigate("/login");
-      return;
+    loadBillingData();
+  }, []);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return { bg: '#dcfce7', text: '#166534', border: '#22c55e' };
+      case 'expired':
+        return { bg: '#fee2e2', text: '#dc2626', border: '#ef4444' };
+      case 'upcoming':
+        return { bg: '#dbeafe', text: '#1e40af', border: '#3b82f6' };
+      case 'cancelled':
+        return { bg: '#f3f4f6', text: '#6b7280', border: '#9ca3af' };
+      default:
+        return { bg: '#f3f4f6', text: '#6b7280', border: '#9ca3af' };
     }
-    setCurrentUser(user);
   };
 
-  const handleChange = (field: string, value: string) => {
-    setBillingData({
-      ...billingData,
-      [field]: value,
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-ZA', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
   };
 
-  const handlePayfastRedirect = async () => {
-    if (!currentUser) {
-      toast.error("Please log in to continue");
-      return;
-    }
-
-    setIsLoading(true);
-    
-    try {
-      // Create booking in database
-      const booking = await bookingService.createBooking({
-        user_id: currentUser.id,
-        service_id: null, // Will be set based on service type
-        service_type: bookingData.serviceType,
-        specific_service: bookingData.specificService,
-        custom_service: bookingData.customService,
-        date: bookingData.date,
-        time: bookingData.time,
-        location: bookingData.location,
-        description: bookingData.description,
-        urgency: bookingData.urgency as any,
-        contact_method: bookingData.contactMethod as any,
-        estimated_cost: estimatedCost,
-        payment_method: 'payfast',
-        billing_address: `${billingData.billingAddress}, ${billingData.city}, ${billingData.postalCode}`
-      });
-
-      // Create payment record
-      await paymentService.createPayment({
-        booking_id: booking.id,
-        amount: estimatedCost,
-        payment_method: 'payfast',
-        status: 'pending'
-      });
-
-      // Update booking payment status
-      await bookingService.updatePaymentStatus(booking.id, 'pending');
-
-      toast.success("Redirecting to PayFast...");
-      
-      // In a real implementation, this would redirect to Payfast's payment gateway
-      // window.location.href = "https://www.payfast.co.za/eng/process";
-      
-      // For demo purposes, we'll just show a success message
-      setTimeout(() => {
-        toast.success("Payment completed via PayFast!");
-        navigate("/dashboard");
-        setIsLoading(false);
-      }, 2000);
-
-    } catch (error) {
-      console.error('Error creating booking:', error);
-      toast.error("Failed to create booking. Please try again.");
-      setIsLoading(false);
-    }
-  };
-
-  const handleSendInvoice = async () => {
-    if (!currentUser) {
-      toast.error("Please log in to continue");
-      return;
-    }
-
-    setIsLoading(true);
-    
-    try {
-      // Create booking in database
-      const booking = await bookingService.createBooking({
-        user_id: currentUser.id,
-        service_id: null, // Will be set based on service type
-        service_type: bookingData.serviceType,
-        specific_service: bookingData.specificService,
-        custom_service: bookingData.customService,
-        date: bookingData.date,
-        time: bookingData.time,
-        location: bookingData.location,
-        description: bookingData.description,
-        urgency: bookingData.urgency as any,
-        contact_method: bookingData.contactMethod as any,
-        estimated_cost: estimatedCost,
-        payment_method: 'bank_transfer',
-        billing_address: `${billingData.billingAddress}, ${billingData.city}, ${billingData.postalCode}`
-      });
-
-      // Create invoice
-      const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + 7); // Due in 7 days
-
-      const invoice = await invoiceService.createInvoice({
-        booking_id: booking.id,
-        amount: estimatedCost,
-        payment_method: 'bank_transfer',
-        due_date: dueDate.toISOString().split('T')[0],
-        bank_details: {
-          bank_name: "Standard Bank",
-          account_number: "1234567890",
-          account_holder: "IBIS Services",
-          reference: `INV-${Date.now()}`
-        }
-      });
-
-      // Create payment record
-      await paymentService.createPayment({
-        booking_id: booking.id,
-        invoice_id: invoice.id,
-        amount: estimatedCost,
-        payment_method: 'bank_transfer',
-        status: 'pending'
-      });
-
-      // Update booking payment status
-      await bookingService.updatePaymentStatus(booking.id, 'pending');
-
-      toast.success("Invoice sent successfully!");
-      navigate("/dashboard");
-      setIsLoading(false);
-
-    } catch (error) {
-      console.error('Error creating booking and invoice:', error);
-      toast.error("Failed to create invoice. Please try again.");
-      setIsLoading(false);
-    }
-  };
-
-  if (!bookingData) {
-    return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <LearnerLayout>
+        <div style={{ 
+          minHeight: '100vh', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          backgroundColor: '#f9fafb'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ 
+              width: '50px', 
+              height: '50px', 
+              border: '4px solid #e5e7eb',
+              borderTop: '4px solid #3b82f6',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 20px'
+            }}></div>
+            <h2 style={{ color: '#374151', fontSize: '18px', fontWeight: '600' }}>
+              Loading billing information...
+            </h2>
+          </div>
+        </div>
+      </LearnerLayout>
+    );
   }
 
-  const estimatedCost = Math.floor(Math.random() * 100) + 50;
-
   return (
-    <>
-      <SEO page="billing" />
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
-      <div className="px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/booking")}
-            className="mb-6 text-white hover:text-blue-300 hover:bg-white/10 px-4 py-2 rounded-xl transition-all duration-300 group"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform duration-300" />
-            Back to Booking
-          </Button>
+    <LearnerLayout>
+      <div style={{ 
+        minHeight: '100vh', 
+        backgroundColor: '#f9fafb',
+        padding: '20px'
+      }}>
+        <div style={{ 
+          maxWidth: '1200px', 
+          margin: '0 auto'
+        }}>
+          {/* Header */}
+          <div style={{ 
+            marginBottom: '40px',
+            padding: '20px 0'
+          }}>
+            <h1 style={{ 
+              color: '#111827', 
+              fontSize: '36px', 
+              fontWeight: '700', 
+              marginBottom: '12px',
+              lineHeight: '1.2'
+            }}>
+              Billing & Subscriptions
+            </h1>
+            <p style={{ 
+              color: '#6b7280', 
+              fontSize: '18px',
+              maxWidth: '600px'
+            }}>
+              Manage your subscription, view billing history, and update payment methods.
+            </p>
+          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Booking Summary */}
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 shadow-xl">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center">
-                  <CheckCircle className="mr-2 h-5 w-5 text-green-400" />
-                  Booking Summary
-                </CardTitle>
-                <CardDescription className="text-gray-300">
-                  Review your service details before payment
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg">
-                    <Calendar className="h-4 w-4 text-blue-400" />
-                    <div>
-                      <p className="text-gray-300 text-sm">Service Date</p>
-                      <p className="text-white font-semibold">{new Date(bookingData.date).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg">
-                    <Clock className="h-4 w-4 text-blue-400" />
-                    <div>
-                      <p className="text-gray-300 text-sm">Service Time</p>
-                      <p className="text-white font-semibold">{bookingData.time}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg">
-                    <MapPin className="h-4 w-4 text-blue-400" />
-                    <div>
-                      <p className="text-gray-300 text-sm">Location</p>
-                      <p className="text-white font-semibold">{bookingData.location}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg">
-                    <DollarSign className="h-4 w-4 text-green-400" />
-                    <div>
-                      <p className="text-gray-300 text-sm">Estimated Cost</p>
-                      <p className="text-white font-semibold">R{estimatedCost}</p>
-                    </div>
+          {/* Current Subscription */}
+          {activeSubscription && (
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              padding: '24px',
+              marginBottom: '32px',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
+              border: '1px solid #e5e7eb'
+            }}>
+              <h2 style={{ 
+                color: '#111827', 
+                fontSize: '24px', 
+                fontWeight: '600', 
+                marginBottom: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <span style={{ fontSize: '28px' }}>📋</span>
+                Current Subscription
+              </h2>
+              
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                gap: '24px'
+              }}>
+                <div>
+                  <h3 style={{ 
+                    color: '#374151', 
+                    fontSize: '16px', 
+                    fontWeight: '600', 
+                    marginBottom: '8px'
+                  }}>
+                    Package
+                  </h3>
+                  <p style={{ 
+                    color: '#111827', 
+                    fontSize: '18px', 
+                    fontWeight: '500',
+                    margin: 0
+                  }}>
+                    {activeSubscription.packageName}
+                  </p>
+                </div>
+                
+                <div>
+                  <h3 style={{ 
+                    color: '#374151', 
+                    fontSize: '16px', 
+                    fontWeight: '600', 
+                    marginBottom: '8px'
+                  }}>
+                    Price
+                  </h3>
+                  <p style={{ 
+                    color: '#111827', 
+                    fontSize: '18px', 
+                    fontWeight: '500',
+                    margin: 0
+                  }}>
+                    {activeSubscription.price === 0 ? 'FREE' : `R${activeSubscription.price.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                  </p>
+                </div>
+                
+                <div>
+                  <h3 style={{ 
+                    color: '#374151', 
+                    fontSize: '16px', 
+                    fontWeight: '600', 
+                    marginBottom: '8px'
+                  }}>
+                    Duration
+                  </h3>
+                  <p style={{ 
+                    color: '#111827', 
+                    fontSize: '18px', 
+                    fontWeight: '500',
+                    margin: 0
+                  }}>
+                    {activeSubscription.duration}
+                  </p>
+                </div>
+                
+                <div>
+                  <h3 style={{ 
+                    color: '#374151', 
+                    fontSize: '16px', 
+                    fontWeight: '600', 
+                    marginBottom: '8px'
+                  }}>
+                    Status
+                  </h3>
+                  <div style={{
+                    backgroundColor: getStatusColor(activeSubscription.status).bg,
+                    color: getStatusColor(activeSubscription.status).text,
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    display: 'inline-block',
+                    textTransform: 'capitalize'
+                  }}>
+                    {activeSubscription.status}
                   </div>
                 </div>
+              </div>
+              
+              <div style={{
+                marginTop: '24px',
+                padding: '16px',
+                backgroundColor: '#f9fafb',
+                borderRadius: '12px',
+                border: '1px solid #e5e7eb'
+              }}>
+                <p style={{ 
+                  color: '#6b7280', 
+                  fontSize: '14px',
+                  margin: '0 0 8px 0'
+                }}>
+                  <strong>Started:</strong> {formatDate(activeSubscription.startDate)}
+                </p>
+                {activeSubscription.endDate && (
+                  <p style={{ 
+                    color: '#6b7280', 
+                    fontSize: '14px',
+                    margin: '0 0 8px 0'
+                  }}>
+                    <strong>Ends:</strong> {formatDate(activeSubscription.endDate)}
+                  </p>
+                )}
+                {activeSubscription.nextBillingDate && (
+                  <p style={{ 
+                    color: '#6b7280', 
+                    fontSize: '14px',
+                    margin: 0
+                  }}>
+                    <strong>Next Billing:</strong> {formatDate(activeSubscription.nextBillingDate)}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
-                <div className="p-4 bg-white/5 rounded-lg">
-                  <h4 className="text-white font-semibold mb-2">Service Details</h4>
-                  <p className="text-gray-300 text-sm mb-2">
-                    <span className="font-medium">Type:</span> {bookingData.specificService === "other" ? bookingData.customService : bookingData.specificService.replace('-', ' ')}
-                  </p>
-                  <p className="text-gray-300 text-sm mb-2">
-                    <span className="font-medium">Urgency:</span> {bookingData.urgency}
-                  </p>
-                  <p className="text-gray-300 text-sm">
-                    <span className="font-medium">Contact:</span> {bookingData.contactMethod}
-                  </p>
+          {/* Billing History */}
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
+            border: '1px solid #e5e7eb'
+          }}>
+            <h2 style={{ 
+              color: '#111827', 
+              fontSize: '24px', 
+              fontWeight: '600', 
+              marginBottom: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
+            }}>
+              <span style={{ fontSize: '28px' }}>📊</span>
+              Billing History
+            </h2>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ 
+                width: '100%',
+                borderCollapse: 'collapse'
+              }}>
+                <thead>
+                  <tr style={{ 
+                    borderBottom: '2px solid #e5e7eb'
+                  }}>
+                    <th style={{ 
+                      padding: '12px 16px',
+                      textAlign: 'left',
+                      color: '#374151',
+                      fontSize: '14px',
+                      fontWeight: '600'
+                    }}>
+                      Package
+                    </th>
+                    <th style={{ 
+                      padding: '12px 16px',
+                      textAlign: 'left',
+                      color: '#374151',
+                      fontSize: '14px',
+                      fontWeight: '600'
+                    }}>
+                      Amount
+                    </th>
+                    <th style={{ 
+                      padding: '12px 16px',
+                      textAlign: 'left',
+                      color: '#374151',
+                      fontSize: '14px',
+                      fontWeight: '600'
+                    }}>
+                      Period
+                    </th>
+                    <th style={{ 
+                      padding: '12px 16px',
+                      textAlign: 'left',
+                      color: '#374151',
+                      fontSize: '14px',
+                      fontWeight: '600'
+                    }}>
+                      Status
+                    </th>
+                    <th style={{ 
+                      padding: '12px 16px',
+                      textAlign: 'left',
+                      color: '#374151',
+                      fontSize: '14px',
+                      fontWeight: '600'
+                    }}>
+                      Payment Method
+                    </th>
+                    <th style={{ 
+                      padding: '12px 16px',
+                      textAlign: 'left',
+                      color: '#374151',
+                      fontSize: '14px',
+                      fontWeight: '600'
+                    }}>
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {billingHistory.map((item) => {
+                    const statusColor = getStatusColor(item.status);
+                    
+                    return (
+                      <tr key={item.id} style={{ 
+                        borderBottom: '1px solid #f3f4f6'
+                      }}>
+                        <td style={{ 
+                          padding: '16px',
+                          color: '#111827',
+                          fontSize: '14px',
+                          fontWeight: '500'
+                        }}>
+                          {item.packageName}
+                        </td>
+                        <td style={{ 
+                          padding: '16px',
+                          color: '#111827',
+                          fontSize: '14px',
+                          fontWeight: '500'
+                        }}>
+                          <div>
+                            {item.price === 0 ? 'FREE' : `R${item.price.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                            {item.originalPrice && (
+                              <div style={{ 
+                                fontSize: '12px', 
+                                color: '#6b7280',
+                                textDecoration: 'line-through'
+                              }}>
+                                R{item.originalPrice.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td style={{ 
+                          padding: '16px',
+                          color: '#6b7280',
+                          fontSize: '14px'
+                        }}>
+                          {item.duration}
+                        </td>
+                        <td style={{ 
+                          padding: '16px'
+                        }}>
+                          <div style={{
+                            backgroundColor: statusColor.bg,
+                            color: statusColor.text,
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            display: 'inline-block',
+                            textTransform: 'capitalize'
+                          }}>
+                            {item.status}
+                          </div>
+                        </td>
+                        <td style={{ 
+                          padding: '16px',
+                          color: '#6b7280',
+                          fontSize: '14px'
+                        }}>
+                          {item.paymentMethod}
+                        </td>
+                        <td style={{ 
+                          padding: '16px'
+                        }}>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button style={{
+                              backgroundColor: '#3b82f6',
+                              color: 'white',
+                              padding: '6px 12px',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontWeight: '500',
+                              cursor: 'pointer'
+                            }}>
+                              View Invoice
+                            </button>
+                            {item.status === 'active' && (
+                              <button style={{
+                                backgroundColor: '#dc2626',
+                                color: 'white',
+                                padding: '6px 12px',
+                                border: 'none',
+                                borderRadius: '6px',
+                                fontSize: '12px',
+                                fontWeight: '500',
+                                cursor: 'pointer'
+                              }}>
+                                Cancel
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Payment Methods */}
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            marginTop: '32px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
+            border: '1px solid #e5e7eb'
+          }}>
+            <h2 style={{ 
+              color: '#111827', 
+              fontSize: '24px', 
+              fontWeight: '600', 
+              marginBottom: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
+            }}>
+              <span style={{ fontSize: '28px' }}>💳</span>
+              Payment Methods
+            </h2>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '20px'
+            }}>
+              <div style={{
+                border: '2px solid #e5e7eb',
+                borderRadius: '12px',
+                padding: '20px',
+                backgroundColor: '#f9fafb'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                  <div style={{ fontSize: '24px' }}>💳</div>
+                  <div>
+                    <h3 style={{ 
+                      color: '#111827', 
+                      fontSize: '16px', 
+                      fontWeight: '600',
+                      margin: 0
+                    }}>
+                      Credit Card ending in 1234
+                    </h3>
+                    <p style={{ 
+                      color: '#6b7280', 
+                      fontSize: '14px',
+                      margin: 0
+                    }}>
+                      Visa • Expires 12/25
+                    </p>
+                  </div>
                 </div>
-
-                <div className="p-4 bg-white/5 rounded-lg">
-                  <h4 className="text-white font-semibold mb-2">Description</h4>
-                  <p className="text-gray-300 text-sm">{bookingData.description}</p>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button style={{
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    padding: '8px 16px',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: 'pointer'
+                  }}>
+                    Update
+                  </button>
+                  <button style={{
+                    backgroundColor: '#dc2626',
+                    color: 'white',
+                    padding: '8px 16px',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: 'pointer'
+                  }}>
+                    Remove
+                  </button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Payment Options */}
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 shadow-xl">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center">
-                  <CreditCard className="mr-2 h-5 w-5 text-blue-400" />
-                  Payment Options
-                </CardTitle>
-                <CardDescription className="text-gray-300">
-                  Choose your preferred payment method
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 bg-white/10 border border-white/20">
-                    <TabsTrigger 
-                      value="payfast" 
-                      className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-300"
-                    >
-                      PayFast
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="bank-transfer" 
-                      className="data-[state=active]:bg-green-600 data-[state=active]:text-white text-gray-300"
-                    >
-                      Bank Transfer
-                    </TabsTrigger>
-                  </TabsList>
+              <div style={{
+                border: '2px dashed #d1d5db',
+                borderRadius: '12px',
+                padding: '20px',
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}>
+                <div style={{ fontSize: '32px', marginBottom: '12px' }}>➕</div>
+                <h3 style={{ 
+                  color: '#6b7280', 
+                  fontSize: '16px', 
+                  fontWeight: '600',
+                  margin: '0 0 8px 0'
+                }}>
+                  Add Payment Method
+                </h3>
+                <p style={{ 
+                  color: '#9ca3af', 
+                  fontSize: '14px',
+                  margin: 0
+                }}>
+                  Add a new credit card or bank account
+                </p>
+              </div>
+            </div>
+          </div>
 
-                  <TabsContent value="payfast" className="mt-6">
-                    <div className="space-y-6">
-                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <ExternalLink className="h-4 w-4 text-blue-600" />
-                          <span className="text-blue-800 font-semibold">Secure Payment via PayFast</span>
-                        </div>
-                        <p className="text-blue-700 text-sm">
-                          You will be redirected to PayFast's secure payment gateway to complete your transaction.
-                        </p>
-                      </div>
+          {/* Upgrade Options */}
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            marginTop: '32px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
+            border: '1px solid #e5e7eb'
+          }}>
+            <h2 style={{ 
+              color: '#111827', 
+              fontSize: '24px', 
+              fontWeight: '600', 
+              marginBottom: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
+            }}>
+              <span style={{ fontSize: '28px' }}>🚀</span>
+              Upgrade Options
+            </h2>
 
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="email" className="text-white font-semibold">Email Address</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            placeholder="your-email@example.com"
-                            value={billingData.email}
-                            onChange={(e) => handleChange("email", e.target.value)}
-                            className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900"
-                            required
-                          />
-                        </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+              gap: '20px'
+            }}>
+              <div style={{
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
+                padding: '20px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '32px', marginBottom: '12px' }}>⭐</div>
+                <h3 style={{ 
+                  color: '#111827', 
+                  fontSize: '18px', 
+                  fontWeight: '600',
+                  margin: '0 0 8px 0'
+                }}>
+                  Premium Package
+                </h3>
+                <p style={{ 
+                  color: '#6b7280', 
+                  fontSize: '14px',
+                  margin: '0 0 16px 0'
+                }}>
+                  R2,999.00 for 3 months
+                </p>
+                <button style={{
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  padding: '10px 20px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  width: '100%'
+                }}>
+                  Upgrade Now
+                </button>
+              </div>
 
-                        <div className="p-4 bg-white/5 rounded-lg">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-300">Total Amount:</span>
-                            <span className="text-white font-bold text-xl">R{estimatedCost}</span>
-                          </div>
-                        </div>
-
-                        <Button
-                          onClick={handlePayfastRedirect}
-                          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                          disabled={isLoading || !billingData.email}
-                        >
-                          {isLoading ? "Redirecting..." : `Proceed to PayFast - R${estimatedCost}`}
-                        </Button>
-                      </div>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="bank-transfer" className="mt-6">
-                    <div className="space-y-6">
-                      <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <Receipt className="h-4 w-4 text-green-600" />
-                          <span className="text-green-800 font-semibold">Bank Transfer Invoice</span>
-                        </div>
-                        <p className="text-green-700 text-sm">
-                          We'll generate an invoice with our bank details. Please include the invoice number as payment reference.
-                        </p>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="billingAddress" className="text-white font-semibold">Billing Address</Label>
-                          <Input
-                            id="billingAddress"
-                            type="text"
-                            placeholder="Enter your billing address"
-                            value={billingData.billingAddress}
-                            onChange={(e) => handleChange("billingAddress", e.target.value)}
-                            className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900"
-                            required
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="city" className="text-white font-semibold">City</Label>
-                            <Input
-                              id="city"
-                              type="text"
-                              placeholder="Enter city"
-                              value={billingData.city}
-                              onChange={(e) => handleChange("city", e.target.value)}
-                              className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900"
-                              required
-                            />
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label htmlFor="postalCode" className="text-white font-semibold">Postal Code</Label>
-                            <Input
-                              id="postalCode"
-                              type="text"
-                              placeholder="Enter postal code"
-                              value={billingData.postalCode}
-                              onChange={(e) => handleChange("postalCode", e.target.value)}
-                              className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900"
-                              required
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="email" className="text-white font-semibold">Email Address</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            placeholder="your-email@example.com"
-                            value={billingData.email}
-                            onChange={(e) => handleChange("email", e.target.value)}
-                            className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900"
-                            required
-                          />
-                        </div>
-
-                        <div className="p-4 bg-white/5 rounded-lg">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-300">Total Amount:</span>
-                            <span className="text-white font-bold text-xl">R{estimatedCost}</span>
-                          </div>
-                        </div>
-
-                        <Button
-                          onClick={handleSendInvoice}
-                          className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                          disabled={isLoading || !billingData.email || !billingData.billingAddress || !billingData.city || !billingData.postalCode}
-                        >
-                          {isLoading ? "Sending Invoice..." : `Send Invoice - R${estimatedCost}`}
-                        </Button>
-                      </div>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
+              <div style={{
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
+                padding: '20px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '32px', marginBottom: '12px' }}>👑</div>
+                <h3 style={{ 
+                  color: '#111827', 
+                  fontSize: '18px', 
+                  fontWeight: '600',
+                  margin: '0 0 8px 0'
+                }}>
+                  Enterprise Package
+                </h3>
+                <p style={{ 
+                  color: '#6b7280', 
+                  fontSize: '14px',
+                  margin: '0 0 16px 0'
+                }}>
+                  R5,999.00 for 6 months
+                </p>
+                <button style={{
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  padding: '10px 20px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  width: '100%'
+                }}>
+                  Upgrade Now
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    </>
+    </LearnerLayout>
   );
 };
 

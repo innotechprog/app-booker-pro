@@ -15,7 +15,12 @@ import Booking from "./pages/Booking";
 import Billing from "./pages/Billing";
 import Invoices from "./pages/Invoices";
 import Packages from "./pages/Packages";
+import Checkout from "./pages/Checkout";
 import Dashboard from "./pages/Dashboard";
+import AdminEducationalDashboard from "./pages/AdminEducationalDashboard";
+import AdminTutorManagement from "./pages/AdminTutorManagement";
+import AdminStudentManagement from "./pages/AdminStudentManagement";
+import TutorBooking from "./pages/TutorBooking";
 import AdminDashboard from "./pages/AdminDashboard";
 import Education from "./pages/Education";
 import Tutorials from "./pages/Tutorials";
@@ -53,8 +58,13 @@ const App = () => (
             <Route path="/billing" element={<Billing />} />
             <Route path="/invoices" element={<Invoices />} />
             <Route path="/packages" element={<Packages />} />
+            <Route path="/checkout/:packageId" element={<Checkout />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/educational" element={<AdminEducationalDashboard />} />
+        <Route path="/admin/tutors" element={<AdminTutorManagement />} />
+        <Route path="/admin/students" element={<AdminStudentManagement />} />
+        <Route path="/tutor-booking/:tutorId" element={<TutorBooking />} />
             <Route path="/education" element={<Education />} />
             <Route path="/tutorials/available" element={<AvailableTutorials />} />
             <Route path="/tutor/:tutorId" element={<TutorProfile />} />

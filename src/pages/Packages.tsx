@@ -1,20 +1,7 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
 import { packagesAPI } from "@/services/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { 
-  Check, 
-  Star, 
-  Clock, 
-  Users, 
-  ArrowRight,
-  AlertCircle,
-  XCircle
-} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import LearnerLayout from "@/components/LearnerLayout";
 
 interface ServicePackage {
@@ -37,34 +24,20 @@ interface ServicePackage {
 }
 
 const Packages = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [packages, setPackages] = useState<ServicePackage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentUserPackage, setCurrentUserPackage] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/learner/login");
-      return;
-    }
-
-    // Load packages and user's current package
     const loadPackages = async () => {
-      setLoading(true);
       try {
-        // Fetch user's current package
-        const userPackageResponse = await packagesAPI.getUserPackage();
-        console.log('User package response:', userPackageResponse);
-        if (userPackageResponse.success) {
-          setCurrentUserPackage(userPackageResponse.package);
-        }
-      } catch (error) {
-        console.error('Error fetching user package:', error);
-      }
-      
-      // Mock data - replace with actual API call when backend is ready
-        setPackages([
+        setLoading(true);
+        setError(null);
+
+        // Set packages immediately - no API dependency
+        const mockPackages: ServicePackage[] = [
           {
             id: "1",
             name: "Free Package",
@@ -87,6 +60,7 @@ const Packages = () => {
             maxStudents: 1,
             subjects: ["Choose 2 subjects only"],
             recommended: true,
+            isCurrent: true,
             limitations: [
               "Cannot view teacher profiles",
               "Limited to 5 notes total",
@@ -116,7 +90,8 @@ const Packages = () => {
             icon: "⭐",
             color: "bg-purple-50 border-purple-200",
             maxStudents: 3,
-            subjects: ["Mathematics", "Science", "English", "History", "Geography"]
+            subjects: ["Mathematics", "Science", "English", "History", "Geography"],
+            isCurrent: false
           },
           {
             id: "3",
@@ -140,7 +115,8 @@ const Packages = () => {
             icon: "👑",
             color: "bg-gold-50 border-gold-200",
             maxStudents: 5,
-            subjects: ["All Subjects Available"]
+            subjects: ["All Subjects Available"],
+            isCurrent: false
           },
           {
             id: "4",
@@ -160,162 +136,447 @@ const Packages = () => {
             icon: "🎯",
             color: "bg-green-50 border-green-200",
             maxStudents: 1,
-            subjects: ["Choose One Subject"]
+            subjects: ["Choose One Subject"],
+            isCurrent: false
           }
-        ]);
+        ];
+
+        setPackages(mockPackages);
         
-        // Mark current package
-        setPackages(prevPackages => {
-          const currentPackageId = currentUserPackage?.id || '1'; // Default to free package if no current package
-          console.log('Setting packages with current package ID:', currentPackageId);
-          const updatedPackages = prevPackages.map(pkg => ({
-            ...pkg,
-            isCurrent: pkg.id === currentPackageId
-          }));
-          console.log('Updated packages:', updatedPackages);
-          return updatedPackages;
-        });
-        
+        // Try to fetch user's current package if authenticated
+        if (isAuthenticated) {
+          try {
+            const response = await packagesAPI.getUserPackage();
+            if (response.success && response.package) {
+              // Update current package status
+              setPackages(prevPackages => 
+                prevPackages.map(pkg => ({
+                  ...pkg,
+                  isCurrent: pkg.id === response.package.id
+                }))
+              );
+            }
+          } catch (apiError) {
+            console.warn('Could not fetch user package:', apiError);
+            // Continue with mock data - this is not critical
+          }
+        }
+      } catch (error) {
+        console.error('Error loading packages:', error);
+        setError('Failed to load packages. Please try again.');
+      } finally {
         setLoading(false);
+      }
     };
 
     loadPackages();
-  }, [isAuthenticated, navigate]);
-
-
-  const getCategoryBadge = (category: string) => {
-    switch (category) {
-      case 'free':
-        return <Badge className="bg-green-100 text-green-800 border-green-200">Free</Badge>;
-      case 'basic':
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Basic</Badge>;
-      case 'premium':
-        return <Badge className="bg-purple-100 text-purple-800 border-purple-200">Premium</Badge>;
-      case 'enterprise':
-        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Enterprise</Badge>;
-      default:
-        return <Badge variant="outline">Standard</Badge>;
-    }
-  };
+  }, [isAuthenticated]);
 
   const handlePurchasePackage = (packageId: string) => {
-    // Navigate to purchase/checkout page
-    navigate(`/packages/${packageId}/purchase`);
+    if (!isAuthenticated) {
+      navigate('/learner/login');
+      return;
+    }
+    
+    // Navigate to checkout page
+    navigate(`/checkout/${packageId}`);
   };
 
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'free':
+        return { bg: '#dcfce7', text: '#166534' };
+      case 'basic':
+        return { bg: '#dbeafe', text: '#1e40af' };
+      case 'premium':
+        return { bg: '#f3e8ff', text: '#7c2d12' };
+      case 'enterprise':
+        return { bg: '#fef3c7', text: '#92400e' };
+      default:
+        return { bg: '#f3f4f6', text: '#374151' };
+    }
+  };
 
   if (loading) {
     return (
       <LearnerLayout>
-        <div className="min-h-screen bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
+        <div style={{ 
+          minHeight: '100vh', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          backgroundColor: '#f9fafb'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ 
+              width: '50px', 
+              height: '50px', 
+              border: '4px solid #e5e7eb',
+              borderTop: '4px solid #3b82f6',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 20px'
+            }}></div>
+            <h2 style={{ color: '#374151', fontSize: '18px', fontWeight: '600' }}>
+              Loading packages...
+            </h2>
           </div>
         </div>
       </LearnerLayout>
     );
   }
 
-  console.log('Rendering packages page with packages:', packages);
+  if (error) {
+    return (
+      <LearnerLayout>
+        <div style={{ 
+          minHeight: '100vh', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          backgroundColor: '#f9fafb'
+        }}>
+          <div style={{ 
+            textAlign: 'center',
+            backgroundColor: 'white',
+            padding: '40px',
+            borderRadius: '12px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            maxWidth: '400px'
+          }}>
+            <div style={{ fontSize: '48px', marginBottom: '20px' }}>⚠️</div>
+            <h2 style={{ color: '#dc2626', fontSize: '18px', fontWeight: '600', marginBottom: '10px' }}>
+              Error Loading Packages
+            </h2>
+            <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '20px' }}>
+              {error}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                padding: '10px 20px',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer'
+              }}
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </LearnerLayout>
+    );
+  }
 
   return (
     <LearnerLayout>
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <style>
+        {`
+          .packages-grid {
+            display: grid;
+            gap: 24px;
+            margin-bottom: 60px;
+            grid-template-columns: 1fr; /* Default: 1 column on mobile */
+          }
+          
+          /* Bootstrap-like breakpoints for col-lg-3 (4 columns on large screens) */
+          
+          /* Small devices (landscape phones, 576px and up) */
+          @media (min-width: 576px) {
+            .packages-grid {
+              grid-template-columns: repeat(2, 1fr); /* 2 columns */
+            }
+          }
+          
+          /* Medium devices (tablets, 768px and up) */
+          @media (min-width: 768px) {
+            .packages-grid {
+              grid-template-columns: repeat(3, 1fr); /* 3 columns */
+            }
+          }
+          
+          /* Large devices (desktops, 992px and up) - col-lg-3 equivalent */
+          @media (min-width: 992px) {
+            .packages-grid {
+              grid-template-columns: repeat(4, 1fr); /* 4 columns = col-lg-3 */
+            }
+          }
+          
+          /* Extra large devices (large desktops, 1200px and up) */
+          @media (min-width: 1200px) {
+            .packages-grid {
+              grid-template-columns: repeat(4, 1fr); /* Keep 4 columns */
+            }
+          }
+        `}
+      </style>
+      <div style={{ 
+        minHeight: '100vh', 
+        backgroundColor: '#f9fafb',
+        padding: '20px'
+      }}>
+        <div style={{ 
+          maxWidth: '1400px', 
+          margin: '0 auto'
+        }}>
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Service Packages</h1>
-            <p className="text-gray-600">Choose the perfect learning package for your needs</p>
+          <div style={{ 
+            textAlign: 'center', 
+            marginBottom: '40px',
+            padding: '20px 0'
+          }}>
+            <h1 style={{ 
+              color: '#111827', 
+              fontSize: '36px', 
+              fontWeight: '700', 
+              marginBottom: '12px',
+              lineHeight: '1.2'
+            }}>
+              Service Packages
+            </h1>
+            <p style={{ 
+              color: '#6b7280', 
+              fontSize: '18px',
+              maxWidth: '600px',
+              margin: '0 auto'
+            }}>
+              Choose the perfect learning package for your needs. Start with our free package or upgrade for more features.
+            </p>
           </div>
 
+          {/* Packages Grid - Bootstrap col-lg-3 equivalent (4 columns on large screens) */}
+          <div className="packages-grid">
+            {packages.map((pkg) => {
+              const categoryColor = getCategoryColor(pkg.category);
+              
+              return (
+                <div 
+                  key={pkg.id}
+                  style={{
+                    backgroundColor: 'white',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
+                    border: '1px solid #e5e7eb',
+                    position: 'relative',
+                    transition: 'all 0.3s ease',
+                    transform: pkg.popular ? 'scale(1.02)' : 'scale(1)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-4px)';
+                    e.currentTarget.style.boxShadow = '0 12px 24px rgba(0, 0, 0, 0.15)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = pkg.popular ? 'scale(1.02)' : 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.05)';
+                  }}
+                >
+                  {/* Badges */}
+                  {pkg.popular && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '-12px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      backgroundColor: '#7c3aed',
+                      color: 'white',
+                      padding: '6px 16px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                    }}>
+                      ⭐ Most Popular
+                    </div>
+                  )}
+                  
+                  {pkg.recommended && !pkg.isCurrent && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '-12px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      backgroundColor: '#10b981',
+                      color: 'white',
+                      padding: '6px 16px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                    }}>
+                      ✓ Recommended
+                    </div>
+                  )}
+                  
+                  {pkg.isCurrent && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '-12px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      backgroundColor: '#3b82f6',
+                      color: 'white',
+                      padding: '6px 16px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                    }}>
+                      ✓ Current Package
+                    </div>
+                  )}
 
-          {/* Packages Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {packages.map((pkg) => (
-              <Card 
-                key={pkg.id} 
-                className={`relative ${pkg.color} shadow-lg hover:shadow-xl transition-all duration-300 ${
-                  pkg.popular ? 'ring-2 ring-purple-300 scale-105' : ''
-                } ${
-                  pkg.recommended && !pkg.isCurrent ? 'ring-2 ring-green-300 scale-105' : ''
-                } ${
-                  pkg.isCurrent ? 'ring-2 ring-blue-300 scale-105' : ''
-                }`}
-              >
-                {pkg.popular && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-purple-600 text-white px-4 py-1">
-                      <Star className="h-3 w-3 mr-1" />
-                      Most Popular
-                    </Badge>
+                  {/* Package Header */}
+                  <div style={{ 
+                    textAlign: 'center', 
+                    marginBottom: '24px',
+                    paddingTop: pkg.popular || pkg.recommended || pkg.isCurrent ? '12px' : '0'
+                  }}>
+                    <div style={{ 
+                      fontSize: '56px', 
+                      marginBottom: '16px',
+                      lineHeight: '1'
+                    }}>
+                      {pkg.icon}
+                    </div>
+                    <h2 style={{ 
+                      color: '#111827', 
+                      fontSize: '24px', 
+                      fontWeight: '700', 
+                      marginBottom: '8px',
+                      lineHeight: '1.2'
+                    }}>
+                      {pkg.name}
+                    </h2>
+                    <p style={{ 
+                      color: '#6b7280', 
+                      fontSize: '15px', 
+                      marginBottom: '16px',
+                      lineHeight: '1.5'
+                    }}>
+                      {pkg.description}
+                    </p>
+                    <div style={{
+                      backgroundColor: categoryColor.bg,
+                      color: categoryColor.text,
+                      padding: '6px 16px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      display: 'inline-block',
+                      textTransform: 'capitalize'
+                    }}>
+                      {pkg.category}
+                    </div>
                   </div>
-                )}
-                
-                {pkg.recommended && !pkg.isCurrent && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-green-600 text-white px-4 py-1">
-                      <Check className="h-3 w-3 mr-1" />
-                      Recommended
-                    </Badge>
-                  </div>
-                )}
-                
-                {pkg.isCurrent && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-blue-600 text-white px-4 py-1">
-                      <Check className="h-3 w-3 mr-1" />
-                      Current Package
-                    </Badge>
-                  </div>
-                )}
-                
-                <CardHeader className="text-center pb-4">
-                  <div className="text-4xl mb-2">{pkg.icon}</div>
-                  <CardTitle className="text-xl font-bold text-gray-900">{pkg.name}</CardTitle>
-                  <p className="text-gray-600 text-sm">{pkg.description}</p>
-                  {getCategoryBadge(pkg.category)}
-                </CardHeader>
 
-                <CardContent className="space-y-6">
                   {/* Pricing */}
-                  <div className="text-center">
-                    <div className="flex items-center justify-center space-x-2">
+                  <div style={{ 
+                    textAlign: 'center', 
+                    marginBottom: '24px',
+                    padding: '20px',
+                    backgroundColor: '#f9fafb',
+                    borderRadius: '12px'
+                  }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'baseline', 
+                      justifyContent: 'center', 
+                      gap: '12px',
+                      marginBottom: '8px'
+                    }}>
                       {pkg.originalPrice && (
-                        <span className="text-lg text-gray-400 line-through">
+                        <span style={{ 
+                          fontSize: '18px', 
+                          color: '#9ca3af', 
+                          textDecoration: 'line-through',
+                          fontWeight: '500'
+                        }}>
                           R{pkg.originalPrice.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       )}
-                      <span className={`text-3xl font-bold ${pkg.price === 0 ? 'text-green-600' : 'text-gray-900'}`}>
+                      <span style={{ 
+                        fontSize: '36px', 
+                        fontWeight: '700', 
+                        color: pkg.price === 0 ? '#10b981' : '#111827',
+                        lineHeight: '1'
+                      }}>
                         {pkg.price === 0 ? 'FREE' : `R${pkg.price.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">{pkg.duration}</p>
+                    <p style={{ 
+                      color: '#6b7280', 
+                      fontSize: '14px', 
+                      fontWeight: '500',
+                      margin: '0 0 12px 0'
+                    }}>
+                      {pkg.duration}
+                    </p>
                     {pkg.originalPrice && (
-                      <Badge className="bg-green-100 text-green-800 border-green-200 mt-2">
+                      <div style={{
+                        backgroundColor: '#dcfce7',
+                        color: '#166534',
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        display: 'inline-block'
+                      }}>
                         Save R{(pkg.originalPrice - pkg.price).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </Badge>
+                      </div>
                     )}
                     {pkg.price === 0 && (
-                      <Badge className="bg-green-100 text-green-800 border-green-200 mt-2">
+                      <div style={{
+                        backgroundColor: '#dcfce7',
+                        color: '#166534',
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        display: 'inline-block'
+                      }}>
                         🎉 No Cost Forever!
-                      </Badge>
+                      </div>
                     )}
                   </div>
 
-                  <Separator />
-
                   {/* Features */}
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-                      <Check className="h-4 w-4 mr-2 text-green-600" />
+                  <div style={{ marginBottom: '24px' }}>
+                    <h3 style={{ 
+                      color: '#111827', 
+                      fontSize: '16px', 
+                      fontWeight: '600', 
+                      marginBottom: '16px'
+                    }}>
                       What's Included
-                    </h4>
-                    <ul className="space-y-2">
+                    </h3>
+                    <ul style={{ 
+                      listStyle: 'none', 
+                      padding: 0, 
+                      margin: 0 
+                    }}>
                       {pkg.features.map((feature, index) => (
-                        <li key={index} className="flex items-start space-x-2 text-sm text-gray-700">
-                          <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                        <li key={index} style={{ 
+                          display: 'flex', 
+                          alignItems: 'flex-start', 
+                          gap: '12px', 
+                          marginBottom: '12px',
+                          fontSize: '14px',
+                          color: '#374151',
+                          lineHeight: '1.5'
+                        }}>
+                          <div style={{ 
+                            color: '#10b981', 
+                            marginTop: '2px',
+                            fontSize: '16px',
+                            fontWeight: 'bold'
+                          }}>
+                            ✓
+                          </div>
                           <span>{feature}</span>
                         </li>
                       ))}
@@ -324,15 +585,46 @@ const Packages = () => {
 
                   {/* Limitations for Free Package */}
                   {pkg.category === 'free' && pkg.limitations && (
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-orange-900 mb-3 flex items-center">
-                        <AlertCircle className="h-4 w-4 mr-2 text-orange-600" />
-                        Limitations
+                    <div style={{
+                      backgroundColor: '#fef3c7',
+                      border: '1px solid #f59e0b',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      marginBottom: '24px'
+                    }}>
+                      <h4 style={{ 
+                        color: '#92400e', 
+                        fontSize: '14px', 
+                        fontWeight: '600', 
+                        marginBottom: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}>
+                        ⚠️ Limitations
                       </h4>
-                      <ul className="space-y-2">
+                      <ul style={{ 
+                        listStyle: 'none', 
+                        padding: 0, 
+                        margin: 0 
+                      }}>
                         {pkg.limitations.map((limitation, index) => (
-                          <li key={index} className="flex items-start space-x-2 text-sm text-orange-800">
-                            <XCircle className="h-3 w-3 text-orange-600 mt-0.5 flex-shrink-0" />
+                          <li key={index} style={{ 
+                            display: 'flex', 
+                            alignItems: 'flex-start', 
+                            gap: '8px', 
+                            marginBottom: '6px',
+                            fontSize: '12px',
+                            color: '#92400e',
+                            lineHeight: '1.4'
+                          }}>
+                            <span style={{ 
+                              color: '#dc2626', 
+                              marginTop: '1px',
+                              fontSize: '12px'
+                            }}>
+                              ✗
+                            </span>
                             <span>{limitation}</span>
                           </li>
                         ))}
@@ -340,38 +632,41 @@ const Packages = () => {
                     </div>
                   )}
 
-                  <Separator />
-
-                  {/* Package Details */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Duration:</span>
-                      <span className="font-medium text-gray-900">{pkg.duration}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Max Students:</span>
-                      <span className="font-medium text-gray-900">{pkg.maxStudents}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Subjects:</span>
-                      <span className="font-medium text-gray-900">
-                        {pkg.subjects.length > 1 ? `${pkg.subjects.length} subjects` : pkg.subjects[0]}
-                      </span>
-                    </div>
-                  </div>
-
                   {/* Purchase Button */}
-                  <Button 
+                  <button
                     onClick={() => handlePurchasePackage(pkg.id)}
                     disabled={pkg.isCurrent}
-                    className={`w-full py-3 ${
-                      pkg.isCurrent 
-                        ? 'bg-gray-400 cursor-not-allowed' 
+                    style={{
+                      width: '100%',
+                      padding: '14px 20px',
+                      backgroundColor: pkg.isCurrent 
+                        ? '#d1d5db' 
                         : pkg.price === 0 
-                          ? 'bg-green-600 hover:bg-green-700' 
-                          : 'bg-blue-600 hover:bg-blue-700'
-                    } text-white`}
-                    size="lg"
+                          ? '#10b981' 
+                          : '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '10px',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      cursor: pkg.isCurrent ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s ease',
+                      opacity: pkg.isCurrent ? 0.6 : 1
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!pkg.isCurrent) {
+                        e.currentTarget.style.backgroundColor = pkg.price === 0 ? '#059669' : '#2563eb';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!pkg.isCurrent) {
+                        e.currentTarget.style.backgroundColor = pkg.price === 0 ? '#10b981' : '#3b82f6';
+                      }
+                    }}
                   >
                     <span>
                       {pkg.isCurrent 
@@ -381,45 +676,103 @@ const Packages = () => {
                           : 'Choose Package'
                       }
                     </span>
-                    {!pkg.isCurrent && <ArrowRight className="h-4 w-4 ml-2" />}
-                    {pkg.isCurrent && <Check className="h-4 w-4 ml-2" />}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+                    {!pkg.isCurrent && <span style={{ fontSize: '18px' }}>→</span>}
+                    {pkg.isCurrent && <span style={{ fontSize: '16px' }}>✓</span>}
+                  </button>
+                </div>
+              );
+            })}
           </div>
 
           {/* Additional Information */}
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="bg-white border-gray-200 shadow-sm">
-              <CardContent className="pt-6 text-center">
-                <div className="p-3 bg-blue-100 rounded-full w-fit mx-auto mb-4">
-                  <Gift className="h-6 w-6 text-blue-600" />
-                </div>
-                <h3 className="font-semibold text-gray-900 mb-2">Flexible Payment</h3>
-                <p className="text-sm text-gray-600">Pay monthly or get discounts for longer commitments</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white border-gray-200 shadow-sm">
-              <CardContent className="pt-6 text-center">
-                <div className="p-3 bg-green-100 rounded-full w-fit mx-auto mb-4">
-                  <Zap className="h-6 w-6 text-green-600" />
-                </div>
-                <h3 className="font-semibold text-gray-900 mb-2">Instant Access</h3>
-                <p className="text-sm text-gray-600">Start learning immediately after purchase</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white border-gray-200 shadow-sm">
-              <CardContent className="pt-6 text-center">
-                <div className="p-3 bg-purple-100 rounded-full w-fit mx-auto mb-4">
-                  <Users className="h-6 w-6 text-purple-600" />
-                </div>
-                <h3 className="font-semibold text-gray-900 mb-2">Expert Tutors</h3>
-                <p className="text-sm text-gray-600">Learn from qualified and experienced educators</p>
-              </CardContent>
-            </Card>
+          <div style={{ 
+            marginTop: '60px',
+            padding: '40px',
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+          }}>
+            <h2 style={{ 
+              color: '#111827', 
+              fontSize: '28px', 
+              fontWeight: '700', 
+              marginBottom: '24px', 
+              textAlign: 'center'
+            }}>
+              Why Choose Our Packages?
+            </h2>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+              gap: '32px' 
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ 
+                  fontSize: '48px', 
+                  marginBottom: '16px',
+                  lineHeight: '1'
+                }}>💳</div>
+                <h3 style={{ 
+                  color: '#111827', 
+                  fontSize: '18px', 
+                  fontWeight: '600', 
+                  marginBottom: '12px' 
+                }}>
+                  Flexible Payment
+                </h3>
+                <p style={{ 
+                  color: '#6b7280', 
+                  fontSize: '14px',
+                  lineHeight: '1.5'
+                }}>
+                  Pay monthly or get discounts for longer commitments
+                </p>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ 
+                  fontSize: '48px', 
+                  marginBottom: '16px',
+                  lineHeight: '1'
+                }}>🎓</div>
+                <h3 style={{ 
+                  color: '#111827', 
+                  fontSize: '18px', 
+                  fontWeight: '600', 
+                  marginBottom: '12px' 
+                }}>
+                  Expert Tutors
+                </h3>
+                <p style={{ 
+                  color: '#6b7280', 
+                  fontSize: '14px',
+                  lineHeight: '1.5'
+                }}>
+                  Learn from qualified and experienced educators
+                </p>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ 
+                  fontSize: '48px', 
+                  marginBottom: '16px',
+                  lineHeight: '1'
+                }}>📱</div>
+                <h3 style={{ 
+                  color: '#111827', 
+                  fontSize: '18px', 
+                  fontWeight: '600', 
+                  marginBottom: '12px' 
+                }}>
+                  24/7 Support
+                </h3>
+                <p style={{ 
+                  color: '#6b7280', 
+                  fontSize: '14px',
+                  lineHeight: '1.5'
+                }}>
+                  Get help whenever you need it with our support team
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -428,4 +781,3 @@ const Packages = () => {
 };
 
 export default Packages;
-
