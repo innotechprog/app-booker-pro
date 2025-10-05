@@ -44,3 +44,5 @@ export const query = async (sql, params = []) => {
 export default pool;
 
 
+
+
