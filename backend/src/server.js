@@ -24,9 +24,51 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(helmet()); // Security headers
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:8080',
-  credentials: true
+
+// CORS: allow multiple dev origins via FRONTEND_URLS and FRONTEND_URL merged with sensible defaults
+const envOrigins = [
+  ...(process.env.FRONTEND_URLS ? process.env.FRONTEND_URLS.split(',') : []),
+  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+  'http://localhost:8080',
+  'http://localhost:8081',
+  'http://localhost:8082',
+  'http://localhost:8083',
+  'http://localhost:8084',
+  'http://localhost:8085',
+  'http://localhost:8086',
+  'http://localhost:8087',
+  'http://localhost:8088',
+  'http://localhost:8089',
+  'http://localhost:8090',
+];
+const allowedOrigins = Array.from(new Set(envOrigins.map((o) => o.trim()).filter(Boolean)));
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow non-browser requests (no origin) and configured origins
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+    methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+    allowedHeaders: ['Content-Type','Authorization'],
+    optionsSuccessStatus: 204,
+  })
+);
+
+// Handle preflight for all routes
+app.options('*', cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization'],
+  optionsSuccessStatus: 204,
 }));
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies

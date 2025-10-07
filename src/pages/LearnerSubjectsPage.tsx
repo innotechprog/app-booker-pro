@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import SEO from "@/components/SEO";
-import LearnerLayout from "@/components/LearnerLayout";
+import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { learnerAPI, subjectsAPI } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -263,19 +263,19 @@ const LearnerSubjectsPage = () => {
 
   if (loading) {
     return (
-      <LearnerLayout>
+      <DashboardLayout>
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading your subjects...</p>
           </div>
         </div>
-      </LearnerLayout>
+      </DashboardLayout>
     );
   }
 
   return (
-    <LearnerLayout>
+    <DashboardLayout>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
         <SEO title="My Subjects - Learner Portal" />
         <div className="max-w-7xl mx-auto px-4 py-8">
@@ -746,7 +746,7 @@ const LearnerSubjectsPage = () => {
           </div>
         </div>
       </div>
-    </LearnerLayout>
+    </DashboardLayout>
   );
 };
 

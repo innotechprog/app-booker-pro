@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, User, LogOut, Notebook, BookOpen, Users, FileText, Bell, Calendar } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -17,11 +17,26 @@ const getInitials = (name: string): string => {
 
 const LearnerHeader = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const userName = user?.fullName || user?.name || user?.email || "Learner";
+
+  // Helper function to determine if a link is active
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+
+  // Helper function to get link classes
+  const getLinkClasses = (path: string) => {
+    const baseClasses = "transition-colors";
+    const activeClasses = "text-blue-600 font-semibold";
+    const inactiveClasses = "text-gray-700 hover:text-blue-600";
+    
+    return `${baseClasses} ${isActive(path) ? activeClasses : inactiveClasses}`;
+  };
 
   useEffect(() => {
     // Check notifications count
@@ -51,11 +66,12 @@ const LearnerHeader = () => {
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center space-x-6">
-          <Link to="/learner/dashboard" className="text-gray-700 hover:text-blue-600 transition-colors">Dashboard</Link>
-          <Link to="/learner/subjects" className="text-gray-700 hover:text-blue-600 transition-colors">Subjects</Link>
-          <Link to="/learner/tutorials" className="text-gray-700 hover:text-blue-600 transition-colors">Tutorials</Link>
-          <Link to="/learner/tutors" className="text-gray-700 hover:text-blue-600 transition-colors">Tutors</Link>
-          <Link to="/learner/notes" className="text-gray-700 hover:text-blue-600 transition-colors">Notes</Link>
+          <Link to="/learner/dashboard" className={getLinkClasses("/learner/dashboard")}>Dashboard</Link>
+          <Link to="/learner/subjects" className={getLinkClasses("/learner/subjects")}>Subjects</Link>
+          <Link to="/learner/tutorials" className={getLinkClasses("/learner/tutorials")}>Tutorials</Link>
+          <Link to="/learner/tutors" className={getLinkClasses("/learner/tutors")}>Tutors</Link>
+          <Link to="/learner/notes" className={getLinkClasses("/learner/notes")}>Notes</Link>
+          <Link to="/learner/packages" className={getLinkClasses("/learner/packages")}>Packages</Link>
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
@@ -106,11 +122,12 @@ const LearnerHeader = () => {
             </div>
           )}
           <nav className="flex flex-col py-3 space-y-2">
-            <Link to="/learner/dashboard" onClick={()=>setIsMobileMenuOpen(false)} className="py-2 text-gray-700 hover:text-blue-600">Dashboard</Link>
-            <Link to="/learner/subjects" onClick={()=>setIsMobileMenuOpen(false)} className="py-2 text-gray-700 hover:text-blue-600">Subjects</Link>
-            <Link to="/learner/tutorials" onClick={()=>setIsMobileMenuOpen(false)} className="py-2 text-gray-700 hover:text-blue-600">Tutorials</Link>
-            <Link to="/learner/tutors" onClick={()=>setIsMobileMenuOpen(false)} className="py-2 text-gray-700 hover:text-blue-600">Tutors</Link>
-            <Link to="/learner/notes" onClick={()=>setIsMobileMenuOpen(false)} className="py-2 text-gray-700 hover:text-blue-600">Notes</Link>
+            <Link to="/learner/dashboard" onClick={()=>setIsMobileMenuOpen(false)} className={`${getLinkClasses("/learner/dashboard")} py-2`}>Dashboard</Link>
+            <Link to="/learner/subjects" onClick={()=>setIsMobileMenuOpen(false)} className={`${getLinkClasses("/learner/subjects")} py-2`}>Subjects</Link>
+            <Link to="/learner/tutorials" onClick={()=>setIsMobileMenuOpen(false)} className={`${getLinkClasses("/learner/tutorials")} py-2`}>Tutorials</Link>
+            <Link to="/learner/tutors" onClick={()=>setIsMobileMenuOpen(false)} className={`${getLinkClasses("/learner/tutors")} py-2`}>Tutors</Link>
+            <Link to="/learner/notes" onClick={()=>setIsMobileMenuOpen(false)} className={`${getLinkClasses("/learner/notes")} py-2`}>Notes</Link>
+            <Link to="/learner/packages" onClick={()=>setIsMobileMenuOpen(false)} className={`${getLinkClasses("/learner/packages")} py-2`}>Packages</Link>
             <Button variant="outline" onClick={handleLogout} className="mt-2 bg-[whitesmoke] border-gray-300 text-gray-700 hover:bg-gray-200">Logout</Button>
           </nav>
         </div>

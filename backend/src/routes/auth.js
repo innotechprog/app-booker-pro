@@ -45,14 +45,13 @@ router.post('/register', async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generate UUID for user
-    const userId = uuidv4();
-
-    // Create user
-    await query(
-      'INSERT INTO users (id, full_name, email, password, grade, profile_completion) VALUES (?, ?, ?, ?, ?, ?)',
-      [userId, fullName, email, hashedPassword, grade || '', 40]
+    // Create user (let database auto-generate ID)
+    const result = await query(
+      'INSERT INTO users (full_name, email, password, grade, profile_completion) VALUES (?, ?, ?, ?, ?)',
+      [fullName, email, hashedPassword, grade || '', 40]
     );
+    
+    const userId = result.insertId;
 
     // Create study streak record
     await query(
@@ -68,8 +67,8 @@ router.post('/register', async (req, res) => {
 
     // Assign free package to new user
     await query(
-      'INSERT INTO user_packages (id, user_id, package_id, start_date, is_active) VALUES (?, ?, ?, ?, ?)',
-      [uuidv4(), userId, 'free-package-1', new Date().toISOString().split('T')[0], true]
+      'INSERT INTO user_packages (user_id, package_id, start_date, is_active) VALUES (?, ?, ?, ?)',
+      [userId, 'free-package-1', new Date().toISOString().split('T')[0], true]
     );
 
     // Generate token

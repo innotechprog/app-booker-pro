@@ -36,11 +36,8 @@ const Contact = () => {
                 <div>
                   <h4 className="text-xl font-bold text-gray-900 mb-2">Phone</h4>
                   <div className="space-y-1">
-                    <a href="tel:+15551234567" className="block text-gray-600 hover:text-blue-600 transition-colors">
-                      +1 (555) 123-4567
-                    </a>
-                    <a href="tel:+15559876543" className="block text-gray-600 hover:text-blue-600 transition-colors">
-                      +1 (555) 987-6543
+                    <a href="tel:+27762538318" className="block text-gray-600 hover:text-blue-600 transition-colors">
+                      076 2538318
                     </a>
                   </div>
                 </div>
@@ -53,11 +50,8 @@ const Contact = () => {
                 <div>
                   <h4 className="text-xl font-bold text-gray-900 mb-2">Email</h4>
                   <div className="space-y-1">
-                    <a href="mailto:info@ibinnovative.com" className="block text-gray-600 hover:text-green-600 transition-colors">
-                      info@ibinnovative.com
-                    </a>
-                    <a href="mailto:support@ibinnovative.com" className="block text-gray-600 hover:text-green-600 transition-colors">
-                      support@ibinnovative.com
+                    <a href="mailto:info@ib-innovativesolutions.co.za" className="block text-gray-600 hover:text-green-600 transition-colors">
+                      info@ib-innovativesolutions.co.za
                     </a>
                   </div>
                 </div>
@@ -135,7 +129,7 @@ const Contact = () => {
                   <Label htmlFor="phone" className="text-gray-700 font-semibold">Phone</Label>
                   <Input 
                     id="phone" 
-                    placeholder="+1 (555) 123-4567" 
+                    placeholder="076 2538318" 
                     className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg transition-all duration-300 bg-gray-50 focus:bg-white"
                   />
                 </div>

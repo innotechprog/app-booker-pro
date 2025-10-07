@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import SEO from "@/components/SEO";
-import LearnerLayout from "@/components/LearnerLayout";
+import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { notesAPI, calendarAPI, notificationsAPI, learnerAPI, messagesAPI, tutorialsAPI } from "@/services/api";
 import { Button } from "@/components/ui/button";
@@ -1156,8 +1156,19 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
     ];
   }, [messages, profile]);
 
+  // Filter tutors based on selected subject
+  const filteredTutors = useMemo(() => {
+    if (selectedSubject === 'all') {
+      return tutors;
+    }
+    return tutors.filter(tutor => 
+      tutor.subject?.toLowerCase().includes(selectedSubject.toLowerCase()) ||
+      tutor.specialization?.toLowerCase().includes(selectedSubject.toLowerCase())
+    );
+  }, [tutors, selectedSubject]);
+
   return (
-    <LearnerLayout>
+    <DashboardLayout>
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <SEO title="Learner Portal" />
       <div className="max-w-6xl mx-auto px-4 py-8">
@@ -3058,7 +3069,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
       </div>
     </div>
 
-    </LearnerLayout>
+    </DashboardLayout>
   );
 };
 

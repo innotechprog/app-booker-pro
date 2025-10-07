@@ -2,45 +2,16 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Send, CheckCircle, Shield, Zap, Calendar, MapPin, Home, LogIn, UserPlus, BookOpen } from "lucide-react";
 import SEO from "@/components/SEO";
+import Layout from "@/components/Layout";
+import Footer from "@/components/Footer";
 
 const BookService = () => {
   const navigate = useNavigate();
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 pb-20 md:pb-0">
+    <Layout>
       <SEO page="bookService" />
-      
-      {/* Header */}
-      <div className="bg-white/10 backdrop-blur-sm border-b border-white/20 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl sm:text-2xl font-bold text-white">
-              IBIS<span className="text-blue-400">.</span>
-            </h1>
-            <div className="flex items-center space-x-2 sm:space-x-4">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/")}
-                className="text-white hover:text-blue-300 hover:bg-white/10 px-2 sm:px-4 py-2 rounded-2xl transition-all duration-300 text-sm sm:text-base"
-              >
-                <Home className="mr-1 sm:mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Home</span>
-                <span className="sm:hidden">Home</span>
-              </Button>
-              {(localStorage.getItem('learnerData') === null && localStorage.getItem('learner_current') === null) && (
-                <Button
-                  onClick={() => navigate("/login")}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-6 py-2 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl text-sm sm:text-base"
-                >
-                  <LogIn className="mr-1 sm:mr-2 h-4 w-4" />
-                  <span className="hidden sm:inline">Login</span>
-                  <span className="sm:hidden">Login</span>
-        </Button>
-              )}
-            </div>
-          </div>
-                  </div>
-                </div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 pb-20 md:pb-0">
 
       {/* Send Me Hero Section */}
       <div className="px-4 py-16">
@@ -283,7 +254,9 @@ const BookService = () => {
               </Button>
         </div>
       </div>
-    </div>
+      </div>
+      <Footer />
+    </Layout>
   );
 };
 

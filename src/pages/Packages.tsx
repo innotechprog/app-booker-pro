@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { packagesAPI } from "@/services/api";
 import { useNavigate } from "react-router-dom";
-import LearnerLayout from "@/components/LearnerLayout";
+import DashboardLayout from "@/components/DashboardLayout";
+import Footer from "@/components/Footer";
 
 interface ServicePackage {
   id: string;
@@ -199,385 +200,146 @@ const Packages = () => {
 
   if (loading) {
     return (
-      <LearnerLayout>
-        <div style={{ 
-          minHeight: '100vh', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          backgroundColor: '#f9fafb'
-        }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ 
-              width: '50px', 
-              height: '50px', 
-              border: '4px solid #e5e7eb',
-              borderTop: '4px solid #3b82f6',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              margin: '0 auto 20px'
-            }}></div>
-            <h2 style={{ color: '#374151', fontSize: '18px', fontWeight: '600' }}>
+      <DashboardLayout>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-5"></div>
+            <h2 className="text-gray-700 text-lg font-semibold">
               Loading packages...
             </h2>
           </div>
         </div>
-      </LearnerLayout>
+        <Footer />
+      </DashboardLayout>
     );
   }
 
   if (error) {
     return (
-      <LearnerLayout>
-        <div style={{ 
-          minHeight: '100vh', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          backgroundColor: '#f9fafb'
-        }}>
-          <div style={{ 
-            textAlign: 'center',
-            backgroundColor: 'white',
-            padding: '40px',
-            borderRadius: '12px',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-            maxWidth: '400px'
-          }}>
-            <div style={{ fontSize: '48px', marginBottom: '20px' }}>⚠️</div>
-            <h2 style={{ color: '#dc2626', fontSize: '18px', fontWeight: '600', marginBottom: '10px' }}>
+      <DashboardLayout>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center bg-white p-10 rounded-xl shadow-sm max-w-md">
+            <div className="text-5xl mb-5">⚠️</div>
+            <h2 className="text-red-600 text-lg font-semibold mb-3">
               Error Loading Packages
             </h2>
-            <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '20px' }}>
+            <p className="text-gray-600 text-sm mb-5">
               {error}
             </p>
             <button
               onClick={() => window.location.reload()}
-              style={{
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                padding: '10px 20px',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '14px',
-                fontWeight: '500',
-                cursor: 'pointer'
-              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors"
             >
               Try Again
             </button>
           </div>
         </div>
-      </LearnerLayout>
+        <Footer />
+      </DashboardLayout>
     );
   }
 
   return (
-    <LearnerLayout>
-      <style>
-        {`
-          .packages-grid {
-            display: grid;
-            gap: 24px;
-            margin-bottom: 60px;
-            grid-template-columns: 1fr; /* Default: 1 column on mobile */
-          }
-          
-          /* Bootstrap-like breakpoints for col-lg-3 (4 columns on large screens) */
-          
-          /* Small devices (landscape phones, 576px and up) */
-          @media (min-width: 576px) {
-            .packages-grid {
-              grid-template-columns: repeat(2, 1fr); /* 2 columns */
-            }
-          }
-          
-          /* Medium devices (tablets, 768px and up) */
-          @media (min-width: 768px) {
-            .packages-grid {
-              grid-template-columns: repeat(3, 1fr); /* 3 columns */
-            }
-          }
-          
-          /* Large devices (desktops, 992px and up) - col-lg-3 equivalent */
-          @media (min-width: 992px) {
-            .packages-grid {
-              grid-template-columns: repeat(4, 1fr); /* 4 columns = col-lg-3 */
-            }
-          }
-          
-          /* Extra large devices (large desktops, 1200px and up) */
-          @media (min-width: 1200px) {
-            .packages-grid {
-              grid-template-columns: repeat(4, 1fr); /* Keep 4 columns */
-            }
-          }
-        `}
-      </style>
-      <div style={{ 
-        minHeight: '100vh', 
-        backgroundColor: '#f9fafb',
-        padding: '20px'
-      }}>
-        <div style={{ 
-          maxWidth: '1400px', 
-          margin: '0 auto'
-        }}>
+    <DashboardLayout>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <div style={{ 
-            textAlign: 'center', 
-            marginBottom: '40px',
-            padding: '20px 0'
-          }}>
-            <h1 style={{ 
-              color: '#111827', 
-              fontSize: '36px', 
-              fontWeight: '700', 
-              marginBottom: '12px',
-              lineHeight: '1.2'
-            }}>
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
               Service Packages
             </h1>
-            <p style={{ 
-              color: '#6b7280', 
-              fontSize: '18px',
-              maxWidth: '600px',
-              margin: '0 auto'
-            }}>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Choose the perfect learning package for your needs. Start with our free package or upgrade for more features.
             </p>
           </div>
 
-          {/* Packages Grid - Bootstrap col-lg-3 equivalent (4 columns on large screens) */}
-          <div className="packages-grid">
+          {/* Packages Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-16">
             {packages.map((pkg) => {
               const categoryColor = getCategoryColor(pkg.category);
               
               return (
                 <div 
                   key={pkg.id}
-                  style={{
-                    backgroundColor: 'white',
-                    borderRadius: '16px',
-                    padding: '24px',
-                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
-                    border: '1px solid #e5e7eb',
-                    position: 'relative',
-                    transition: 'all 0.3s ease',
-                    transform: pkg.popular ? 'scale(1.02)' : 'scale(1)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-4px)';
-                    e.currentTarget.style.boxShadow = '0 12px 24px rgba(0, 0, 0, 0.15)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = pkg.popular ? 'scale(1.02)' : 'scale(1)';
-                    e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.05)';
-                  }}
+                  className={`bg-white rounded-2xl p-6 shadow-sm border border-gray-200 relative transition-all duration-300 hover:shadow-lg hover:-translate-y-1 flex flex-col h-full ${
+                    pkg.popular ? 'scale-105 border-purple-300' : ''
+                  }`}
                 >
                   {/* Badges */}
                   {pkg.popular && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '-12px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      backgroundColor: '#7c3aed',
-                      color: 'white',
-                      padding: '6px 16px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                    }}>
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-purple-600 text-white px-4 py-1 rounded-full text-xs font-semibold shadow-lg">
                       ⭐ Most Popular
                     </div>
                   )}
                   
                   {pkg.recommended && !pkg.isCurrent && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '-12px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      backgroundColor: '#10b981',
-                      color: 'white',
-                      padding: '6px 16px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                    }}>
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-4 py-1 rounded-full text-xs font-semibold shadow-lg">
                       ✓ Recommended
                     </div>
                   )}
                   
                   {pkg.isCurrent && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '-12px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      backgroundColor: '#3b82f6',
-                      color: 'white',
-                      padding: '6px 16px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                    }}>
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-xs font-semibold shadow-lg">
                       ✓ Current Package
                     </div>
                   )}
 
                   {/* Package Header */}
-                  <div style={{ 
-                    textAlign: 'center', 
-                    marginBottom: '24px',
-                    paddingTop: pkg.popular || pkg.recommended || pkg.isCurrent ? '12px' : '0'
-                  }}>
-                    <div style={{ 
-                      fontSize: '56px', 
-                      marginBottom: '16px',
-                      lineHeight: '1'
-                    }}>
+                  <div className={`text-center mb-6 ${pkg.popular || pkg.recommended || pkg.isCurrent ? 'pt-3' : ''}`}>
+                    <div className="text-6xl mb-4">
                       {pkg.icon}
                     </div>
-                    <h2 style={{ 
-                      color: '#111827', 
-                      fontSize: '24px', 
-                      fontWeight: '700', 
-                      marginBottom: '8px',
-                      lineHeight: '1.2'
-                    }}>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
                       {pkg.name}
                     </h2>
-                    <p style={{ 
-                      color: '#6b7280', 
-                      fontSize: '15px', 
-                      marginBottom: '16px',
-                      lineHeight: '1.5'
-                    }}>
+                    <p className="text-gray-600 text-sm mb-4 leading-relaxed">
                       {pkg.description}
                     </p>
-                    <div style={{
-                      backgroundColor: categoryColor.bg,
-                      color: categoryColor.text,
-                      padding: '6px 16px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      display: 'inline-block',
-                      textTransform: 'capitalize'
-                    }}>
+                    <div className={`inline-block px-4 py-1 rounded-full text-xs font-semibold capitalize`}
+                         style={{ backgroundColor: categoryColor.bg, color: categoryColor.text }}>
                       {pkg.category}
                     </div>
                   </div>
 
                   {/* Pricing */}
-                  <div style={{ 
-                    textAlign: 'center', 
-                    marginBottom: '24px',
-                    padding: '20px',
-                    backgroundColor: '#f9fafb',
-                    borderRadius: '12px'
-                  }}>
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'baseline', 
-                      justifyContent: 'center', 
-                      gap: '12px',
-                      marginBottom: '8px'
-                    }}>
+                  <div className="text-center mb-6 p-5 bg-gray-50 rounded-xl">
+                    <div className="flex items-baseline justify-center gap-3 mb-2">
                       {pkg.originalPrice && (
-                        <span style={{ 
-                          fontSize: '18px', 
-                          color: '#9ca3af', 
-                          textDecoration: 'line-through',
-                          fontWeight: '500'
-                        }}>
+                        <span className="text-lg text-gray-400 line-through font-medium">
                           R{pkg.originalPrice.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       )}
-                      <span style={{ 
-                        fontSize: '36px', 
-                        fontWeight: '700', 
-                        color: pkg.price === 0 ? '#10b981' : '#111827',
-                        lineHeight: '1'
-                      }}>
+                      <span className={`text-4xl font-bold ${pkg.price === 0 ? 'text-green-600' : 'text-gray-900'}`}>
                         {pkg.price === 0 ? 'FREE' : `R${pkg.price.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                       </span>
                     </div>
-                    <p style={{ 
-                      color: '#6b7280', 
-                      fontSize: '14px', 
-                      fontWeight: '500',
-                      margin: '0 0 12px 0'
-                    }}>
+                    <p className="text-gray-600 text-sm font-medium mb-3">
                       {pkg.duration}
                     </p>
                     {pkg.originalPrice && (
-                      <div style={{
-                        backgroundColor: '#dcfce7',
-                        color: '#166534',
-                        padding: '6px 12px',
-                        borderRadius: '6px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        display: 'inline-block'
-                      }}>
+                      <div className="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-lg text-xs font-semibold">
                         Save R{(pkg.originalPrice - pkg.price).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                     )}
                     {pkg.price === 0 && (
-                      <div style={{
-                        backgroundColor: '#dcfce7',
-                        color: '#166534',
-                        padding: '6px 12px',
-                        borderRadius: '6px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        display: 'inline-block'
-                      }}>
+                      <div className="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-lg text-xs font-semibold">
                         🎉 No Cost Forever!
                       </div>
                     )}
                   </div>
 
                   {/* Features */}
-                  <div style={{ marginBottom: '24px' }}>
-                    <h3 style={{ 
-                      color: '#111827', 
-                      fontSize: '16px', 
-                      fontWeight: '600', 
-                      marginBottom: '16px'
-                    }}>
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
                       What's Included
                     </h3>
-                    <ul style={{ 
-                      listStyle: 'none', 
-                      padding: 0, 
-                      margin: 0 
-                    }}>
+                    <ul className="space-y-3">
                       {pkg.features.map((feature, index) => (
-                        <li key={index} style={{ 
-                          display: 'flex', 
-                          alignItems: 'flex-start', 
-                          gap: '12px', 
-                          marginBottom: '12px',
-                          fontSize: '14px',
-                          color: '#374151',
-                          lineHeight: '1.5'
-                        }}>
-                          <div style={{ 
-                            color: '#10b981', 
-                            marginTop: '2px',
-                            fontSize: '16px',
-                            fontWeight: 'bold'
-                          }}>
+                        <li key={index} className="flex items-start gap-3 text-sm text-gray-700">
+                          <div className="text-green-600 mt-0.5 font-bold text-base">
                             ✓
                           </div>
-                          <span>{feature}</span>
+                          <span className="leading-relaxed">{feature}</span>
                         </li>
                       ))}
                     </ul>
@@ -585,47 +347,17 @@ const Packages = () => {
 
                   {/* Limitations for Free Package */}
                   {pkg.category === 'free' && pkg.limitations && (
-                    <div style={{
-                      backgroundColor: '#fef3c7',
-                      border: '1px solid #f59e0b',
-                      borderRadius: '12px',
-                      padding: '16px',
-                      marginBottom: '24px'
-                    }}>
-                      <h4 style={{ 
-                        color: '#92400e', 
-                        fontSize: '14px', 
-                        fontWeight: '600', 
-                        marginBottom: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}>
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+                      <h4 className="text-yellow-800 text-sm font-semibold mb-3 flex items-center gap-2">
                         ⚠️ Limitations
                       </h4>
-                      <ul style={{ 
-                        listStyle: 'none', 
-                        padding: 0, 
-                        margin: 0 
-                      }}>
+                      <ul className="space-y-2">
                         {pkg.limitations.map((limitation, index) => (
-                          <li key={index} style={{ 
-                            display: 'flex', 
-                            alignItems: 'flex-start', 
-                            gap: '8px', 
-                            marginBottom: '6px',
-                            fontSize: '12px',
-                            color: '#92400e',
-                            lineHeight: '1.4'
-                          }}>
-                            <span style={{ 
-                              color: '#dc2626', 
-                              marginTop: '1px',
-                              fontSize: '12px'
-                            }}>
+                          <li key={index} className="flex items-start gap-2 text-xs text-yellow-800">
+                            <span className="text-red-600 mt-0.5 text-xs">
                               ✗
                             </span>
-                            <span>{limitation}</span>
+                            <span className="leading-relaxed">{limitation}</span>
                           </li>
                         ))}
                       </ul>
@@ -633,142 +365,65 @@ const Packages = () => {
                   )}
 
                   {/* Purchase Button */}
-                  <button
-                    onClick={() => handlePurchasePackage(pkg.id)}
-                    disabled={pkg.isCurrent}
-                    style={{
-                      width: '100%',
-                      padding: '14px 20px',
-                      backgroundColor: pkg.isCurrent 
-                        ? '#d1d5db' 
-                        : pkg.price === 0 
-                          ? '#10b981' 
-                          : '#3b82f6',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '10px',
-                      fontSize: '16px',
-                      fontWeight: '600',
-                      cursor: pkg.isCurrent ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      transition: 'all 0.2s ease',
-                      opacity: pkg.isCurrent ? 0.6 : 1
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!pkg.isCurrent) {
-                        e.currentTarget.style.backgroundColor = pkg.price === 0 ? '#059669' : '#2563eb';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!pkg.isCurrent) {
-                        e.currentTarget.style.backgroundColor = pkg.price === 0 ? '#10b981' : '#3b82f6';
-                      }
-                    }}
-                  >
-                    <span>
-                      {pkg.isCurrent 
-                        ? 'Current Package' 
-                        : pkg.price === 0 
-                          ? 'Get Free Package' 
-                          : 'Choose Package'
-                      }
-                    </span>
-                    {!pkg.isCurrent && <span style={{ fontSize: '18px' }}>→</span>}
-                    {pkg.isCurrent && <span style={{ fontSize: '16px' }}>✓</span>}
-                  </button>
+                  <div className="mt-auto">
+                    <button
+                      onClick={() => handlePurchasePackage(pkg.id)}
+                      disabled={pkg.isCurrent}
+                      className={`w-full py-4 px-5 rounded-xl font-semibold text-base flex items-center justify-center gap-2 transition-all duration-200 ${
+                        pkg.isCurrent 
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                          : pkg.price === 0 
+                            ? 'bg-green-600 hover:bg-green-700 text-white' 
+                            : 'bg-blue-600 hover:bg-blue-700 text-white'
+                      }`}
+                    >
+                      <span>
+                        {pkg.isCurrent 
+                          ? 'Current Package' 
+                          : pkg.price === 0 
+                            ? 'Get Free Package' 
+                            : 'Choose Package'
+                        }
+                      </span>
+                      {!pkg.isCurrent && <span className="text-lg">→</span>}
+                      {pkg.isCurrent && <span className="text-base">✓</span>}
+                    </button>
+                  </div>
                 </div>
               );
             })}
           </div>
 
           {/* Additional Information */}
-          <div style={{ 
-            marginTop: '60px',
-            padding: '40px',
-            backgroundColor: 'white',
-            borderRadius: '16px',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
-          }}>
-            <h2 style={{ 
-              color: '#111827', 
-              fontSize: '28px', 
-              fontWeight: '700', 
-              marginBottom: '24px', 
-              textAlign: 'center'
-            }}>
+          <div className="mt-16 p-10 bg-white rounded-2xl shadow-sm">
+            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
               Why Choose Our Packages?
             </h2>
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-              gap: '32px' 
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ 
-                  fontSize: '48px', 
-                  marginBottom: '16px',
-                  lineHeight: '1'
-                }}>💳</div>
-                <h3 style={{ 
-                  color: '#111827', 
-                  fontSize: '18px', 
-                  fontWeight: '600', 
-                  marginBottom: '12px' 
-                }}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="text-center">
+                <div className="text-5xl mb-4">💳</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">
                   Flexible Payment
                 </h3>
-                <p style={{ 
-                  color: '#6b7280', 
-                  fontSize: '14px',
-                  lineHeight: '1.5'
-                }}>
+                <p className="text-gray-600 text-sm leading-relaxed">
                   Pay monthly or get discounts for longer commitments
                 </p>
               </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ 
-                  fontSize: '48px', 
-                  marginBottom: '16px',
-                  lineHeight: '1'
-                }}>🎓</div>
-                <h3 style={{ 
-                  color: '#111827', 
-                  fontSize: '18px', 
-                  fontWeight: '600', 
-                  marginBottom: '12px' 
-                }}>
+              <div className="text-center">
+                <div className="text-5xl mb-4">🎓</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">
                   Expert Tutors
                 </h3>
-                <p style={{ 
-                  color: '#6b7280', 
-                  fontSize: '14px',
-                  lineHeight: '1.5'
-                }}>
+                <p className="text-gray-600 text-sm leading-relaxed">
                   Learn from qualified and experienced educators
                 </p>
               </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ 
-                  fontSize: '48px', 
-                  marginBottom: '16px',
-                  lineHeight: '1'
-                }}>📱</div>
-                <h3 style={{ 
-                  color: '#111827', 
-                  fontSize: '18px', 
-                  fontWeight: '600', 
-                  marginBottom: '12px' 
-                }}>
+              <div className="text-center">
+                <div className="text-5xl mb-4">📱</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">
                   24/7 Support
                 </h3>
-                <p style={{ 
-                  color: '#6b7280', 
-                  fontSize: '14px',
-                  lineHeight: '1.5'
-                }}>
+                <p className="text-gray-600 text-sm leading-relaxed">
                   Get help whenever you need it with our support team
                 </p>
               </div>
@@ -776,7 +431,8 @@ const Packages = () => {
           </div>
         </div>
       </div>
-    </LearnerLayout>
+      <Footer />
+    </DashboardLayout>
   );
 };
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import LearnerLayout from "@/components/LearnerLayout";
+import Layout from "@/components/Layout";
+import Footer from "@/components/Footer";
 
 interface BillingInfo {
   id: string;
@@ -97,7 +98,7 @@ const Billing = () => {
 
   if (loading) {
     return (
-      <LearnerLayout>
+      <Layout>
         <div style={{ 
           minHeight: '100vh', 
           display: 'flex', 
@@ -120,12 +121,12 @@ const Billing = () => {
             </h2>
           </div>
         </div>
-      </LearnerLayout>
+      </Layout>
     );
   }
 
   return (
-    <LearnerLayout>
+    <Layout>
       <div style={{ 
         minHeight: '100vh', 
         backgroundColor: '#f9fafb',
@@ -707,7 +708,8 @@ const Billing = () => {
           </div>
         </div>
       </div>
-    </LearnerLayout>
+      <Footer />
+    </Layout>
   );
 };
 

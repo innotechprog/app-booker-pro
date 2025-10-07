@@ -280,6 +280,48 @@ const setupDatabase = async () => {
     `);
     console.log('✅ User Progress table created');
 
+    // Packages table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS packages (
+        id VARCHAR(36) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        duration VARCHAR(100),
+        features JSON,
+        limitations JSON,
+        category ENUM('free', 'basic', 'premium', 'enterprise') DEFAULT 'free',
+        max_notes INT DEFAULT 5,
+        max_tutorials_per_subject INT DEFAULT 5,
+        max_reminders INT DEFAULT 2,
+        max_subjects INT DEFAULT 2,
+        can_view_teacher_profiles BOOLEAN DEFAULT FALSE,
+        is_recommended BOOLEAN DEFAULT FALSE,
+        is_popular BOOLEAN DEFAULT FALSE,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Packages table created');
+
+    // User packages table (tracks which package a user has)
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS user_packages (
+        id VARCHAR(36) PRIMARY KEY,
+        user_id INT NOT NULL,
+        package_id VARCHAR(36) NOT NULL,
+        start_date DATE NOT NULL,
+        end_date DATE,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (package_id) REFERENCES packages(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_active_package (user_id, is_active)
+      )
+    `);
+    console.log('✅ User Packages table created');
+
     console.log('\n🎉 All tables created successfully!');
     console.log('📝 Next steps:');
     console.log('   1. Copy env.example to .env and configure your settings');
@@ -297,6 +339,7 @@ const setupDatabase = async () => {
 };
 
 setupDatabase();
+
 
 
 

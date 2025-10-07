@@ -79,6 +79,37 @@ const seedDatabase = async () => {
     }
     console.log('✅ Achievements added');
 
+    // Insert Packages
+    console.log('📦 Adding packages...');
+    const packages = [
+      ['free-package-1', 'Free Package', 'Perfect for trying out our platform with basic features', 0.00, 'Forever Free', 
+       JSON.stringify(['Create up to 5 notes', 'View 5 tutorials per subject', 'Book tutoring sessions', 'Set up to 2 reminders', 'Choose 2 subjects maximum', 'Basic progress tracking', 'Email support']),
+       JSON.stringify(['Cannot view teacher profiles', 'Limited to 5 notes total', 'Limited to 5 tutorials per subject', 'Maximum 2 reminders', 'Maximum 2 subjects']),
+       'free', 5, 5, 2, 2, false, true, false],
+      ['basic-package-1', 'Starter Package', 'Perfect for students just getting started with tutoring', 1499.00, '1 Month',
+       JSON.stringify(['10 hours of tutoring', 'Basic study materials', 'Email support', 'Progress tracking', 'Mobile app access']),
+       JSON.stringify([]),
+       'basic', 50, 20, 10, 5, true, false, false],
+      ['premium-package-1', 'Premium Package', 'Most popular choice for serious learners', 2999.00, '3 Months',
+       JSON.stringify(['20 hours of tutoring', 'Premium study materials', 'Priority support', 'Advanced progress tracking', 'Group study sessions', 'Exam preparation', '24/7 chat support']),
+       JSON.stringify([]),
+       'premium', 100, 50, 20, 10, true, false, true],
+      ['enterprise-package-1', 'Enterprise Package', 'Complete learning solution for advanced students', 5999.00, '6 Months',
+       JSON.stringify(['50 hours of tutoring', 'All premium materials', 'Dedicated tutor', 'Custom study plans', 'Unlimited group sessions', 'Exam preparation', 'Career counseling', '24/7 priority support', 'Certificate of completion']),
+       JSON.stringify([]),
+       'enterprise', 500, 100, 50, 20, true, false, false]
+    ];
+
+    for (const packageData of packages) {
+      await connection.query(
+        `INSERT IGNORE INTO packages 
+        (id, name, description, price, duration, features, limitations, category, max_notes, max_tutorials_per_subject, max_reminders, max_subjects, can_view_teacher_profiles, is_recommended, is_popular) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        packageData
+      );
+    }
+    console.log('✅ Packages added');
+
     // Create demo user
     console.log('👤 Creating demo user...');
     const hashedPassword = await bcrypt.hash('demo123', 10);
@@ -106,6 +137,7 @@ const seedDatabase = async () => {
 };
 
 seedDatabase();
+
 
 
 

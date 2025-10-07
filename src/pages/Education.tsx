@@ -610,14 +610,6 @@ const Education = () => {
         </div>
         
         <div className="max-w-7xl mx-auto px-6 text-center relative z-10">
-          {/* Hide Login button for logged-in learners */}
-          {!isLearnerLoggedIn() && (
-            <div className="flex justify-end mb-4">
-              <Button asChild variant="outline" className="border-white text-white hover:bg-white hover:text-gray-900">
-                <Link to="/learner/login">Login</Link>
-              </Button>
-            </div>
-          )}
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
             Education Services
           </h1>

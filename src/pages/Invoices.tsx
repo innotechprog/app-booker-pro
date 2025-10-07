@@ -16,7 +16,8 @@ import {
   XCircle,
   AlertCircle
 } from "lucide-react";
-import LearnerLayout from "@/components/LearnerLayout";
+import Layout from "@/components/Layout";
+import Footer from "@/components/Footer";
 
 interface Invoice {
   id: string;
@@ -136,7 +137,7 @@ const Invoices = () => {
 
   if (loading) {
   return (
-      <LearnerLayout>
+      <Layout>
         <div className="min-h-screen bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="flex items-center justify-center h-64">
@@ -144,19 +145,20 @@ const Invoices = () => {
             </div>
           </div>
         </div>
-      </LearnerLayout>
+        <Footer />
+      </Layout>
     );
   }
 
   return (
-    <LearnerLayout>
+    <Layout>
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Invoices</h1>
             <p className="text-gray-600">Manage your invoices and payment history</p>
-              </div>
+          </div>
               
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -171,7 +173,7 @@ const Invoices = () => {
                     <p className="text-2xl font-bold text-gray-900">
                       {invoices.filter(inv => inv.status === 'paid').length}
                     </p>
-              </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -302,8 +304,8 @@ const Invoices = () => {
           )}
         </div>
       </div>
-                </div>
-    </LearnerLayout>
+      <Footer />
+    </Layout>
   );
 };
 
