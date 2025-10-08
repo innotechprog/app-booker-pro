@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import Layout from "@/components/Layout";
+import DashboardLayout from "@/components/DashboardLayout";
 import Footer from "@/components/Footer";
 
 interface BillingInfo {
@@ -26,48 +26,65 @@ const Billing = () => {
     const loadBillingData = async () => {
       setLoading(true);
       
-      // Mock billing data - replace with actual API calls
-      const mockBillingHistory: BillingInfo[] = [
-        {
-          id: "1",
-          packageName: "Free Package",
-          price: 0,
-          duration: "Forever Free",
-          startDate: "2024-01-01",
-          status: 'active',
-          paymentMethod: "None"
-        },
-        {
-          id: "2",
-          packageName: "Premium Package",
-          price: 2999.00,
-          originalPrice: 4499.00,
-          duration: "3 Months",
-          startDate: "2024-01-15",
-          endDate: "2024-04-15",
-          status: 'expired',
-          paymentMethod: "PayFast",
-          nextBillingDate: "2024-04-15"
-        },
-        {
-          id: "3",
-          packageName: "Enterprise Package",
-          price: 5999.00,
-          duration: "6 Months",
-          startDate: "2024-03-01",
-          endDate: "2024-09-01",
-          status: 'upcoming',
-          paymentMethod: "Bank Transfer - Ref: EDU-123456",
-          nextBillingDate: "2024-09-01"
+      try {
+        // Load enrolled subjects from localStorage
+        const enrolledSubjects = JSON.parse(localStorage.getItem('enrolledSubjects') || '[]');
+        
+        if (enrolledSubjects.length === 0) {
+          // No enrolled subjects - show empty state
+          setBillingHistory([]);
+          setActiveSubscription(null);
+          setLoading(false);
+          return;
         }
-      ];
 
-      // Find active subscription
-      const active = mockBillingHistory.find(item => item.status === 'active');
-      setActiveSubscription(active || null);
-      
-      setBillingHistory(mockBillingHistory);
-      setLoading(false);
+        // Convert enrolled subjects to billing history format
+        const billingHistory: BillingInfo[] = enrolledSubjects.map((subject: any, index: number) => {
+          const startDate = new Date(subject.enrolledDate);
+          const nextBillingDate = new Date(startDate);
+          nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+          
+          return {
+            id: subject.id,
+            packageName: subject.name,
+            price: subject.price,
+            duration: "Monthly",
+            startDate: startDate.toISOString().split('T')[0],
+            status: 'active',
+            paymentMethod: "PayFast",
+            nextBillingDate: nextBillingDate.toISOString().split('T')[0]
+          };
+        });
+
+        // For demo purposes, let's add some variety to the statuses
+        if (billingHistory.length > 0) {
+          // Make the first subject active
+          billingHistory[0].status = 'active';
+          
+          // Make some subjects expired for demo
+          if (billingHistory.length > 2) {
+            billingHistory[1].status = 'expired';
+          }
+          
+          // Make some subjects upcoming for demo
+          if (billingHistory.length > 3) {
+            billingHistory[2].status = 'upcoming';
+          }
+        }
+
+        // Find active subscription (first active one)
+        const active = billingHistory.find(item => item.status === 'active');
+        setActiveSubscription(active || null);
+        
+        setBillingHistory(billingHistory);
+        
+      } catch (error) {
+        console.error('Error loading billing data:', error);
+        setBillingHistory([]);
+        setActiveSubscription(null);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadBillingData();
@@ -96,71 +113,62 @@ const Billing = () => {
     });
   };
 
+  const getTotalMonthlyCost = () => {
+    return billingHistory
+      .filter(item => item.status === 'active')
+      .reduce((total, item) => total + item.price, 0);
+  };
+
+  const getActiveSubjects = () => {
+    return billingHistory.filter(item => item.status === 'active');
+  };
+
   if (loading) {
     return (
-      <Layout>
-        <div style={{ 
-          minHeight: '100vh', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          backgroundColor: '#f9fafb'
-        }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ 
-              width: '50px', 
-              height: '50px', 
-              border: '4px solid #e5e7eb',
-              borderTop: '4px solid #3b82f6',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              margin: '0 auto 20px'
-            }}></div>
-            <h2 style={{ color: '#374151', fontSize: '18px', fontWeight: '600' }}>
+      <DashboardLayout>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-5"></div>
+            <h2 className="text-gray-700 text-lg font-semibold">
               Loading billing information...
             </h2>
           </div>
         </div>
-      </Layout>
+        <Footer />
+      </DashboardLayout>
     );
   }
 
   return (
-    <Layout>
-      <div style={{ 
-        minHeight: '100vh', 
-        backgroundColor: '#f9fafb',
-        padding: '20px'
-      }}>
-        <div style={{ 
-          maxWidth: '1200px', 
-          margin: '0 auto'
-        }}>
+    <DashboardLayout>
+      <div className="min-h-screen bg-gray-50 p-5">
+        <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div style={{ 
-            marginBottom: '40px',
-            padding: '20px 0'
-          }}>
-            <h1 style={{ 
-              color: '#111827', 
-              fontSize: '36px', 
-              fontWeight: '700', 
-              marginBottom: '12px',
-              lineHeight: '1.2'
-            }}>
-              Billing & Subscriptions
+          <div className="mb-10 py-5">
+            <h1 className="text-4xl font-bold text-gray-900 mb-3">
+              Subject Enrollment Billing
             </h1>
-            <p style={{ 
-              color: '#6b7280', 
-              fontSize: '18px',
-              maxWidth: '600px'
-            }}>
-              Manage your subscription, view billing history, and update payment methods.
+            <p className="text-gray-600 text-lg max-w-2xl">
+              Manage your subject enrollments, view billing history, and update payment methods for each subject.
             </p>
           </div>
 
           {/* Current Subscription */}
-          {activeSubscription && (
+          {billingHistory.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center mb-8">
+              <div className="text-6xl mb-4">📚</div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">No Enrolled Subjects</h2>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                You haven't enrolled in any subjects yet. Browse our available subjects and start your learning journey today!
+              </p>
+              <button
+                onClick={() => window.location.href = '/learner/packages'}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
+              >
+                Browse Subjects
+              </button>
+            </div>
+          ) : (
             <div style={{
               backgroundColor: 'white',
               borderRadius: '16px',
@@ -179,8 +187,43 @@ const Billing = () => {
                 gap: '12px'
               }}>
                 <span style={{ fontSize: '28px' }}>📋</span>
-                Current Subscription
+                Current Subject Enrollments ({getActiveSubjects().length})
               </h2>
+              
+              {/* Active Subjects Summary */}
+              <div style={{
+                backgroundColor: '#f8fafc',
+                borderRadius: '12px',
+                padding: '20px',
+                marginBottom: '24px'
+              }}>
+                <h3 style={{ 
+                  color: '#374151', 
+                  fontSize: '16px', 
+                  fontWeight: '600', 
+                  marginBottom: '12px'
+                }}>
+                  Active Subjects
+                </h3>
+                <div style={{ display: 'grid', gap: '8px' }}>
+                  {getActiveSubjects().map((subject) => (
+                    <div key={subject.id} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 0',
+                      borderBottom: '1px solid #e5e7eb'
+                    }}>
+                      <span style={{ color: '#111827', fontSize: '14px', fontWeight: '500' }}>
+                        {subject.packageName}
+                      </span>
+                      <span style={{ color: '#059669', fontSize: '14px', fontWeight: '600' }}>
+                        R{subject.price.toFixed(2)}/month
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
               
               <div style={{
                 display: 'grid',
@@ -194,15 +237,15 @@ const Billing = () => {
                     fontWeight: '600', 
                     marginBottom: '8px'
                   }}>
-                    Package
+                    Total Monthly Cost
                   </h3>
                   <p style={{ 
                     color: '#111827', 
-                    fontSize: '18px', 
-                    fontWeight: '500',
+                    fontSize: '24px', 
+                    fontWeight: '700',
                     margin: 0
                   }}>
-                    {activeSubscription.packageName}
+                    R{getTotalMonthlyCost().toFixed(2)}
                   </p>
                 </div>
                 
@@ -213,7 +256,7 @@ const Billing = () => {
                     fontWeight: '600', 
                     marginBottom: '8px'
                   }}>
-                    Price
+                    Billing Cycle
                   </h3>
                   <p style={{ 
                     color: '#111827', 
@@ -221,7 +264,7 @@ const Billing = () => {
                     fontWeight: '500',
                     margin: 0
                   }}>
-                    {activeSubscription.price === 0 ? 'FREE' : `R${activeSubscription.price.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    Monthly
                   </p>
                 </div>
                 
@@ -232,7 +275,7 @@ const Billing = () => {
                     fontWeight: '600', 
                     marginBottom: '8px'
                   }}>
-                    Duration
+                    Payment Method
                   </h3>
                   <p style={{ 
                     color: '#111827', 
@@ -240,7 +283,7 @@ const Billing = () => {
                     fontWeight: '500',
                     margin: 0
                   }}>
-                    {activeSubscription.duration}
+                    PayFast
                   </p>
                 </div>
                 
@@ -254,8 +297,8 @@ const Billing = () => {
                     Status
                   </h3>
                   <div style={{
-                    backgroundColor: getStatusColor(activeSubscription.status).bg,
-                    color: getStatusColor(activeSubscription.status).text,
+                    backgroundColor: '#dcfce7',
+                    color: '#166534',
                     padding: '6px 12px',
                     borderRadius: '20px',
                     fontSize: '12px',
@@ -263,7 +306,7 @@ const Billing = () => {
                     display: 'inline-block',
                     textTransform: 'capitalize'
                   }}>
-                    {activeSubscription.status}
+                    Active
                   </div>
                 </div>
               </div>
@@ -280,38 +323,35 @@ const Billing = () => {
                   fontSize: '14px',
                   margin: '0 0 8px 0'
                 }}>
-                  <strong>Started:</strong> {formatDate(activeSubscription.startDate)}
+                  <strong>Total Active Subjects:</strong> {getActiveSubjects().length}
                 </p>
-                {activeSubscription.endDate && (
-                  <p style={{ 
-                    color: '#6b7280', 
-                    fontSize: '14px',
-                    margin: '0 0 8px 0'
-                  }}>
-                    <strong>Ends:</strong> {formatDate(activeSubscription.endDate)}
-                  </p>
-                )}
-                {activeSubscription.nextBillingDate && (
-                  <p style={{ 
-                    color: '#6b7280', 
-                    fontSize: '14px',
-                    margin: 0
-                  }}>
-                    <strong>Next Billing:</strong> {formatDate(activeSubscription.nextBillingDate)}
-                  </p>
-                )}
+                <p style={{ 
+                  color: '#6b7280', 
+                  fontSize: '14px',
+                  margin: '0 0 8px 0'
+                }}>
+                  <strong>Billing Frequency:</strong> Monthly per subject
+                </p>
+                <p style={{ 
+                  color: '#6b7280', 
+                  fontSize: '14px',
+                  margin: 0
+                }}>
+                  <strong>Next Billing:</strong> {activeSubscription ? formatDate(activeSubscription.nextBillingDate || '') : 'N/A'}
+                </p>
               </div>
             </div>
           )}
 
           {/* Billing History */}
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '16px',
-            padding: '24px',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
-            border: '1px solid #e5e7eb'
-          }}>
+          {billingHistory.length > 0 && (
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              padding: '24px',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
+              border: '1px solid #e5e7eb'
+            }}>
             <h2 style={{ 
               color: '#111827', 
               fontSize: '24px', 
@@ -322,7 +362,7 @@ const Billing = () => {
               gap: '12px'
             }}>
               <span style={{ fontSize: '28px' }}>📊</span>
-              Billing History
+              Subject Enrollment History
             </h2>
 
             <div style={{ overflowX: 'auto' }}>
@@ -341,7 +381,7 @@ const Billing = () => {
                       fontSize: '14px',
                       fontWeight: '600'
                     }}>
-                      Package
+                      Subject
                     </th>
                     <th style={{ 
                       padding: '12px 16px',
@@ -494,6 +534,7 @@ const Billing = () => {
               </table>
             </div>
           </div>
+          )}
 
           {/* Payment Methods */}
           <div style={{
@@ -709,7 +750,7 @@ const Billing = () => {
         </div>
       </div>
       <Footer />
-    </Layout>
+    </DashboardLayout>
   );
 };
 

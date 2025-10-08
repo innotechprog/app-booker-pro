@@ -80,17 +80,38 @@ const AVAILABLE_SUBJECTS = [
   { name: "Tourism", category: "Business", emoji: "✈️" },
 ];
 
+// Helper functions to get subject details
+const getSubjectPrice = (name: string, category: string): number => {
+  const priceMap: { [key: string]: number } = {
+    'Mathematics': 299, 'Physical Science': 349, 'Life Science': 349,
+    'English': 249, 'Afrikaans': 249, 'History': 199, 'Geography': 199,
+    'Accounting': 299, 'Economics': 299, 'Computer Science': 399,
+    'Information Technology': 399
+  };
+  return priceMap[name] || 199;
+};
+
+const getSubjectDescription = (name: string, category: string): string => {
+  return `Comprehensive ${name} course with expert tutors and interactive learning materials.`;
+};
+
+const getSubjectFeatures = (name: string, category: string): string[] => {
+  return [
+    'Live tutoring sessions',
+    'Video tutorials and recordings',
+    'Practice exercises and assessments',
+    'Study guides and notes',
+    'Progress tracking'
+  ];
+};
+
 const LearnerSubjectsPage = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const [profile, setProfile] = useState<any>(null);
-  const [userSubjects, setUserSubjects] = useState<any[]>([]);
-  const [availableSubjects, setAvailableSubjects] = useState<any[]>([]);
+  const [enrolledSubjects, setEnrolledSubjects] = useState<any[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-  const [newSubject, setNewSubject] = useState("");
-  const [showAddSubject, setShowAddSubject] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [subjectSearchQuery, setSubjectSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
   // Sample subject content data
@@ -147,23 +168,52 @@ const LearnerSubjectsPage = () => {
       try {
         setLoading(true);
         
-        // Load user profile
-        const profileResponse = await learnerAPI.getProfile();
-        if (profileResponse.success) {
-          setProfile(profileResponse.profile);
+        // Load enrolled subjects from database
+        if (user?.id) {
+          try {
+            const enrolledResponse = await subjectsAPI.getEnrolled(user.id);
+            if (enrolledResponse.success) {
+              // Transform database subjects to match the expected format
+              const transformedSubjects = enrolledResponse.subjects.map((subject: any) => ({
+                id: `subject-${subject.id}`,
+                name: subject.name,
+                category: subject.category,
+                icon: subject.emoji || '📚',
+                price: getSubjectPrice(subject.name, subject.category),
+                description: getSubjectDescription(subject.name, subject.category),
+                features: getSubjectFeatures(subject.name, subject.category),
+                enrolledDate: subject.enrolled_date,
+                status: 'active',
+                progress: subject.progress || 0
+              }));
+              
+              setEnrolledSubjects(transformedSubjects);
+              
+              // Also update localStorage for backward compatibility
+              localStorage.setItem('enrolledSubjects', JSON.stringify(transformedSubjects));
+            }
+          } catch (error) {
+            console.error('Error loading enrolled subjects:', error);
+            // Fallback to localStorage if database fails
+            const storedSubjects = JSON.parse(localStorage.getItem('enrolledSubjects') || '[]');
+            setEnrolledSubjects(storedSubjects);
+          }
+        } else {
+          // If no user, try localStorage
+          const storedSubjects = JSON.parse(localStorage.getItem('enrolledSubjects') || '[]');
+          setEnrolledSubjects(storedSubjects);
         }
-
-        // Load user subjects
-        const subjectsResponse = await learnerAPI.getSubjects();
-        if (subjectsResponse.success) {
-          setUserSubjects(subjectsResponse.subjects);
+        
+        // Load user profile (keep for compatibility)
+        try {
+          const profileResponse = await learnerAPI.getProfile();
+          if (profileResponse.success) {
+            setProfile(profileResponse.profile);
+          }
+        } catch (error) {
+          console.warn('Could not load profile:', error);
         }
-
-        // Load available subjects
-        const availableResponse = await subjectsAPI.getAll();
-        if (availableResponse.success) {
-          setAvailableSubjects(availableResponse.subjects);
-        }
+        
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -174,77 +224,57 @@ const LearnerSubjectsPage = () => {
     loadData();
   }, [isAuthenticated, navigate]);
 
-  const addSubjectFromList = async (subjectName: string) => {
-    const currentSubjects = userSubjects.map(s => s.name);
-    if (currentSubjects.includes(subjectName)) {
-      alert("This subject is already added!");
+  const removeSubject = async (subjectId: string) => {
+    if (!user?.id) {
+      alert('User not found. Please log in again.');
       return;
     }
 
     try {
-      const response = await learnerAPI.addSubject(subjectName);
+      // Extract actual subject ID (remove 'subject-' prefix)
+      const actualSubjectId = parseInt(subjectId.replace('subject-', ''));
+      
+      // Unenroll from database
+      const response = await subjectsAPI.unenroll(user.id, actualSubjectId);
+      
       if (response.success) {
-        // Reload user subjects
-        const subjectsResponse = await learnerAPI.getSubjects();
-        if (subjectsResponse.success) {
-          setUserSubjects(subjectsResponse.subjects);
+        // Update local state
+        const updatedSubjects = enrolledSubjects.filter(subject => subject.id !== subjectId);
+        setEnrolledSubjects(updatedSubjects);
+        localStorage.setItem('enrolledSubjects', JSON.stringify(updatedSubjects));
+        
+        if (selectedSubject === subjectId) {
+          setSelectedSubject(null);
         }
+        
+        // Show success message
+        alert('Subject unenrolled successfully!');
+      } else {
+        alert('Failed to unenroll subject. Please try again.');
       }
     } catch (error) {
-      console.error('Error adding subject:', error);
-      alert('Failed to add subject. Please try again.');
-    }
-
-    setSubjectSearchQuery("");
-    setShowAddSubject(false);
-  };
-
-  const removeSubject = async (subjectName: string) => {
-    const subject = userSubjects.find(s => s.name === subjectName);
-    if (!subject) return;
-
-    try {
-      const response = await learnerAPI.removeSubject(subject.id);
-      if (response.success) {
-        // Reload user subjects
-        const subjectsResponse = await learnerAPI.getSubjects();
-        if (subjectsResponse.success) {
-          setUserSubjects(subjectsResponse.subjects);
-        }
-      }
-    } catch (error) {
-      console.error('Error removing subject:', error);
-      alert('Failed to remove subject. Please try again.');
-    }
-
-    if (selectedSubject === subjectName) {
-      setSelectedSubject(null);
+      console.error('Error unenrolling subject:', error);
+      alert('Failed to unenroll subject. Please try again.');
     }
   };
 
-  const subjects = userSubjects.map(s => s.name);
-  const filteredSubjects = userSubjects.filter((s: any) =>
-    s.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredSubjects = enrolledSubjects.filter((subject: any) =>
+    subject.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Filter available subjects for add dropdown
-  const availableToAdd = availableSubjects.filter(
-    (s) => 
-      !subjects.includes(s.name) && 
-      (s.name.toLowerCase().includes(subjectSearchQuery.toLowerCase()) ||
-       s.category.toLowerCase().includes(subjectSearchQuery.toLowerCase()))
-  );
-
-  const getSubjectEmoji = (subject: string) => {
-    const subjectData = availableSubjects.find(s => s.name === subject) || 
-                       AVAILABLE_SUBJECTS.find(s => s.name === subject);
-    return subjectData?.emoji || '📖';
+  const getSubjectEmoji = (subject: any) => {
+    return subject.icon || '📖';
   };
 
-  const getSubjectCategory = (subject: string) => {
-    const subjectData = availableSubjects.find(s => s.name === subject) || 
-                       AVAILABLE_SUBJECTS.find(s => s.name === subject);
-    return subjectData?.category || 'Other';
+  const getSubjectCategory = (subject: any) => {
+    // Determine category based on subject name or use a default
+    const name = subject.name.toLowerCase();
+    if (name.includes('math')) return 'Mathematics';
+    if (name.includes('science')) return 'Science';
+    if (name.includes('english')) return 'Language';
+    if (name.includes('programming') || name.includes('coding')) return 'Technology';
+    if (name.includes('sat')) return 'Test Preparation';
+    return 'General';
   };
 
   const getSubjectColor = (index: number) => {
@@ -293,68 +323,28 @@ const LearnerSubjectsPage = () => {
               <Card className="bg-white border-gray-200 shadow-sm sticky top-4">
                 <CardHeader className="border-b border-gray-100">
                   <div className="flex items-center justify-between mb-3">
-                    <CardTitle className="flex items-center text-gray-900">
+                    <CardTitle className="flex items-center text-gray-900 text-lg font-semibold">
                       <GraduationCap className="mr-2 h-5 w-5 text-blue-600" />
-                      All Subjects ({subjects.length})
+                      Enrolled Subjects ({enrolledSubjects.length})
                     </CardTitle>
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => setShowAddSubject(!showAddSubject)}
+                      onClick={() => navigate('/learner/packages')}
                     >
-                      <Plus className="h-4 w-4" />
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Subjects
                     </Button>
                   </div>
 
-                  {/* Add Subject Dropdown */}
-                  {showAddSubject && (
-                    <div className="space-y-2">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <Input
-                          value={subjectSearchQuery}
-                          onChange={(e) => setSubjectSearchQuery(e.target.value)}
-                          placeholder="Search subjects to add..."
-                          className="pl-9"
-                        />
-                      </div>
-                      <div className="max-h-[300px] overflow-y-auto bg-white border border-gray-200 rounded-md">
-                        {availableToAdd.length === 0 ? (
-                          <div className="text-center py-4 text-gray-500 text-sm">
-                            {subjectSearchQuery ? 'No subjects match your search' : 'All available subjects added'}
-                          </div>
-                        ) : (
-                          <div className="divide-y divide-gray-100">
-                            {availableToAdd.map((subject) => (
-                              <div
-                                key={subject.name}
-                                className="p-3 hover:bg-blue-50 cursor-pointer transition-colors"
-                                onClick={() => addSubjectFromList(subject.name)}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <span className="text-2xl">{subject.emoji}</span>
-                                  <div className="flex-1">
-                                    <p className="font-semibold text-sm text-gray-900">{subject.name}</p>
-                                    <Badge variant="outline" className="text-xs mt-1">{subject.category}</Badge>
-                                  </div>
-                                  <Plus className="h-4 w-4 text-gray-400" />
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
                   {/* Search */}
-                  {subjects.length > 0 && (
+                  {enrolledSubjects.length > 0 && (
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <Input
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search subjects..."
+                        placeholder="Search enrolled subjects..."
                         className="pl-9"
                       />
                     </div>
@@ -366,14 +356,14 @@ const LearnerSubjectsPage = () => {
                     <div className="text-center py-12 px-4">
                       <GraduationCap className="h-16 w-16 mx-auto mb-4 text-gray-300" />
                       <p className="text-gray-500 mb-4">
-                        {subjects.length === 0
-                          ? "No subjects added yet"
+                        {enrolledSubjects.length === 0
+                          ? "No subjects enrolled yet"
                           : "No subjects match your search"}
                       </p>
-                      {subjects.length === 0 && (
-                        <Button onClick={() => setShowAddSubject(true)} size="sm">
+                      {enrolledSubjects.length === 0 && (
+                        <Button onClick={() => navigate('/learner/packages')} size="sm">
                           <Plus className="h-4 w-4 mr-2" />
-                          Add Your First Subject
+                          Enroll in Subjects
                         </Button>
                       )}
                     </div>
@@ -383,20 +373,20 @@ const LearnerSubjectsPage = () => {
                         <div
                           key={subject.id}
                           className={`p-4 cursor-pointer transition-all hover:bg-gray-50 ${
-                            selectedSubject === subject.name ? 'bg-blue-50 border-l-4 border-blue-600' : ''
+                            selectedSubject === subject.id ? 'bg-blue-50 border-l-4 border-blue-600' : ''
                           }`}
-                          onClick={() => setSelectedSubject(subject.name)}
+                          onClick={() => setSelectedSubject(subject.id)}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3 flex-1">
                               <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${getSubjectColor(idx)} flex items-center justify-center text-2xl`}>
-                                {getSubjectEmoji(subject.name)}
+                                {getSubjectEmoji(subject)}
                               </div>
                               <div className="flex-1">
                                 <p className="font-semibold text-gray-900">{subject.name}</p>
                                 <div className="flex items-center gap-2 mt-1">
-                                  <Badge variant="outline" className="text-xs">{getSubjectCategory(subject.name)}</Badge>
-                                  <span className="text-xs text-gray-500">{subject.progress || 0}% complete</span>
+                                  <Badge variant="outline" className="text-xs">{getSubjectCategory(subject)}</Badge>
+                                  <span className="text-xs text-gray-500">R{subject.price}/month</span>
                                 </div>
                               </div>
                             </div>
@@ -405,9 +395,10 @@ const LearnerSubjectsPage = () => {
                               size="icon"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                removeSubject(subject.name);
+                                removeSubject(subject.id);
                               }}
                               className="text-gray-400 hover:text-red-600"
+                              title="Unenroll from this subject"
                             >
                               <X className="h-4 w-4" />
                             </Button>
@@ -430,7 +421,7 @@ const LearnerSubjectsPage = () => {
                       Select a Subject
                     </h3>
                     <p className="text-gray-500">
-                      Click on any subject from the left to view its content, tutorials, and resources
+                      Click on any enrolled subject from the left to view its content, tutorials, and resources
                     </p>
                   </CardContent>
                 </Card>
@@ -442,10 +433,18 @@ const LearnerSubjectsPage = () => {
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-4">
                           <div className="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center text-4xl">
-                            {getSubjectEmoji(selectedSubject)}
+                            {(() => {
+                              const subject = enrolledSubjects.find(s => s.id === selectedSubject);
+                              return getSubjectEmoji(subject);
+                            })()}
                           </div>
                           <div>
-                            <h2 className="text-3xl font-bold mb-2">{selectedSubject}</h2>
+                            <h2 className="text-3xl font-bold mb-2">
+                              {(() => {
+                                const subject = enrolledSubjects.find(s => s.id === selectedSubject);
+                                return subject?.name || 'Unknown Subject';
+                              })()}
+                            </h2>
                             <div className="flex items-center gap-4 text-sm text-blue-100">
                               <span className="flex items-center gap-1">
                                 <BookOpen className="h-4 w-4" />

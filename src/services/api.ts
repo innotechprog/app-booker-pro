@@ -277,6 +277,24 @@ export const subjectsAPI = {
 
   getCategories: async () => {
     return await fetch(`${API_BASE_URL}/subjects/categories`).then(r => r.json());
+  },
+
+  enroll: async (userId: number, subjectIds: number[]) => {
+    return await fetchWithAuth('/subjects/enroll', {
+      method: 'POST',
+      body: JSON.stringify({ userId, subjectIds })
+    });
+  },
+
+  getEnrolled: async (userId: number) => {
+    return await fetchWithAuth(`/subjects/enrolled/${userId}`);
+  },
+
+  unenroll: async (userId: number, subjectId: number) => {
+    return await fetchWithAuth('/subjects/unenroll', {
+      method: 'DELETE',
+      body: JSON.stringify({ userId, subjectId })
+    });
   }
 };
 

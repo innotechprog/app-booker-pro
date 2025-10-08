@@ -189,10 +189,10 @@ const Invoices = () => {
                     <p className="text-2xl font-bold text-gray-900">
                       {invoices.filter(inv => inv.status === 'pending').length}
                     </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             <Card className="bg-white border-gray-200 shadow-sm">
               <CardContent className="pt-6">
@@ -276,7 +276,7 @@ const Invoices = () => {
                           </p>
                         </div>
                       </div>
-                      </div>
+                    </div>
                       
                     <div className="flex justify-end space-x-2">
                       <Button
@@ -297,11 +297,12 @@ const Invoices = () => {
                         <Download className="h-4 w-4" />
                         <span>Download</span>
                       </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
         </div>
       </div>
       <Footer />
