@@ -73,21 +73,7 @@ app.options('*', cors({
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
-// Rate limiting - more lenient in development
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // Higher limit in development
-  message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  skip: (req) => {
-    // Skip rate limiting for health checks
-    return req.path === '/health';
-  }
-});
-app.use('/api/', limiter);
-
-// Health check
+// Health check (before rate limiting)
 app.get('/health', (req, res) => {
   res.json({
     success: true,
@@ -96,18 +82,19 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Reset rate limit in development (for testing purposes)
-if (process.env.NODE_ENV !== 'production') {
-  app.post('/api/reset-rate-limit', (req, res) => {
-    // Rate limiter stores data in memory, so restarting the server clears it
-    // This endpoint just confirms the server is in development mode
-    res.json({
-      success: true,
-      message: 'Rate limit is stored in memory. Restart the server to clear it, or wait 15 minutes.',
-      note: 'In development mode, rate limit is 1000 requests per 15 minutes'
-    });
-  });
-}
+// Rate limiting - more lenient in development
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // Higher limit in development
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  skip: (req) => {
+    // Skip rate limiting for health checks and reset endpoint
+    return req.path === '/health' || req.path === '/api/reset-rate-limit';
+  }
+});
+app.use('/api/', limiter);
 
 // Routes
 app.use('/api/auth', authRoutes);

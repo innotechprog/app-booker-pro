@@ -9,7 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import SEO from "@/components/SEO";
 import Footer from "@/components/Footer";
-import { ArrowLeft, Search, Star, Clock, Users, MapPin, Eye, Play, Filter, User, BookOpen, TrendingUp, Calendar, Award, MessageCircle, Bot, Send, ThumbsUp, ThumbsDown } from "lucide-react";
+import { ArrowLeft, Search, Star, Clock, Users, MapPin, Eye, Play, Filter, User, BookOpen, TrendingUp, Calendar, Award, MessageCircle, Bot, Send, ThumbsUp, ThumbsDown, Video, CheckCircle } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 import { TutorialItem, mockTutorials, getPersonalizedTutorials } from "@/data/tutorials";
 
 type AvailableTutorialsProps = { hideHeader?: boolean };
@@ -32,6 +35,16 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
   const [upgradeMessage, setUpgradeMessage] = useState("");
   const [discussionQuestion, setDiscussionQuestion] = useState("");
   const [showDiscussion, setShowDiscussion] = useState(false);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [selectedTutorialForBooking, setSelectedTutorialForBooking] = useState<TutorialItem | null>(null);
+  const [bookingData, setBookingData] = useState({
+    date: '',
+    time: '',
+    duration: '1',
+    sessionType: 'online',
+    notes: ''
+  });
+  const [processingBooking, setProcessingBooking] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Check if learner is logged in
@@ -45,8 +58,53 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
       setShowLoginPrompt(true);
       return;
     }
-    // Proceed with booking logic here
-    console.log('Booking session for:', tutorial.title);
+    // Set the selected tutorial and show booking modal
+    setSelectedTutorialForBooking(tutorial);
+    setBookingData({
+      date: '',
+      time: '',
+      duration: '1',
+      sessionType: 'online',
+      notes: ''
+    });
+    setShowBookingModal(true);
+  };
+
+  // Handle booking submission
+  const handleBookingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!bookingData.date || !bookingData.time) {
+      toast.error("Please select date and time for the session");
+      return;
+    }
+
+    if (!selectedTutorialForBooking) {
+      toast.error("No tutorial selected");
+      return;
+    }
+
+    setProcessingBooking(true);
+
+    try {
+      // Simulate API call - replace with actual API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      toast.success("Live session booked successfully! You will receive a confirmation email shortly.");
+      setShowBookingModal(false);
+      setSelectedTutorialForBooking(null);
+      setBookingData({
+        date: '',
+        time: '',
+        duration: '1',
+        sessionType: 'online',
+        notes: ''
+      });
+    } catch (error) {
+      toast.error("Failed to book session. Please try again.");
+    } finally {
+      setProcessingBooking(false);
+    }
   };
 
   // Handle access restricted features
@@ -569,22 +627,23 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
                   )}
                 </div>
 
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => openVideoModal(tutorial)}
-                  >
-                    <Play className="mr-1 h-3 w-3" />
-                    Watch
-                  </Button>
+                <div className="flex flex-col gap-2">
                   <Button
                     size="sm"
                     variant="outline"
-                    className="flex-1"
+                    className="w-full"
+                    onClick={() => openVideoModal(tutorial)}
+                  >
+                    <Play className="mr-1 h-3 w-3" />
+                    Watch Tutorial
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={() => handleBookSession(tutorial)}
                   >
-                    Book Session
+                    <Video className="mr-1 h-3 w-3" />
+                    Book Live Session
                   </Button>
                 </div>
               </CardContent>
@@ -705,16 +764,19 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
                       </p>
 
                       <div className="space-y-2">
-                        <Button className="w-full" size="sm">
+                        <Button className="w-full" size="sm" onClick={() => openVideoModal(selectedVideo)}>
                           <Play className="mr-1 h-3 w-3" />
                           Watch Full Tutorial
                         </Button>
                         <Button 
-                          className="w-full" 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleBookSession(selectedVideo)}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
+                          size="sm"
+                          onClick={() => {
+                            setShowVideoModal(false);
+                            handleBookSession(selectedVideo);
+                          }}
                         >
+                          <Video className="mr-1 h-3 w-3" />
                           Book Live Session
                         </Button>
                       </div>
@@ -833,6 +895,226 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Book Live Session Modal */}
+      <Dialog open={showBookingModal} onOpenChange={setShowBookingModal}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Video className="h-5 w-5 text-blue-600" />
+              Book Live Session
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedTutorialForBooking && (
+            <form onSubmit={handleBookingSubmit} className="space-y-6">
+              {/* Tutorial Info */}
+              <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-4">
+                    <img
+                      src={selectedTutorialForBooking.videoThumbnail}
+                      alt={selectedTutorialForBooking.title}
+                      className="w-20 h-20 rounded-lg object-cover"
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 mb-1">
+                        {selectedTutorialForBooking.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {selectedTutorialForBooking.subject} • {selectedTutorialForBooking.grade}
+                      </p>
+                      <div className="flex items-center gap-3 text-sm text-gray-600">
+                        <div className="flex items-center">
+                          <User className="h-4 w-4 mr-1" />
+                          {selectedTutorialForBooking.tutor}
+                        </div>
+                        <div className="flex items-center">
+                          <Star className="h-4 w-4 mr-1 text-yellow-500 fill-current" />
+                          {selectedTutorialForBooking.rating}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Booking Form */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Date */}
+                  <div className="space-y-2">
+                    <Label htmlFor="booking-date" className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Session Date *
+                    </Label>
+                    <Input
+                      id="booking-date"
+                      type="date"
+                      value={bookingData.date}
+                      onChange={(e) => setBookingData({ ...bookingData, date: e.target.value })}
+                      min={new Date().toISOString().split('T')[0]}
+                      required
+                      className="w-full"
+                    />
+                  </div>
+
+                  {/* Time */}
+                  <div className="space-y-2">
+                    <Label htmlFor="booking-time" className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Session Time *
+                    </Label>
+                    <Input
+                      id="booking-time"
+                      type="time"
+                      value={bookingData.time}
+                      onChange={(e) => setBookingData({ ...bookingData, time: e.target.value })}
+                      required
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Duration */}
+                  <div className="space-y-2">
+                    <Label htmlFor="booking-duration">Duration (hours) *</Label>
+                    <Select
+                      value={bookingData.duration}
+                      onValueChange={(value) => setBookingData({ ...bookingData, duration: value })}
+                    >
+                      <SelectTrigger id="booking-duration">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 hour</SelectItem>
+                        <SelectItem value="1.5">1.5 hours</SelectItem>
+                        <SelectItem value="2">2 hours</SelectItem>
+                        <SelectItem value="2.5">2.5 hours</SelectItem>
+                        <SelectItem value="3">3 hours</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Session Type */}
+                  <div className="space-y-2">
+                    <Label htmlFor="booking-type">Session Type *</Label>
+                    <Select
+                      value={bookingData.sessionType}
+                      onValueChange={(value) => setBookingData({ ...bookingData, sessionType: value })}
+                    >
+                      <SelectTrigger id="booking-type">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="online">Online</SelectItem>
+                        <SelectItem value="in-person">In-Person</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div className="space-y-2">
+                  <Label htmlFor="booking-notes">Additional Notes (Optional)</Label>
+                  <Textarea
+                    id="booking-notes"
+                    value={bookingData.notes}
+                    onChange={(e) => setBookingData({ ...bookingData, notes: e.target.value })}
+                    placeholder="Any specific topics you'd like to focus on or questions you have..."
+                    rows={4}
+                    className="resize-none"
+                  />
+                </div>
+
+                {/* Session Summary */}
+                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                  <h4 className="font-semibold text-gray-900 mb-3">Session Summary</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-gray-600">Subject:</span>
+                      <p className="font-medium text-gray-900">{selectedTutorialForBooking.subject}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Grade:</span>
+                      <p className="font-medium text-gray-900">{selectedTutorialForBooking.grade}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Tutor:</span>
+                      <p className="font-medium text-gray-900">{selectedTutorialForBooking.tutor}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Duration:</span>
+                      <p className="font-medium text-gray-900">{bookingData.duration} hour(s)</p>
+                    </div>
+                    {bookingData.date && (
+                      <div>
+                        <span className="text-gray-600">Date:</span>
+                        <p className="font-medium text-gray-900">
+                          {new Date(bookingData.date).toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                    )}
+                    {bookingData.time && (
+                      <div>
+                        <span className="text-gray-600">Time:</span>
+                        <p className="font-medium text-gray-900">
+                          {(() => {
+                            const [hours, minutes] = bookingData.time.split(':');
+                            const hour = parseInt(hours);
+                            const ampm = hour >= 12 ? 'PM' : 'AM';
+                            const displayHour = hour % 12 || 12;
+                            return `${displayHour}:${minutes} ${ampm}`;
+                          })()}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowBookingModal(false);
+                    setSelectedTutorialForBooking(null);
+                  }}
+                  className="flex-1"
+                  disabled={processingBooking}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  disabled={processingBooking || !bookingData.date || !bookingData.time}
+                >
+                  {processingBooking ? (
+                    <>
+                      <Clock className="mr-2 h-4 w-4 animate-spin" />
+                      Booking...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Confirm Booking
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
 
