@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AccessLevel, getUserAccessLevel, canAccess, needsUpgrade, getUpgradeMessage } from "@/utils/accessControl";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import SEO from "@/components/SEO";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/contexts/AuthContext";
+import { subjectsAPI } from "@/services/api";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { 
   ArrowLeft, 
   Star, 
@@ -312,12 +316,54 @@ const TutorProfile = () => {
   const [upgradeMessage, setUpgradeMessage] = useState("");
   const [discussionQuestion, setDiscussionQuestion] = useState("");
   const [showDiscussion, setShowDiscussion] = useState(false);
+  const [enrolledSubjects, setEnrolledSubjects] = useState<string[]>([]);
+  const [discussionThreads, setDiscussionThreads] = useState<any[]>([]);
+  const { user, isAuthenticated } = useAuth();
 
   // Check if learner is logged in
   const isLearnerLoggedIn = () => {
-    const learnerData = localStorage.getItem('learnerData');
-    return learnerData !== null;
+    return (localStorage.getItem('learnerData') || localStorage.getItem('learner_current')) !== null || isAuthenticated;
   };
+
+  // Load enrolled subjects
+  useEffect(() => {
+    const loadEnrolledSubjects = async () => {
+      if (isAuthenticated && user?.id) {
+        try {
+          const response = await subjectsAPI.getEnrolled(user.id);
+          if (response.success) {
+            const subjectNames = response.subjects.map((s: any) => s.name || s.subject_name);
+            setEnrolledSubjects(subjectNames);
+          }
+        } catch (error) {
+          console.error('Error loading enrolled subjects:', error);
+          const stored = localStorage.getItem('enrolledSubjects');
+          if (stored) {
+            try {
+              const parsed = JSON.parse(stored);
+              const names = parsed.map((s: any) => s.name);
+              setEnrolledSubjects(names);
+            } catch (e) {
+              console.error('Error parsing stored subjects:', e);
+            }
+          }
+        }
+      } else {
+        const stored = localStorage.getItem('enrolledSubjects');
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            const names = parsed.map((s: any) => s.name);
+            setEnrolledSubjects(names);
+          } catch (e) {
+            console.error('Error parsing stored subjects:', e);
+          }
+        }
+      }
+    };
+
+    loadEnrolledSubjects();
+  }, [isAuthenticated, user]);
 
   // Find tutor profile
   const tutor = mockTutorProfiles.find(t => t.id === tutorId);
@@ -327,6 +373,26 @@ const TutorProfile = () => {
     if (!tutor) return [];
     return mockTutorials.filter(t => t.tutor === tutor.name);
   }, [tutor]);
+
+  // Check if learner is enrolled in a subject that the tutor teaches
+  const isEnrolledInTutorSubject = () => {
+    if (!isLearnerLoggedIn()) return false;
+    if (!tutor) return false;
+    if (enrolledSubjects.length === 0) return false;
+    
+    // Check if any enrolled subject matches the tutor's specializations
+    return tutor.specializations.some(specialization => 
+      enrolledSubjects.some(enrolled => 
+        enrolled.toLowerCase().includes(specialization.toLowerCase()) ||
+        specialization.toLowerCase().includes(enrolled.toLowerCase())
+      )
+    ) || tutorTutorials.some(tutorial =>
+      enrolledSubjects.some(enrolled =>
+        enrolled.toLowerCase().includes(tutorial.subject.toLowerCase()) ||
+        tutorial.subject.toLowerCase().includes(enrolled.toLowerCase())
+      )
+    );
+  };
 
   // Sort tutorials
   const sortedTutorials = useMemo(() => {
@@ -409,16 +475,34 @@ const TutorProfile = () => {
 
   const handleSubmitQuestion = () => {
     if (!discussionQuestion.trim()) return;
-    
-    if (!canAccess(AccessLevel.REGISTERED)) {
-      handleAccessRestricted(AccessLevel.REGISTERED);
+    if (!isLearnerLoggedIn()) {
+      toast.error("Please log in to ask questions");
       return;
     }
     
-    // In a real app, this would submit to backend
-    alert(`Question submitted: "${discussionQuestion}"`);
+    const newQuestion = {
+      id: Date.now(),
+      question: discussionQuestion,
+      answer: null,
+      answeredBy: null,
+      timestamp: "Just now",
+      likes: 0,
+      isLiked: false,
+      user: user?.fullName || "You"
+    };
+    
+    setDiscussionThreads(prev => [newQuestion, ...prev]);
+    toast.success("Question submitted! It will be answered soon.");
     setDiscussionQuestion("");
   };
+
+  // Load discussion threads when video modal opens
+  useEffect(() => {
+    if (selectedVideo && showDiscussion) {
+      const threads = getDiscussionData(selectedVideo.id);
+      setDiscussionThreads(threads);
+    }
+  }, [selectedVideo, showDiscussion]);
 
   if (!tutor) {
     return (
@@ -929,14 +1013,14 @@ const TutorProfile = () => {
                         />
                         <div className="flex justify-between items-center">
                           <p className="text-xs text-gray-500">
-                            {canAccess(AccessLevel.REGISTERED) 
+                            {isLearnerLoggedIn() 
                               ? "Your question will be answered by AI or the tutor" 
-                              : "Register to ask questions"
+                              : "Log in to ask questions"
                             }
                           </p>
                           <Button 
                             onClick={handleSubmitQuestion}
-                            disabled={!discussionQuestion.trim()}
+                            disabled={!discussionQuestion.trim() || !isLearnerLoggedIn()}
                             className="bg-blue-600 hover:bg-blue-700 text-white"
                           >
                             <Send className="h-4 w-4 mr-2" />
@@ -949,7 +1033,7 @@ const TutorProfile = () => {
                     {/* Discussion Thread */}
                     <div className="space-y-4">
                       <h4 className="font-semibold text-gray-900">Recent Questions & Answers</h4>
-                      {getDiscussionData(selectedVideo.id).map((discussion) => (
+                      {discussionThreads.length > 0 ? discussionThreads.map((discussion) => (
                         <div key={discussion.id} className="border border-gray-200 rounded-lg p-4">
                           <div className="space-y-3">
                             {/* Question */}
@@ -986,17 +1070,28 @@ const TutorProfile = () => {
 
                             {/* Like Button */}
                             <div className="flex items-center space-x-4">
-                              <button className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors">
+                              <button 
+                                className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors"
+                                onClick={() => {
+                                  setDiscussionThreads(prev => prev.map(t => 
+                                    t.id === discussion.id 
+                                      ? { ...t, isLiked: !t.isLiked, likes: t.isLiked ? t.likes - 1 : t.likes + 1 }
+                                      : t
+                                  ));
+                                }}
+                              >
                                 <ThumbsUp className={`h-4 w-4 ${discussion.isLiked ? 'text-blue-600' : ''}`} />
                                 <span className="text-sm">{discussion.likes}</span>
-                              </button>
-                              <button className="flex items-center space-x-1 text-gray-500 hover:text-gray-700 transition-colors">
-                                <ThumbsDown className="h-4 w-4" />
                               </button>
                             </div>
                           </div>
                         </div>
-                      ))}
+                      )) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                          <p>No questions yet. Be the first to ask!</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </>
@@ -1116,3 +1211,4 @@ const TutorProfile = () => {
 };
 
 export default TutorProfile;
+

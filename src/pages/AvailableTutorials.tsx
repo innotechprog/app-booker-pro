@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AccessLevel, getUserAccessLevel, canAccess, needsUpgrade, getUpgradeMessage } from "@/utils/accessControl";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import SEO from "@/components/SEO";
 import Footer from "@/components/Footer";
-import { ArrowLeft, Search, Star, Clock, Users, MapPin, Eye, Play, Filter, User, BookOpen, TrendingUp, Calendar, Award, MessageCircle, Bot, Send, ThumbsUp, ThumbsDown, Video, CheckCircle } from "lucide-react";
+import { ArrowLeft, Search, Star, Clock, Users, MapPin, Eye, Play, Filter, User, BookOpen, TrendingUp, Calendar, Award, MessageCircle, Bot, Send, ThumbsUp, ThumbsDown, Video, CheckCircle, ExternalLink } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { TutorialItem, mockTutorials, getPersonalizedTutorials } from "@/data/tutorials";
+import { useAuth } from "@/contexts/AuthContext";
+import { subjectsAPI } from "@/services/api";
 
 type AvailableTutorialsProps = { hideHeader?: boolean };
 
@@ -45,11 +47,79 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
     notes: ''
   });
   const [processingBooking, setProcessingBooking] = useState(false);
+  const [enrolledSubjects, setEnrolledSubjects] = useState<string[]>([]);
+  const [discussionThreads, setDiscussionThreads] = useState<any[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { user, isAuthenticated } = useAuth();
 
   // Check if learner is logged in
   const isLearnerLoggedIn = () => {
-    return (localStorage.getItem('learnerData') || localStorage.getItem('learner_current')) !== null;
+    return (localStorage.getItem('learnerData') || localStorage.getItem('learner_current')) !== null || isAuthenticated;
+  };
+
+  // Load enrolled subjects
+  useEffect(() => {
+    const loadEnrolledSubjects = async () => {
+      if (isAuthenticated && user?.id) {
+        try {
+          const response = await subjectsAPI.getEnrolled(user.id);
+          if (response.success) {
+            const subjectNames = response.subjects.map((s: any) => s.name || s.subject_name);
+            setEnrolledSubjects(subjectNames);
+          }
+        } catch (error) {
+          console.error('Error loading enrolled subjects:', error);
+          // Fallback to localStorage
+          const stored = localStorage.getItem('enrolledSubjects');
+          if (stored) {
+            try {
+              const parsed = JSON.parse(stored);
+              const names = parsed.map((s: any) => s.name);
+              setEnrolledSubjects(names);
+            } catch (e) {
+              console.error('Error parsing stored subjects:', e);
+            }
+          }
+        }
+      } else {
+        // Fallback to localStorage for non-authenticated users
+        const stored = localStorage.getItem('enrolledSubjects');
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            const names = parsed.map((s: any) => s.name);
+            setEnrolledSubjects(names);
+          } catch (e) {
+            console.error('Error parsing stored subjects:', e);
+          }
+        }
+      }
+    };
+
+    loadEnrolledSubjects();
+  }, [isAuthenticated, user]);
+
+  // Check if learner is enrolled in a subject that matches the tutorial
+  const isEnrolledInTutorialSubject = (tutorial: TutorialItem) => {
+    if (!isLearnerLoggedIn()) return false;
+    if (enrolledSubjects.length === 0) return false;
+    
+    // Check if any enrolled subject matches the tutorial subject
+    return enrolledSubjects.some(enrolled => 
+      enrolled.toLowerCase().includes(tutorial.subject.toLowerCase()) ||
+      tutorial.subject.toLowerCase().includes(enrolled.toLowerCase())
+    );
+  };
+
+  // Get tutor ID from tutor name (simple mapping for now)
+  const getTutorId = (tutorName: string) => {
+    const tutorMap: Record<string, string> = {
+      'Dr. Sarah Johnson': 'sarah-johnson',
+      'Prof. Michael Chen': 'michael-chen',
+      'Dr. Emma Williams': 'emma-williams',
+      'Prof. David Brown': 'david-brown',
+    };
+    return tutorMap[tutorName] || tutorName.toLowerCase().replace(/\s+/g, '-');
   };
 
   // Handle booking session with authentication check
@@ -140,10 +210,35 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
   // Handle submit question
   const handleSubmitQuestion = () => {
     if (!discussionQuestion.trim()) return;
-    // In a real app, this would submit to a backend
-    console.log('Submitting question:', discussionQuestion);
+    if (!isLearnerLoggedIn()) {
+      toast.error("Please log in to ask questions");
+      return;
+    }
+    
+    // Add question to discussion threads
+    const newQuestion = {
+      id: Date.now(),
+      question: discussionQuestion,
+      answer: null,
+      answeredBy: null,
+      timestamp: "Just now",
+      likes: 0,
+      isLiked: false,
+      user: user?.fullName || "You"
+    };
+    
+    setDiscussionThreads(prev => [newQuestion, ...prev]);
+    toast.success("Question submitted! It will be answered soon.");
     setDiscussionQuestion("");
   };
+
+  // Load discussion threads when video modal opens
+  useEffect(() => {
+    if (selectedVideo && showDiscussion) {
+      const threads = getDiscussionData(selectedVideo.id);
+      setDiscussionThreads(threads);
+    }
+  }, [selectedVideo, showDiscussion]);
 
   // Open video modal
   const openVideoModal = (tutorial: TutorialItem) => {
@@ -602,16 +697,29 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
                   </Badge>
                 </div>
 
-                <div className="flex items-center mb-3">
-                  <img
-                    src={tutorial.tutorPhoto}
-                    alt={tutorial.tutor}
-                    className="w-8 h-8 rounded-full mr-2"
-                  />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{tutorial.tutor}</p>
-                    <p className="text-xs text-gray-700">{tutorial.school}</p>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center flex-1">
+                    <img
+                      src={tutorial.tutorPhoto}
+                      alt={tutorial.tutor}
+                      className="w-8 h-8 rounded-full mr-2"
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">{tutorial.tutor}</p>
+                      <p className="text-xs text-gray-700">{tutorial.school}</p>
+                    </div>
                   </div>
+                  {isEnrolledInTutorialSubject(tutorial) && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      onClick={() => navigate(`/tutor/${getTutorId(tutorial.tutor)}`)}
+                    >
+                      <User className="h-3 w-3 mr-1" />
+                      View Profile
+                    </Button>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap gap-1 mb-3">
@@ -757,9 +865,9 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
                       </div>
 
                       <p className="text-sm text-gray-600 mb-4">
-                        {canAccess(AccessLevel.REGISTERED) 
+                        {isEnrolledInTutorialSubject(selectedVideo) || canAccess(AccessLevel.REGISTERED)
                           ? selectedVideo.tutorBio 
-                          : "Register to view tutor bio and contact information"
+                          : "Enroll in this subject to view tutor bio and contact information"
                         }
                       </p>
 
@@ -768,6 +876,20 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
                           <Play className="mr-1 h-3 w-3" />
                           Watch Full Tutorial
                         </Button>
+                        {isEnrolledInTutorialSubject(selectedVideo) && (
+                          <Button 
+                            className="w-full" 
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setShowVideoModal(false);
+                              navigate(`/tutor/${getTutorId(selectedVideo.tutor)}`);
+                            }}
+                          >
+                            <User className="mr-1 h-3 w-3" />
+                            View Tutor Profile
+                          </Button>
+                        )}
                         <Button 
                           className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
                           size="sm"
@@ -793,12 +915,11 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
                     <div className="flex items-center text-sm text-gray-600">
                       <Bot className="mr-1 h-4 w-4" />
                       AI Assistant Available
-                      <Badge variant="secondary" className="ml-2">Coming Soon!</Badge>
                     </div>
                   </div>
 
                   {/* Ask Question Form */}
-                  {canAccess(AccessLevel.REGISTERED) ? (
+                  {isLearnerLoggedIn() ? (
                     <div className="mb-6">
                       <div className="flex gap-2">
                         <Input
@@ -806,6 +927,11 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
                           onChange={(e) => setDiscussionQuestion(e.target.value)}
                           placeholder="Ask a question about this tutorial..."
                           className="flex-1"
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter' && discussionQuestion.trim()) {
+                              handleSubmitQuestion();
+                            }
+                          }}
                         />
                         <Button onClick={handleSubmitQuestion} disabled={!discussionQuestion.trim()}>
                           <Send className="h-4 w-4" />
@@ -815,38 +941,70 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
                   ) : (
                     <div className="mb-6 p-4 bg-blue-50 rounded-lg">
                       <p className="text-sm text-blue-800 mb-3">
-                        Please register to ask questions and participate in discussions.
+                        Please log in to ask questions and participate in discussions.
                       </p>
                       <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
-                        <a href="/learner/register">Register</a>
+                        <a href="/learner/login">Log In</a>
                       </Button>
                     </div>
                   )}
 
                   {/* Discussion Threads */}
                   <div className="space-y-4">
-                    {getDiscussionData(selectedVideo.id).map((thread) => (
+                    {discussionThreads.length > 0 ? discussionThreads.map((thread) => (
                       <div key={thread.id} className="border rounded-lg p-4">
                         <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-medium text-gray-900">{thread.question}</h4>
-                          <span className="text-xs text-gray-500">{thread.timestamp}</span>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-3">{thread.answer}</p>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center text-xs text-gray-500">
-                            <span>Answered by {thread.answeredBy}</span>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm font-medium text-gray-700">{thread.user || "Anonymous"}</span>
+                              <span className="text-xs text-gray-500">•</span>
+                              <span className="text-xs text-gray-500">{thread.timestamp}</span>
+                            </div>
+                            <h4 className="font-medium text-gray-900">{thread.question}</h4>
                           </div>
+                        </div>
+                        {thread.answer ? (
+                          <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center mb-2">
+                              <Bot className="h-4 w-4 text-blue-600 mr-2" />
+                              <span className="text-sm font-medium text-gray-700">
+                                {thread.answeredBy || "AI Assistant"}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600">{thread.answer}</p>
+                          </div>
+                        ) : (
+                          <div className="mt-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                            <p className="text-sm text-yellow-800">
+                              <Clock className="h-4 w-4 inline mr-1" />
+                              Waiting for answer...
+                            </p>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-4 mt-3">
                           <Button
                             variant="ghost"
                             size="sm"
                             className={`text-xs ${thread.isLiked ? 'text-blue-600' : 'text-gray-500'}`}
+                            onClick={() => {
+                              setDiscussionThreads(prev => prev.map(t => 
+                                t.id === thread.id 
+                                  ? { ...t, isLiked: !t.isLiked, likes: t.isLiked ? t.likes - 1 : t.likes + 1 }
+                                  : t
+                              ));
+                            }}
                           >
                             <ThumbsUp className="mr-1 h-3 w-3" />
                             {thread.likes}
                           </Button>
                         </div>
                       </div>
-                    ))}
+                    )) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                        <p>No questions yet. Be the first to ask!</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

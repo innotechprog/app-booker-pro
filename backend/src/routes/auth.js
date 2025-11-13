@@ -263,6 +263,134 @@ router.get('/me', protect, async (req, res) => {
   }
 });
 
+// @route   POST /api/auth/google
+// @desc    Login/Register with Google OAuth
+// @access  Public
+router.post('/google', async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Google ID token is required'
+      });
+    }
+
+    // Verify Google ID token
+    const googleResponse = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+    
+    if (!googleResponse.ok) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid Google token'
+      });
+    }
+
+    const googleUser = await googleResponse.json();
+
+    if (!googleUser.email || !googleUser.email_verified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Google email not verified'
+      });
+    }
+
+    // Check if user exists
+    const existingUsers = await query(
+      'SELECT * FROM users WHERE email = ?',
+      [googleUser.email]
+    );
+
+    let user;
+    let userId;
+
+    if (existingUsers.length > 0) {
+      // User exists, log them in
+      user = existingUsers[0];
+      userId = user.id;
+
+      // Update last login
+      await query(
+        'UPDATE study_streaks SET last_login_date = ? WHERE user_id = ?',
+        [new Date().toISOString().split('T')[0], userId]
+      );
+    } else {
+      // New user, create account
+      const fullName = googleUser.name || googleUser.email.split('@')[0];
+      
+      // Create user without password (Google OAuth users don't need password)
+      const result = await query(
+        'INSERT INTO users (full_name, email, password, profile_completion) VALUES (?, ?, ?, ?)',
+        [fullName, googleUser.email, '', 50] // Empty password for OAuth users
+      );
+      
+      userId = result.insertId;
+
+      // Create study streak record
+      await query(
+        'INSERT INTO study_streaks (user_id, current_streak, last_login_date) VALUES (?, ?, ?)',
+        [userId, 1, new Date().toISOString().split('T')[0]]
+      );
+
+      // Add welcome notification
+      await query(
+        'INSERT INTO notifications (user_id, type, message) VALUES (?, ?, ?)',
+        [userId, 'achievement', '🎓 Welcome to the platform! Start learning today.']
+      );
+
+      // Assign free package to new user
+      await query(
+        'INSERT INTO user_packages (user_id, package_id, start_date, is_active) VALUES (?, ?, ?, ?)',
+        [userId, 'free-package-1', new Date().toISOString().split('T')[0], true]
+      );
+
+      user = {
+        id: userId,
+        full_name: fullName,
+        email: googleUser.email,
+        grade: '',
+        is_premium: false,
+        profile_completion: 50
+      };
+    }
+
+    // Get user subjects
+    const userSubjects = await query(
+      'SELECT s.name FROM subjects s INNER JOIN user_subjects us ON s.id = us.subject_id WHERE us.user_id = ?',
+      [userId]
+    );
+
+    // Generate token
+    const token = generateToken(userId);
+
+    res.json({
+      success: true,
+      message: existingUsers.length > 0 ? 'Login successful' : 'Registration successful',
+      token,
+      user: {
+        id: userId,
+        fullName: user.full_name,
+        name: user.full_name,
+        email: user.email,
+        phone: user.phone || '',
+        grade: user.grade || '',
+        goals: user.goals || '',
+        isPremium: user.is_premium || false,
+        profileCompletion: user.profile_completion || 50,
+        subjects: userSubjects.map(s => s.name)
+      }
+    });
+  } catch (error) {
+    console.error('Google OAuth error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error with Google authentication',
+      error: error.message
+    });
+  }
+});
+
 // @route   POST /api/auth/logout
 // @desc    Logout user
 // @access  Private

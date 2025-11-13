@@ -20,6 +20,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (userData: any) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
   refreshUser: () => Promise<void>;
@@ -94,6 +95,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const loginWithGoogle = async (idToken: string) => {
+    try {
+      const response = await authAPI.googleLogin(idToken);
+      
+      if (response.success) {
+        setUser(response.user);
+        // Keep compatibility with existing localStorage checks
+        localStorage.setItem('learner_current', JSON.stringify({ email: response.user.email }));
+        localStorage.setItem('learnerData', JSON.stringify(response.user));
+      } else {
+        throw new Error(response.message || 'Google login failed');
+      }
+    } catch (error: any) {
+      throw new Error(error.message || 'Google login failed');
+    }
+  };
+
   const logout = async () => {
     try {
       await authAPI.logout();
@@ -134,6 +152,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isLoading,
     login,
     register,
+    loginWithGoogle,
     logout,
     updateUser,
     refreshUser
