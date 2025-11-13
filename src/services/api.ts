@@ -19,18 +19,34 @@ const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${url}`, {
-    ...options,
-    headers
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}${url}`, {
+      ...options,
+      headers
+    });
 
-  const data = await response.json();
+    // Check if response is ok before trying to parse JSON
+    if (!response.ok) {
+      let errorMessage = 'API request failed';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch {
+        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
 
-  if (!response.ok) {
-    throw new Error(data.message || 'API request failed');
+    const data = await response.json();
+    return data;
+  } catch (error: any) {
+    // Handle network errors (Failed to fetch)
+    if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+      throw new Error(`Cannot connect to server. Please make sure the backend server is running on ${API_BASE_URL}`);
+    }
+    // Re-throw other errors
+    throw error;
   }
-
-  return data;
 };
 
 // =============================================

@@ -204,10 +204,18 @@ router.post('/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
+    
+    // Check if it's a database connection error
+    if (error.code === 'ECONNRESET' || error.code === 'PROTOCOL_CONNECTION_LOST' || error.code === 'ETIMEDOUT') {
+      return res.status(503).json({
+        success: false,
+        message: 'Database connection error. Please make sure MySQL/XAMPP is running.'
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Error logging in',
-      error: error.message
+      message: error.message || 'Error logging in. Please try again.'
     });
   }
 });

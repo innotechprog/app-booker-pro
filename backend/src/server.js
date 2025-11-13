@@ -73,11 +73,17 @@ app.options('*', cors({
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
-// Rate limiting
+// Rate limiting - more lenient in development
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // Higher limit in development
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  skip: (req) => {
+    // Skip rate limiting for health checks
+    return req.path === '/health';
+  }
 });
 app.use('/api/', limiter);
 
@@ -89,6 +95,19 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+// Reset rate limit in development (for testing purposes)
+if (process.env.NODE_ENV !== 'production') {
+  app.post('/api/reset-rate-limit', (req, res) => {
+    // Rate limiter stores data in memory, so restarting the server clears it
+    // This endpoint just confirms the server is in development mode
+    res.json({
+      success: true,
+      message: 'Rate limit is stored in memory. Restart the server to clear it, or wait 15 minutes.',
+      note: 'In development mode, rate limit is 1000 requests per 15 minutes'
+    });
+  });
+}
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -145,21 +164,24 @@ const startServer = async () => {
     const dbConnected = await testConnection();
     
     if (!dbConnected) {
-      console.error('❌ Failed to connect to database. Please check your configuration.');
-      console.log('💡 Make sure to:');
-      console.log('   1. Copy env.example to .env');
-      console.log('   2. Configure your database settings');
-      console.log('   3. Run: npm run db:setup');
-      process.exit(1);
+      console.warn('⚠️  Database connection failed. Server will start but database operations will fail.');
+      console.warn('💡 Please make sure:');
+      console.warn('   1. MySQL/XAMPP is running');
+      console.warn('   2. Database "app_booker_pro" exists');
+      console.warn('   3. MySQL is accessible on port 3306');
+      console.warn('');
     }
 
     // Start listening
     app.listen(PORT, () => {
       console.log('\n🚀 ========================================');
-      console.log(`🚀 Server running in ${process.env.NODE_ENV} mode`);
+      console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode`);
       console.log(`🚀 Server is running on port ${PORT}`);
       console.log(`🚀 API: http://localhost:${PORT}`);
       console.log(`🚀 Health: http://localhost:${PORT}/health`);
+      if (!dbConnected) {
+        console.log('⚠️  WARNING: Database not connected');
+      }
       console.log('🚀 ========================================\n');
     });
   } catch (error) {

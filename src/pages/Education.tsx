@@ -480,7 +480,7 @@ const Education = () => {
               filteredUniversities.map((university) => {
                 const IconComponent = university.icon;
                 return (
-                  <Card key={university.id} className="group hover:shadow-2xl transition-all duration-300 border-0 shadow-xl bg-white/95 backdrop-blur-sm">
+                  <Card key={university.id} className="group hover:shadow-2xl transition-all duration-300 border-0 shadow-xl bg-white/95 backdrop-blur-sm h-full flex flex-col">
                     <CardHeader className="pb-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center space-x-3">
@@ -507,35 +507,37 @@ const Education = () => {
                       </div>
                     </CardHeader>
                     
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Established:</span>
-                          <span className="font-medium text-gray-900">{university.established}</span>
+                    <CardContent className="flex-1 flex flex-col">
+                      <div className="space-y-4 flex-1">
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Established:</span>
+                            <span className="font-medium text-gray-900">{university.established}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Global Ranking:</span>
+                            <span className="font-medium text-gray-900">{university.ranking}</span>
+                          </div>
                         </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Global Ranking:</span>
-                          <span className="font-medium text-gray-900">{university.ranking}</span>
+                       
+                        <div className="space-y-2">
+                          <h4 className="font-semibold text-gray-900 text-sm">Programs:</h4>
+                          <div className="flex flex-wrap gap-1">
+                            {university.programs.slice(0, 4).map((program, index) => (
+                              <Badge key={index} variant="outline" className="text-xs text-gray-600 border-gray-300">
+                                {program}
+                              </Badge>
+                            ))}
+                            {university.programs.length > 4 && (
+                              <Badge variant="outline" className="text-xs text-gray-600 border-gray-300">
+                                +{university.programs.length - 4} more
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
                      
-                      <div className="space-y-2">
-                        <h4 className="font-semibold text-gray-900 text-sm">Programs:</h4>
-                        <div className="flex flex-wrap gap-1">
-                          {university.programs.slice(0, 4).map((program, index) => (
-                            <Badge key={index} variant="outline" className="text-xs text-gray-600 border-gray-300">
-                              {program}
-                            </Badge>
-                          ))}
-                          {university.programs.length > 4 && (
-                            <Badge variant="outline" className="text-xs text-gray-600 border-gray-300">
-                              +{university.programs.length - 4} more
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                     
-                      <div className="flex space-x-2 pt-4 border-t border-gray-200">
+                      <div className="flex space-x-2 pt-4 border-t border-gray-200 mt-auto">
                         <Button 
                           variant="outline"
                           className="flex-1 text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-800"
@@ -647,37 +649,43 @@ const Education = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <Card className="text-center p-6 border-2 border-green-200 bg-white/80">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <BookOpen className="h-8 w-8 text-green-600" />
+              <Card className="text-center border-2 border-green-200 bg-white/80 h-full flex flex-col">
+                <div className="p-6 flex flex-col h-full">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <BookOpen className="h-8 w-8 text-green-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Personalized Tutorials</h3>
+                  <p className="text-gray-600 mb-4 flex-1">Access tutorials tailored to your grade level and learning preferences.</p>
+                  <Button asChild className="bg-green-600 hover:bg-green-700 text-white mt-auto">
+                    <Link to="/tutorials/available">Browse Tutorials</Link>
+                  </Button>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Personalized Tutorials</h3>
-                <p className="text-gray-600 mb-4">Access tutorials tailored to your grade level and learning preferences.</p>
-                <Button asChild className="bg-green-600 hover:bg-green-700 text-white">
-                  <Link to="/tutorials/available">Browse Tutorials</Link>
-                </Button>
               </Card>
 
-              <Card className="text-center p-6 border-2 border-blue-200 bg-white/80">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="h-8 w-8 text-blue-600" />
+              <Card className="text-center border-2 border-blue-200 bg-white/80 h-full flex flex-col">
+                <div className="p-6 flex flex-col h-full">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Users className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Track Progress</h3>
+                  <p className="text-gray-600 mb-4 flex-1">Monitor your learning journey and see your achievements.</p>
+                  <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white mt-auto">
+                    <Link to="/learner">View Dashboard</Link>
+                  </Button>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Track Progress</h3>
-                <p className="text-gray-600 mb-4">Monitor your learning journey and see your achievements.</p>
-                <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
-                  <Link to="/learner">View Dashboard</Link>
-                </Button>
               </Card>
 
-              <Card className="text-center p-6 border-2 border-purple-200 bg-white/80">
-                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Star className="h-8 w-8 text-purple-600" />
+              <Card className="text-center border-2 border-purple-200 bg-white/80 h-full flex flex-col">
+                <div className="p-6 flex flex-col h-full">
+                  <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Star className="h-8 w-8 text-purple-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Premium Features</h3>
+                  <p className="text-gray-600 mb-4 flex-1">Unlock advanced features and get priority support.</p>
+                  <Button asChild variant="outline" className="border-purple-600 text-purple-600 hover:bg-purple-50 mt-auto">
+                    <Link to="/learner">Upgrade Now</Link>
+                  </Button>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Premium Features</h3>
-                <p className="text-gray-600 mb-4">Unlock advanced features and get priority support.</p>
-                <Button asChild variant="outline" className="border-purple-600 text-purple-600 hover:bg-purple-50">
-                  <Link to="/learner">Upgrade Now</Link>
-                </Button>
               </Card>
             </div>
           </div>
@@ -740,60 +748,63 @@ const Education = () => {
                 {filteredServices.map((service) => {
                   const IconComponent = service.icon;
                   return (
-                    <div key={service.id} className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-                      <div className="flex items-start space-x-6 mb-6">
-                        <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0">
-                          <IconComponent className="h-8 w-8 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="text-2xl font-bold text-gray-900 mb-2">{service.title}</h4>
-                          <div className="flex items-center space-x-4 mb-3">
-                            <div className="flex items-center space-x-1">
-                              <Star className="h-5 w-5 text-yellow-400 fill-current" />
-                              <span className="font-semibold text-gray-900">{service.rating}</span>
+                    <div key={service.id} className="bg-white rounded-3xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 h-full flex flex-col">
+                      <div className="p-8 flex flex-col h-full">
+                        <div className="flex items-start space-x-6 mb-6">
+                          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+                            <IconComponent className="h-8 w-8 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-2xl font-bold text-gray-900 mb-2">{service.title}</h4>
+                            <div className="flex items-center space-x-4 mb-3">
+                              <div className="flex items-center space-x-1">
+                                <Star className="h-5 w-5 text-yellow-400 fill-current" />
+                                <span className="font-semibold text-gray-900">{service.rating}</span>
+                              </div>
+                              <span className="text-gray-400">•</span>
+                              <span className="text-gray-600">{service.reviews} reviews</span>
+                              {service.popular && (
+                                <Badge className="bg-green-100 text-green-800 ml-2">Popular</Badge>
+                              )}
                             </div>
-                            <span className="text-gray-400">•</span>
-                            <span className="text-gray-600">{service.reviews} reviews</span>
-                            {service.popular && (
-                              <Badge className="bg-green-100 text-green-800 ml-2">Popular</Badge>
-                            )}
                           </div>
                         </div>
-                      </div>
-                      
-                      <p className="text-gray-600 text-lg leading-relaxed mb-6">
-                        {service.description}
-                      </p>
-                      
-                      <div className="mb-6">
-                        <h5 className="font-semibold text-gray-900 mb-3">What's Included:</h5>
-                        <div className="grid grid-cols-2 gap-2">
-                          {service.features.map((feature, index) => (
-                            <div key={index} className="flex items-center space-x-2">
-                              <CheckCircle className="h-4 w-4 text-green-500" />
-                              <span className="text-gray-600">{feature}</span>
+                        
+                        <div className="flex-1 flex flex-col">
+                          <p className="text-gray-600 text-lg leading-relaxed mb-6">
+                            {service.description}
+                          </p>
+                          
+                          <div className="mb-6">
+                            <h5 className="font-semibold text-gray-900 mb-3">What's Included:</h5>
+                            <div className="grid grid-cols-2 gap-2">
+                              {service.features.map((feature, index) => (
+                                <div key={index} className="flex items-center space-x-2">
+                                  <CheckCircle className="h-4 w-4 text-green-500" />
+                                  <span className="text-gray-600">{feature}</span>
+                                </div>
+                              ))}
                             </div>
-                          ))}
+                          </div>
+                          
+                          <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 rounded-xl">
+                            <div className="text-center">
+                              <Clock className="h-5 w-5 text-blue-500 mx-auto mb-1" />
+                              <span className="text-sm text-gray-600">{service.duration}</span>
+                            </div>
+                            <div className="text-center">
+                              <DollarSign className="h-5 w-5 text-green-500 mx-auto mb-1" />
+                              <span className="text-sm font-semibold text-gray-900">{service.price}</span>
+                            </div>
+                            <div className="text-center">
+                              <MapPin className="h-5 w-5 text-purple-500 mx-auto mb-1" />
+                              <span className="text-sm text-gray-600">{service.location}</span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 rounded-xl">
-                        <div className="text-center">
-                          <Clock className="h-5 w-5 text-blue-500 mx-auto mb-1" />
-                          <span className="text-sm text-gray-600">{service.duration}</span>
-                        </div>
-                        <div className="text-center">
-                          <DollarSign className="h-5 w-5 text-green-500 mx-auto mb-1" />
-                          <span className="text-sm font-semibold text-gray-900">{service.price}</span>
-                        </div>
-                        <div className="text-center">
-                          <MapPin className="h-5 w-5 text-purple-500 mx-auto mb-1" />
-                          <span className="text-sm text-gray-600">{service.location}</span>
-                        </div>
-                      </div>
-                      
-                      <Button 
-                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:!bg-gradient-to-r hover:!from-blue-800 hover:!to-purple-800 text-white hover:!text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                        
+                        <Button 
+                          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:!bg-gradient-to-r hover:!from-blue-800 hover:!to-purple-800 text-white hover:!text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 mt-auto"
                         onClick={() => {
                           if (service.title === "Academic Tutoring") {
                             navigate("/tutorials");
@@ -805,6 +816,7 @@ const Education = () => {
                         <span>{service.title === "Academic Tutoring" ? "Choose Grade & Subject" : "Get Started"}</span>
                         <ArrowRight className="ml-2 h-5 w-5" />
                       </Button>
+                      </div>
                     </div>
                   );
                 })}
@@ -821,7 +833,7 @@ const Education = () => {
             {filteredServices.map((service) => {
               const IconComponent = service.icon;
               return (
-                <Card key={service.id} className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg">
+                <Card key={service.id} className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg h-full flex flex-col">
                   <CardHeader className="pb-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-3">
@@ -850,40 +862,42 @@ const Education = () => {
                     </div>
                   </CardHeader>
                   
-                  <CardContent className="space-y-4">
-                    <CardDescription className="text-gray-300 leading-relaxed">
-                      {service.description}
-                    </CardDescription>
-                    
-                    <div className="space-y-3">
-                      <h4 className="font-semibold text-gray-100">Features:</h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        {service.features.map((feature, index) => (
-                          <div key={index} className="flex items-center space-x-2">
-                            <CheckCircle className="h-4 w-4 text-green-400" />
-                            <span className="text-sm text-gray-300">{feature}</span>
-                          </div>
-                        ))}
+                  <CardContent className="flex-1 flex flex-col">
+                    <div className="space-y-4 flex-1">
+                      <CardDescription className="text-gray-300 leading-relaxed">
+                        {service.description}
+                      </CardDescription>
+                      
+                      <div className="space-y-3">
+                        <h4 className="font-semibold text-gray-100">Features:</h4>
+                        <div className="grid grid-cols-2 gap-2">
+                          {service.features.map((feature, index) => (
+                            <div key={index} className="flex items-center space-x-2">
+                              <CheckCircle className="h-4 w-4 text-green-400" />
+                              <span className="text-sm text-gray-300">{feature}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-600">
-                      <div className="flex items-center space-x-2">
-                        <Clock className="h-4 w-4 text-gray-300" />
-                        <span className="text-sm text-gray-300">{service.duration}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <DollarSign className="h-4 w-4 text-gray-300" />
-                        <span className="text-sm font-medium text-gray-100">{service.price}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <MapPin className="h-4 w-4 text-gray-300" />
-                        <span className="text-sm text-gray-300">{service.location}</span>
+                      
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-600">
+                        <div className="flex items-center space-x-2">
+                          <Clock className="h-4 w-4 text-gray-300" />
+                          <span className="text-sm text-gray-300">{service.duration}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <DollarSign className="h-4 w-4 text-gray-300" />
+                          <span className="text-sm font-medium text-gray-100">{service.price}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <MapPin className="h-4 w-4 text-gray-300" />
+                          <span className="text-sm text-gray-300">{service.location}</span>
+                        </div>
                       </div>
                     </div>
                     
                     <Button 
-                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:!bg-gradient-to-r hover:!from-blue-800 hover:!to-purple-800 text-white hover:!text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:!bg-gradient-to-r hover:!from-blue-800 hover:!to-purple-800 text-white hover:!text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 mt-auto"
                       onClick={() => {
                         if (service.title === "Academic Tutoring") {
                           navigate("/tutorials");
