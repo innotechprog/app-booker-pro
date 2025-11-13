@@ -65,8 +65,10 @@ const Packages = () => {
             subjects: [subject.name],
             recommended: false,
             isCurrent: false,
-            limitations: []
-          }));
+            limitations: [],
+            // Store original category for filtering
+            originalCategory: subject.category || ''
+          } as ServicePackage & { originalCategory?: string }));
 
           // Filter out already enrolled subjects from database
           let availablePackages = subjectPackages;
@@ -83,6 +85,48 @@ const Packages = () => {
               console.error('Error loading enrolled subjects:', error);
               // Continue without filtering if there's an error
             }
+          }
+          
+          // Apply client-side search filter as fallback/enhancement
+          if (searchQuery.trim()) {
+            const searchLower = searchQuery.toLowerCase().trim();
+            availablePackages = availablePackages.filter(pkg => {
+              const nameMatch = pkg.name.toLowerCase().includes(searchLower);
+              const descMatch = pkg.description.toLowerCase().includes(searchLower);
+              const categoryMatch = pkg.category.toLowerCase().includes(searchLower);
+              const subjectMatch = pkg.subjects.some(subj => subj.toLowerCase().includes(searchLower));
+              return nameMatch || descMatch || categoryMatch || subjectMatch;
+            });
+          }
+          
+          // Apply client-side category filter as fallback/enhancement
+          if (selectedCategory) {
+            availablePackages = availablePackages.filter(pkg => {
+              // Check if the original category from database matches
+              const originalCategory = (pkg as any).originalCategory || '';
+              if (originalCategory === selectedCategory) {
+                return true;
+              }
+              
+              // Fallback: Check if any subject name matches the category keywords
+              const categoryKeywords: Record<string, string[]> = {
+                'Core Subjects': ['mathematics', 'english', 'afrikaans', 'history', 'geography'],
+                'Mathematics': ['mathematics', 'math', 'algebra', 'geometry', 'calculus'],
+                'Sciences': ['physics', 'chemistry', 'biology', 'science', 'physical science', 'life science'],
+                'Technology': ['computer', 'coding', 'programming', 'it', 'technology', 'tech'],
+                'Languages': ['english', 'afrikaans', 'language', 'literature']
+              };
+              
+              const keywords = categoryKeywords[selectedCategory] || [];
+              const subjectNameLower = pkg.name.toLowerCase();
+              const subjectDescLower = pkg.description.toLowerCase();
+              
+              // Check if any keyword matches
+              return keywords.some(keyword => 
+                subjectNameLower.includes(keyword) || 
+                subjectDescLower.includes(keyword)
+              );
+            });
           }
           
           console.log('Available packages count:', availablePackages.length);

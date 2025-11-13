@@ -96,6 +96,21 @@ export const authAPI = {
 
   getCurrentUser: async () => {
     return await fetchWithAuth('/auth/me');
+  },
+
+  googleLogin: async (idToken: string) => {
+    const data = await fetchWithAuth('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ idToken })
+    });
+    
+    if (data.token) {
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('learner_current', JSON.stringify({ email: data.user.email }));
+      localStorage.setItem('learnerData', JSON.stringify(data.user));
+    }
+    
+    return data;
   }
 };
 
