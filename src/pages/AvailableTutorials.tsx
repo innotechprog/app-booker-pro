@@ -244,6 +244,7 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
   const openVideoModal = (tutorial: TutorialItem) => {
     setSelectedVideo(tutorial);
     setShowVideoModal(true);
+    setShowDiscussion(true); // Show discussion by default
   };
 
   // Clear all filters
@@ -779,7 +780,10 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowDiscussion(!showDiscussion)}
+                  onClick={() => {
+                    setShowVideoModal(false);
+                    navigate(`/tutorials/discussion/${selectedVideo.id}`, { state: { tutorial: selectedVideo } });
+                  }}
                 >
                   <MessageCircle className="mr-1 h-3 w-3" />
                   Discussion
@@ -907,107 +911,19 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
                 </div>
               </div>
 
-              {/* Discussion Section */}
-              {showDiscussion && (
-                <div className="border-t pt-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">Discussion</h3>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Bot className="mr-1 h-4 w-4" />
-                      AI Assistant Available
-                    </div>
-                  </div>
-
-                  {/* Ask Question Form */}
-                  {isLearnerLoggedIn() ? (
-                    <div className="mb-6">
-                      <div className="flex gap-2">
-                        <Input
-                          value={discussionQuestion}
-                          onChange={(e) => setDiscussionQuestion(e.target.value)}
-                          placeholder="Ask a question about this tutorial..."
-                          className="flex-1"
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter' && discussionQuestion.trim()) {
-                              handleSubmitQuestion();
-                            }
-                          }}
-                        />
-                        <Button onClick={handleSubmitQuestion} disabled={!discussionQuestion.trim()}>
-                          <Send className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-blue-800 mb-3">
-                        Please log in to ask questions and participate in discussions.
-                      </p>
-                      <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
-                        <a href="/learner/login">Log In</a>
-                      </Button>
-                    </div>
-                  )}
-
-                  {/* Discussion Threads */}
-                  <div className="space-y-4">
-                    {discussionThreads.length > 0 ? discussionThreads.map((thread) => (
-                      <div key={thread.id} className="border rounded-lg p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm font-medium text-gray-700">{thread.user || "Anonymous"}</span>
-                              <span className="text-xs text-gray-500">•</span>
-                              <span className="text-xs text-gray-500">{thread.timestamp}</span>
-                            </div>
-                            <h4 className="font-medium text-gray-900">{thread.question}</h4>
-                          </div>
-                        </div>
-                        {thread.answer ? (
-                          <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                            <div className="flex items-center mb-2">
-                              <Bot className="h-4 w-4 text-blue-600 mr-2" />
-                              <span className="text-sm font-medium text-gray-700">
-                                {thread.answeredBy || "AI Assistant"}
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-600">{thread.answer}</p>
-                          </div>
-                        ) : (
-                          <div className="mt-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                            <p className="text-sm text-yellow-800">
-                              <Clock className="h-4 w-4 inline mr-1" />
-                              Waiting for answer...
-                            </p>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-4 mt-3">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className={`text-xs ${thread.isLiked ? 'text-blue-600' : 'text-gray-500'}`}
-                            onClick={() => {
-                              setDiscussionThreads(prev => prev.map(t => 
-                                t.id === thread.id 
-                                  ? { ...t, isLiked: !t.isLiked, likes: t.isLiked ? t.likes - 1 : t.likes + 1 }
-                                  : t
-                              ));
-                            }}
-                          >
-                            <ThumbsUp className="mr-1 h-3 w-3" />
-                            {thread.likes}
-                          </Button>
-                        </div>
-                      </div>
-                    )) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                        <p>No questions yet. Be the first to ask!</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              {/* Discussion Button */}
+              <div className="border-t pt-6">
+                <Button
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => {
+                    setShowVideoModal(false);
+                    navigate(`/tutorials/discussion/${selectedVideo.id}`, { state: { tutorial: selectedVideo } });
+                  }}
+                >
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  Open Discussion
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>

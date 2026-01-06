@@ -15,7 +15,7 @@ import {
   CheckCircle,
   Star,
   Clock,
-  DollarSign,
+  // DollarSign,
   MapPin,
   Users,
   FileText,
@@ -37,7 +37,7 @@ const ITSolutions = () => {
       description: "Custom website and web application development using modern technologies and best practices",
       features: ["Responsive Design", "E-commerce Solutions", "CMS Development", "API Integration"],
       duration: "2-8 weeks",
-      price: "R5000-50000",
+      price: "R5000",
       rating: 4.9,
       reviews: 127,
       location: "Remote & On-site",
@@ -51,7 +51,7 @@ const ITSolutions = () => {
       description: "Comprehensive IT system maintenance, updates, and optimization for peak performance",
       features: ["Regular Updates", "Security Patches", "Performance Optimization", "Backup Solutions"],
       duration: "Ongoing",
-      price: "R2000-8000/month",
+      price: "R2000/month",
       rating: 4.8,
       reviews: 89,
       location: "Remote & On-site",
@@ -65,40 +65,40 @@ const ITSolutions = () => {
       description: "Professional database design, implementation, and management services",
       features: ["Database Design", "Data Migration", "Performance Tuning", "Security Implementation"],
       duration: "1-4 weeks",
-      price: "R3000-25000",
+      price: "R8000",
       rating: 4.7,
-      reviews: 56,
+      reviews: 52,
       location: "Remote & On-site",
       icon: Database,
       popular: false
     },
     {
       id: 4,
-      title: "Cybersecurity",
-      category: "security",
-      description: "Comprehensive cybersecurity solutions to protect your business from digital threats",
-      features: ["Security Audits", "Firewall Setup", "Vulnerability Assessment", "Incident Response"],
-      duration: "1-6 weeks",
-      price: "R4000-30000",
-      rating: 4.9,
-      reviews: 78,
-      location: "Remote & On-site",
-      icon: Shield,
-      popular: true
-    },
-    {
-      id: 5,
       title: "Mobile App Development",
       category: "development",
       description: "Native and cross-platform mobile application development for iOS and Android",
       features: ["iOS Development", "Android Development", "Cross-platform Apps", "App Store Deployment"],
       duration: "4-12 weeks",
-      price: "R15000-80000",
+      price: "R15000",
       rating: 4.8,
       reviews: 45,
       location: "Remote & On-site",
       icon: Smartphone,
       popular: false
+    },
+    {
+      id: 5,
+      title: "Cybersecurity",
+      category: "security",
+      description: "Comprehensive cybersecurity services to protect your business from threats and vulnerabilities",
+      features: ["Vulnerability Assessment", "Penetration Testing", "Security Audits", "Incident Response"],
+      duration: "2-6 weeks",
+      price: "R7000",
+      rating: 4.9,
+      reviews: 61,
+      location: "Remote & On-site",
+      icon: Shield,
+      popular: true
     },
     {
       id: 6,
@@ -107,7 +107,7 @@ const ITSolutions = () => {
       description: "Cloud migration, setup, and management services for scalable business solutions",
       features: ["Cloud Migration", "AWS/Azure Setup", "Scalability Solutions", "Cost Optimization"],
       duration: "2-8 weeks",
-      price: "R5000-40000",
+      price: "R5000",
       rating: 4.6,
       reviews: 34,
       location: "Remote & On-site",
@@ -167,6 +167,35 @@ const ITSolutions = () => {
         </div>
       </div>
 
+      {/* Our Process Section */}
+      <div className="bg-white py-16">
+        <div className="max-w-6xl mx-auto px-6">
+          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Our Process</h2>
+          <div className="flex flex-col md:flex-row justify-center items-center gap-8">
+            <div className="flex flex-col items-center">
+              <div className="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center mb-2 font-bold text-lg">1</div>
+              <span className="font-medium text-gray-800">Consultation</span>
+              <p className="text-gray-500 text-sm text-center">We discuss your needs and goals to understand your business challenges.</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center mb-2 font-bold text-lg">2</div>
+              <span className="font-medium text-gray-800">Proposal</span>
+              <p className="text-gray-500 text-sm text-center">You receive a tailored solution and transparent quote for your project.</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center mb-2 font-bold text-lg">3</div>
+              <span className="font-medium text-gray-800">Implementation</span>
+              <p className="text-gray-500 text-sm text-center">Our team delivers and deploys your IT solution with minimal disruption.</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center mb-2 font-bold text-lg">4</div>
+              <span className="font-medium text-gray-800">Ongoing Support</span>
+              <p className="text-gray-500 text-sm text-center">We provide continuous support and maintenance to keep you running smoothly.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Categories Filter */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-b from-white to-gray-50"></div>
@@ -198,95 +227,111 @@ const ITSolutions = () => {
                 );
               })}
             </div>
+            {/* Services Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
+              {filteredServices.map((service) => {
+                const IconComponent = service.icon;
+                return (
+                  <Card key={service.id} className="rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 border-0 bg-white flex flex-col">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center gap-2 mb-2">
+                        <IconComponent className="h-7 w-7 text-blue-600" />
+                        <CardTitle className="text-lg font-bold text-blue-900 flex-1">{service.title}</CardTitle>
+                        {service.popular && <Badge className="bg-yellow-400 text-yellow-900 ml-2">Popular</Badge>}
+                      </div>
+                      <CardDescription className="text-gray-600 text-sm mb-2 min-h-[40px]">{service.description}</CardDescription>
+                      <div className="flex items-center gap-1 text-yellow-400 text-xs">
+                        {[...Array(Math.round(service.rating))].map((_, i) => (
+                          <Star key={i} className="h-4 w-4 inline" />
+                        ))}
+                        <span className="ml-2 text-gray-500">({service.reviews} reviews)</span>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="flex-1 flex flex-col gap-4">
+                      <div>
+                        <h4 className="font-medium text-gray-800 mb-2">Features:</h4>
+                        <ul className="list-disc list-inside text-sm text-gray-600">
+                          {service.features.map((feature, index) => (
+                            <li key={index}>{feature}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="flex flex-wrap gap-4 pt-4 border-t border-gray-100 items-center">
+                        <div className="flex items-center space-x-2">
+                          <Clock className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm text-gray-700">{service.duration}</span>
+                        </div>
+                        <div className="flex-1"></div>
+                        <div className="flex items-center space-x-2 ml-auto">
+                          <span className="text-lg font-bold text-blue-700">from R{service.price.replace(/R?/,'')}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <MapPin className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm text-gray-700">{service.location}</span>
+                        </div>
+                      </div>
+                      <Button 
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl shadow-md mt-4"
+                        onClick={() => navigate("/booking", { state: { service: service.title } })}
+                      >
+                        <span>Get This Service</span>
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Services Grid */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-50 to-white"></div>
-        <div className="relative z-10 max-w-6xl mx-auto px-6 py-20">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredServices.map((service) => {
-              const IconComponent = service.icon;
-              return (
-                <Card key={service.id} className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-                          <IconComponent className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                            {service.title}
-                          </CardTitle>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <div className="flex items-center space-x-1">
-                              <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                              <span className="text-sm font-medium text-gray-900">{service.rating}</span>
-                            </div>
-                            <span className="text-gray-400">•</span>
-                            <span className="text-sm text-gray-600">{service.reviews} reviews</span>
-                          </div>
-                        </div>
-                      </div>
-                      {service.popular && (
-                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-                          Popular
-                        </Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-4">
-                    <CardDescription className="text-gray-600 leading-relaxed">
-                      {service.description}
-                    </CardDescription>
-                    
-                    <div className="space-y-3">
-                      <h4 className="font-semibold text-gray-900">Features:</h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        {service.features.map((feature, index) => (
-                          <div key={index} className="flex items-center space-x-2">
-                            <CheckCircle className="h-4 w-4 text-green-500" />
-                            <span className="text-sm text-gray-600">{feature}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200">
-                      <div className="flex items-center space-x-2">
-                        <Clock className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">{service.duration}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <DollarSign className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-900">{service.price}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <MapPin className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">{service.location}</span>
-                      </div>
-                    </div>
-                    
-                    <Button 
-                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:!bg-gradient-to-r hover:!from-blue-800 hover:!to-purple-800 text-white hover:!text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                      onClick={() => navigate("/booking", { state: { service: service.title } })}
-                    >
-                      <span>Get This Service</span>
-                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
+      {/* Why Choose Us Section (now directly after services grid) */}
+      <div className="bg-blue-50 py-16">
+        <div className="max-w-6xl mx-auto px-6 text-center">
+          <h2 className="text-3xl font-bold text-blue-900 mb-6">Why Choose Us?</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="bg-white rounded-xl shadow p-6">
+              <h4 className="font-semibold text-blue-700 mb-2">Expert Team</h4>
+              <p className="text-gray-600 text-sm">Certified professionals with years of experience in IT solutions and support.</p>
+            </div>
+            <div className="bg-white rounded-xl shadow p-6">
+              <h4 className="font-semibold text-blue-700 mb-2">Customer Focused</h4>
+              <p className="text-gray-600 text-sm">We tailor our services to your business needs and provide ongoing support.</p>
+            </div>
+            <div className="bg-white rounded-xl shadow p-6">
+              <h4 className="font-semibold text-blue-700 mb-2">Innovative Solutions</h4>
+              <p className="text-gray-600 text-sm">We use the latest technologies to deliver scalable and secure IT services.</p>
+            </div>
+            <div className="bg-white rounded-xl shadow p-6">
+              <h4 className="font-semibold text-blue-700 mb-2">Proven Results</h4>
+              <p className="text-gray-600 text-sm">Trusted by leading brands and SMEs for reliable IT project delivery.</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Contact Section */}
+        {/* Service Level Guarantees Section */}
+        <div className="bg-blue-50 py-16">
+          <div className="max-w-4xl mx-auto px-6 text-center">
+            <h2 className="text-3xl font-bold text-blue-900 mb-6">Service Level Guarantees</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="bg-white rounded-xl shadow p-6">
+                <h4 className="font-semibold text-blue-700 mb-2">99.9% Uptime</h4>
+                <p className="text-gray-600 text-sm">We guarantee high availability for all managed services.</p>
+              </div>
+              <div className="bg-white rounded-xl shadow p-6">
+                <h4 className="font-semibold text-blue-700 mb-2">24/7 Support</h4>
+                <p className="text-gray-600 text-sm">Our team is available around the clock to resolve your issues quickly.</p>
+              </div>
+              <div className="bg-white rounded-xl shadow p-6">
+                <h4 className="font-semibold text-blue-700 mb-2">Fast Response</h4>
+                <p className="text-gray-600 text-sm">We respond to all support requests within 1 hour during business days.</p>
+              </div>
+            </div>
+          </div>
+        </div>
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-b from-white to-gray-100"></div>
         <div className="relative z-10 py-20 px-6">
@@ -309,6 +354,86 @@ const ITSolutions = () => {
         </div>
       </div>
       
+      {/* Clients Section */}
+      <div className="relative bg-white py-16">
+        <div className="max-w-6xl mx-auto px-6">
+          <h3 className="text-3xl font-bold text-gray-900 mb-8 text-center">Our Clients</h3>
+          <div className="relative">
+            <button
+              type="button"
+              aria-label="Scroll left"
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-blue-600 border border-blue-700 rounded-full shadow p-2 hover:bg-blue-700 transition"
+              onClick={() => {
+                const el = document.getElementById('clients-carousel');
+                if (el) el.scrollBy({ left: -300, behavior: 'smooth' });
+              }}
+            >
+              <svg width="24" height="24" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <div id="clients-carousel" className="overflow-x-auto scroll-smooth" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <style>{`
+                #clients-carousel::-webkit-scrollbar { display: none; }
+              `}</style>
+              <div className="flex gap-8 items-center min-w-[600px] md:min-w-[900px] lg:min-w-[1200px] px-2">
+                {[
+                  {logo: "https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg", name: "React Corp"},
+                  {logo: "https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg", name: "Microsoft"},
+                  {logo: "https://upload.wikimedia.org/wikipedia/commons/6/6a/JavaScript-logo.png", name: "JS Solutions"},
+                  {logo: "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg", name: "Netflix"},
+                  {logo: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg", name: "Google"},
+                  {logo: "https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg", name: "Facebook"},
+                  {logo: "https://upload.wikimedia.org/wikipedia/commons/9/96/SAP_2011_logo.svg", name: "SAP"},
+                  {logo: "https://upload.wikimedia.org/wikipedia/commons/5/5f/IBM_logo.svg", name: "IBM"},
+                  {logo: "https://upload.wikimedia.org/wikipedia/commons/1/1b/Apple_logo_grey.svg", name: "Apple"},
+                  {logo: "https://upload.wikimedia.org/wikipedia/commons/6/6e/Amazon_Web_Services_Logo.svg", name: "AWS"},
+                  {logo: "https://upload.wikimedia.org/wikipedia/commons/2/2c/Adobe_Corporate_Logo.png", name: "Adobe"},
+                  {logo: "https://upload.wikimedia.org/wikipedia/commons/3/3e/PayPal_2014_logo.svg", name: "PayPal"},
+                ].map((client, idx) => (
+                  <div key={idx} className="flex flex-col items-center bg-gray-50 rounded-xl shadow p-4 min-w-[140px] transition-transform hover:scale-105">
+                    <img src={client.logo} alt={client.name} className="h-12 mb-2 object-contain" />
+                    <span className="text-gray-700 text-sm font-medium text-center whitespace-nowrap">{client.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <button
+              type="button"
+              aria-label="Scroll right"
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-blue-600 border border-blue-700 rounded-full shadow p-2 hover:bg-blue-700 transition"
+              onClick={() => {
+                const el = document.getElementById('clients-carousel');
+                if (el) el.scrollBy({ left: 300, behavior: 'smooth' });
+              }}
+            >
+              <svg width="24" height="24" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      {/* FAQ Section */}
+      <div className="bg-white py-16">
+        <div className="max-w-3xl mx-auto px-6">
+          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Frequently Asked Questions</h2>
+          <div className="space-y-6">
+            <div className="bg-gray-50 rounded-xl shadow p-6">
+              <h4 className="font-semibold text-blue-700 mb-2">What types of IT services do you offer?</h4>
+              <p className="text-gray-600 text-sm">We provide web development, system maintenance, cybersecurity, cloud solutions, and more. Contact us for a full list.</p>
+            </div>
+            <div className="bg-gray-50 rounded-xl shadow p-6">
+              <h4 className="font-semibold text-blue-700 mb-2">How do I get a quote?</h4>
+              <p className="text-gray-600 text-sm">Click the "Request Quote" button or contact us directly. We'll discuss your needs and send a tailored proposal.</p>
+            </div>
+            <div className="bg-gray-50 rounded-xl shadow p-6">
+              <h4 className="font-semibold text-blue-700 mb-2">Do you provide ongoing support?</h4>
+              <p className="text-gray-600 text-sm">Yes, we offer ongoing support and maintenance packages for all our IT solutions.</p>
+            </div>
+            <div className="bg-gray-50 rounded-xl shadow p-6">
+              <h4 className="font-semibold text-blue-700 mb-2">What is your response time for support?</h4>
+              <p className="text-gray-600 text-sm">We respond to all support requests within 1 hour during business days, and offer 24/7 emergency support.</p>
+            </div>
+          </div>
+        </div>
+      </div>
       <Footer />
     </Layout>
   );
