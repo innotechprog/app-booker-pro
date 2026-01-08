@@ -133,36 +133,50 @@ const ITSolutions = () => {
   return (
     <Layout>
       <SEO page="it-solutions" />
-      
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 relative overflow-hidden py-20">
-        {/* Background decorative elements */}
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }}></div>
+
+      {/* Hero Section - Modern & Tasty */}
+      <div className="relative bg-gradient-to-br from-blue-900 via-blue-700 to-blue-400 overflow-hidden py-24 flex items-center justify-center min-h-[480px]">
+        {/* Decorative SVG background */}
+        <div className="absolute inset-0 opacity-30 pointer-events-none select-none">
+          <svg width="100%" height="100%" viewBox="0 0 1440 480" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+            <circle cx="1200" cy="100" r="180" fill="#fff" fillOpacity="0.07" />
+            <circle cx="200" cy="400" r="120" fill="#fff" fillOpacity="0.04" />
+            <circle cx="800" cy="300" r="100" fill="#fff" fillOpacity="0.06" />
+          </svg>
         </div>
-        
-        <div className="max-w-7xl mx-auto px-6 text-center relative z-10">
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-            IT Solutions
-          </h1>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed mb-8">
-            Professional IT services including web development, system maintenance, cybersecurity, and cloud solutions to help your business thrive in the digital age.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
-              <CheckCircle className="h-5 w-5 text-white" />
-              <span className="text-white">Expert Developers</span>
+        <div className="relative z-10 w-full max-w-3xl mx-auto px-6">
+          <div className="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-10 flex flex-col items-center">
+            <h1 className="text-5xl md:text-6xl font-extrabold text-white drop-shadow mb-4 tracking-tight">
+              <span className="bg-gradient-to-r from-yellow-300 via-blue-300 to-blue-600 bg-clip-text text-transparent">IT Solutions</span>
+            </h1>
+            <p className="text-lg md:text-2xl text-blue-100 max-w-2xl mx-auto leading-relaxed mb-8 font-medium">
+              Empowering your business with <span className="text-yellow-200 font-bold">modern web, mobile, cloud, and security</span> services for the digital age.
+            </p>
+            <div className="flex flex-wrap justify-center gap-4 mb-8">
+              <div className="flex items-center space-x-2 bg-white/30 backdrop-blur px-4 py-2 rounded-full shadow">
+                <CheckCircle className="h-5 w-5 text-blue-700" />
+                <span className="text-blue-900 font-semibold">Expert Developers</span>
+              </div>
+              <div className="flex items-center space-x-2 bg-white/30 backdrop-blur px-4 py-2 rounded-full shadow">
+                <CheckCircle className="h-5 w-5 text-blue-700" />
+                <span className="text-blue-900 font-semibold">24/7 Support</span>
+              </div>
+              <div className="flex items-center space-x-2 bg-white/30 backdrop-blur px-4 py-2 rounded-full shadow">
+                <CheckCircle className="h-5 w-5 text-blue-700" />
+                <span className="text-blue-900 font-semibold">Modern Technologies</span>
+              </div>
+              <div className="flex items-center space-x-2 bg-white/30 backdrop-blur px-4 py-2 rounded-full shadow">
+                <CheckCircle className="h-5 w-5 text-blue-700" />
+                <span className="text-blue-900 font-semibold">Cloud & Security</span>
+              </div>
             </div>
-            <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
-              <CheckCircle className="h-5 w-5 text-white" />
-              <span className="text-white">24/7 Support</span>
-            </div>
-            <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
-              <CheckCircle className="h-5 w-5 text-white" />
-              <span className="text-white">Modern Technologies</span>
-            </div>
+            <Button
+              className="bg-yellow-400 hover:bg-yellow-300 text-blue-900 font-bold px-8 py-3 rounded-xl shadow-lg text-lg transition-all duration-200"
+              onClick={() => window.scrollTo({ top: 600, behavior: 'smooth' })}
+            >
+              Explore Our Services
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
           </div>
         </div>
       </div>
@@ -345,7 +359,10 @@ const ITSolutions = () => {
                 <Users className="mr-2 h-4 w-4" />
                 Contact Us
               </Button>
-              <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-3 rounded-xl">
+              <Button
+                variant="outline"
+                className="border-gray-300 text-white bg-gray-900 hover:bg-gray-800 hover:text-white px-8 py-3 rounded-xl transition-colors duration-200"
+              >
                 <FileText className="mr-2 h-4 w-4" />
                 Request Quote
               </Button>
