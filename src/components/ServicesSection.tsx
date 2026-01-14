@@ -28,7 +28,7 @@ const ServicesSection = () => {
       name: "Education", 
       icon: GraduationCap, 
       route: "/education",
-      description: "Comprehensive educational support including tutoring, university applications, and career guidance"
+      description: "Comprehensive educational support including tutoring, university applications, and career guidance",
     },
     { 
       name: "Send Me", 
@@ -78,9 +78,18 @@ const ServicesSection = () => {
                   <div className="text-center space-y-2">
                     <h3 className="text-xl font-bold leading-tight">{service.name}</h3>
                     <p className="text-sm text-gray-300 leading-relaxed">{service.description}</p>
+                    {service.features && (
+                      <ul className="mt-2 space-y-1 text-xs text-blue-100">
+                        {service.features.map((feature: string, idx: number) => (
+                          <li key={idx} className="flex items-center justify-center">
+                            <span className="w-1.5 h-1.5 bg-blue-400 rounded-full mr-2"></span>
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 </div>
-                
                 {/* Hover effect overlay */}
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-600/0 to-blue-600/0 group-hover:from-blue-600/10 group-hover:to-blue-600/5 rounded-2xl transition-all duration-300 pointer-events-none"></div>
               </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import LearnerLayout from "@/components/LearnerLayout";
+import AdminHeader from "@/components/AdminHeader";
 
 interface DashboardStats {
   totalTutors: number;
@@ -34,6 +34,7 @@ const AdminEducationalDashboard = () => {
     monthlyRevenue: 0
   });
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
+  const [applicationRequests, setApplicationRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -92,6 +93,20 @@ const AdminEducationalDashboard = () => {
 
       setStats(mockStats);
       setRecentActivity(mockActivity);
+
+      // Fetch application assist requests from backend
+      try {
+        const res = await fetch("/api/application-help/all-requests");
+        const data = await res.json();
+        if (data.success) {
+          setApplicationRequests(data.requests);
+        } else {
+          setApplicationRequests([]);
+        }
+      } catch {
+        setApplicationRequests([]);
+      }
+      
       setLoading(false);
     };
 
@@ -140,35 +155,34 @@ const AdminEducationalDashboard = () => {
 
   if (loading) {
     return (
-      <LearnerLayout>
-        <div style={{ 
-          minHeight: '100vh', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          backgroundColor: '#f9fafb'
-        }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ 
-              width: '50px', 
-              height: '50px', 
-              border: '4px solid #e5e7eb',
-              borderTop: '4px solid #3b82f6',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              margin: '0 auto 20px'
-            }}></div>
-            <h2 style={{ color: '#374151', fontSize: '18px', fontWeight: '600' }}>
-              Loading admin dashboard...
-            </h2>
-          </div>
+      <div style={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        backgroundColor: '#f9fafb'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ 
+            width: '50px', 
+            height: '50px', 
+            border: '4px solid #e5e7eb',
+            borderTop: '4px solid #3b82f6',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 20px'
+          }}></div>
+          <h2 style={{ color: '#374151', fontSize: '18px', fontWeight: '600' }}>
+            Loading admin dashboard...
+          </h2>
         </div>
-      </LearnerLayout>
+      </div>
     );
   }
 
   return (
-    <LearnerLayout>
+    <>
+      <AdminHeader />
       <div style={{ 
         minHeight: '100vh', 
         backgroundColor: '#f9fafb',
@@ -372,6 +386,38 @@ const AdminEducationalDashboard = () => {
             </div>
           </div>
 
+          {/* Application Assist Requests Section */}
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+            border: '1px solid #e5e7eb',
+            marginBottom: '32px',
+          }}>
+            <h2 style={{ color: '#111827', fontSize: '22px', fontWeight: '700', marginBottom: '16px' }}>
+              Application Assist Requests
+            </h2>
+            {applicationRequests.length === 0 ? (
+              <p style={{ color: '#6b7280', fontSize: '15px' }}>No requests found.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {applicationRequests.map((req, idx) => (
+                  <div key={idx} style={{
+                    background: '#f3f4f6',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    border: '1px solid #e5e7eb',
+                  }}>
+                    <div style={{ fontWeight: 600, color: '#111827', marginBottom: 4 }}>{req.name} ({req.email}, {req.cellphone})</div>
+                    <div style={{ color: '#374151', fontSize: 14, marginBottom: 4 }}>{req.message || <span style={{color:'#9ca3af'}}>No message</span>}</div>
+                    <div style={{ color: '#6b7280', fontSize: 12 }}>Requested: {req.createdAt ? new Date(req.createdAt).toLocaleString() : 'Unknown'}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Recent Activity */}
           <div style={{
             backgroundColor: 'white',
@@ -441,7 +487,7 @@ const AdminEducationalDashboard = () => {
           </div>
         </div>
       </div>
-    </LearnerLayout>
+    </>
   );
 };
 

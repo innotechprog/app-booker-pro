@@ -1,11 +1,14 @@
 import Layout from "@/components/Layout";
 import Hero from "@/components/Hero";
 import ServicesSection from "@/components/ServicesSection";
+// import { useState } from "react";
+// import { Dialog } from "@/components/ui/dialog";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 
 const Index = () => {
+
   return (
     <Layout>
       <SEO page="home" />
@@ -18,7 +21,7 @@ const Index = () => {
         </div>
         <Hero />
       </div>
-      
+
       {/* Services section with enhanced styling */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-b from-white to-gray-50"></div>
@@ -26,7 +29,6 @@ const Index = () => {
           <ServicesSection />
         </div>
       </div>
-      
       {/* Contact section with enhanced styling */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-b from-gray-50 to-gray-100"></div>
@@ -34,7 +36,7 @@ const Index = () => {
           <Contact />
         </div>
       </div>
-      
+
       {/* Footer hidden for logged-in learners */}
       {localStorage.getItem('learnerData') === null && <Footer />}
     </Layout>

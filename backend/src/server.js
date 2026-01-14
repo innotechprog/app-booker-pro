@@ -15,6 +15,7 @@ import tutorialsRoutes from './routes/tutorials.js';
 import messagesRoutes from './routes/messages.js';
 import subjectsRoutes from './routes/subjects.js';
 import packagesRoutes from './routes/packages.js';
+import applicationHelpRoutes from './routes/applicationHelp.js';
 
 // Load environment variables
 dotenv.config();
@@ -106,6 +107,7 @@ app.use('/api/tutorials', tutorialsRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/subjects', subjectsRoutes);
 app.use('/api/packages', packagesRoutes);
+app.use('/api/application-help', applicationHelpRoutes);
 
 // Welcome route
 app.get('/', (req, res) => {

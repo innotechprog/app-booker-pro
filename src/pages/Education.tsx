@@ -378,9 +378,8 @@ const Education = () => {
       title: "University Application Assistance",
       category: "universities",
       description: "Complete guidance for university applications, essays, and documentation",
-      features: ["Application Review", "Essay Writing", "Document Preparation", "Interview Prep"],
-      duration: "2-4 weeks",
-      price: "R1500-3000",
+      features: ["Application Review", "Essay Writing", "Document Preparation", "Interview Prep", "Turnaround time: 1-4 days"],
+      duration: "1-4 days",
       rating: 4.9,
       reviews: 89,
       location: "Online & In-person",
@@ -418,11 +417,11 @@ const Education = () => {
     );
 
     return (
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700"></div>
+      <div className="relative bg-white">
+        <div className="absolute inset-0"></div>
         <div className="relative z-10 max-w-7xl mx-auto px-4 py-20">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
               <a 
                 href="/education?category=universities" 
                 onClick={(e) => {
@@ -432,25 +431,25 @@ const Education = () => {
                     document.getElementById('universities')?.scrollIntoView({ behavior: 'smooth' });
                   }, 100);
                 }}
-                className="hover:text-blue-200 transition-colors duration-300 cursor-pointer"
+                className="hover:text-blue-600 transition-colors duration-300 cursor-pointer"
               >
                 South African Universities
               </a>
             </h2>
-            <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
               Explore all public universities in South Africa and apply directly through their official websites
             </p>
-            <div className="mt-6 flex items-center justify-center space-x-4 text-white/80">
+            <div className="mt-6 flex items-center justify-center space-x-4 text-gray-700">
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
+                <div className="w-2 h-2 bg-gray-900 rounded-full"></div>
                 <span className="text-sm font-medium">26 Public Universities</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
+                <div className="w-2 h-2 bg-gray-900 rounded-full"></div>
                 <span className="text-sm font-medium">Direct Applications</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
+                <div className="w-2 h-2 bg-gray-900 rounded-full"></div>
                 <span className="text-sm font-medium">Official Links</span>
               </div>
             </div>
@@ -540,14 +539,14 @@ const Education = () => {
                       <div className="flex space-x-2 pt-4 border-t border-gray-200 mt-auto">
                         <Button 
                           variant="outline"
-                          className="flex-1 text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-800"
+                          className="flex-1 bg-white text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-700"
                           onClick={() => window.open(university.website, '_blank')}
                         >
                           <Globe className="mr-2 h-4 w-4" />
                           Website
                         </Button>
                         <Button 
-                          className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:!bg-gradient-to-r hover:!from-blue-800 hover:!to-purple-800 text-white hover:!text-white"
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                           onClick={() => window.open(university.applicationUrl, '_blank')}
                         >
                           <ExternalLink className="mr-2 h-4 w-4" />
@@ -587,7 +586,7 @@ const Education = () => {
               </p>
               <Button 
                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl"
-                onClick={() => setSelectedCategory("applications")}
+                onClick={() => navigate("/application-help")}
               >
                 Get Application Help
               </Button>
@@ -794,7 +793,7 @@ const Education = () => {
                             </div>
                             <div className="text-center">
                               <DollarSign className="h-5 w-5 text-green-500 mx-auto mb-1" />
-                              <span className="text-sm font-semibold text-gray-900">{service.price}</span>
+                              <span className="text-sm font-semibold text-gray-900">{service.price ? service.price : 'Contact for quote'}</span>
                             </div>
                             <div className="text-center">
                               <MapPin className="h-5 w-5 text-purple-500 mx-auto mb-1" />
@@ -833,81 +832,71 @@ const Education = () => {
             {filteredServices.map((service) => {
               const IconComponent = service.icon;
               return (
-                <Card key={service.id} className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg h-full flex flex-col">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-                          <IconComponent className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-xl font-bold text-gray-100 group-hover:text-blue-300 transition-colors">
-                            {service.title}
-                          </CardTitle>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <div className="flex items-center space-x-1">
-                              <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                              <span className="text-sm font-medium text-gray-100">{service.rating}</span>
-                            </div>
-                            <span className="text-gray-400">•</span>
-                            <span className="text-sm text-gray-300">{service.reviews} reviews</span>
-                          </div>
+                <Card key={service.id} className="border border-gray-200 bg-white h-full flex flex-col shadow-none rounded-lg">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
+                        <IconComponent className="h-6 w-6 text-gray-800" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base font-semibold text-gray-900">
+                          {service.title}
+                        </CardTitle>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Star className="h-4 w-4 text-yellow-500" />
+                          <span className="text-xs text-gray-900">{service.rating}</span>
+                          <span className="text-xs text-gray-700">({service.reviews} reviews)</span>
+                          {service.popular && (
+                            <Badge className="bg-gray-100 text-green-800">Popular</Badge>
+                          )}
                         </div>
                       </div>
-                      {service.popular && (
-                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-                          Popular
-                        </Badge>
-                      )}
                     </div>
                   </CardHeader>
-                  
                   <CardContent className="flex-1 flex flex-col">
-                    <div className="space-y-4 flex-1">
-                      <CardDescription className="text-gray-300 leading-relaxed">
-                        {service.description}
-                      </CardDescription>
-                      
-                      <div className="space-y-3">
-                        <h4 className="font-semibold text-gray-100">Features:</h4>
-                        <div className="grid grid-cols-2 gap-2">
-                          {service.features.map((feature, index) => (
-                            <div key={index} className="flex items-center space-x-2">
-                              <CheckCircle className="h-4 w-4 text-green-400" />
-                              <span className="text-sm text-gray-300">{feature}</span>
-                            </div>
-                          ))}
-                        </div>
+                    <CardDescription className="text-sm text-gray-800 mb-2">
+                      {service.description}
+                    </CardDescription>
+                    <div className="mb-2">
+                      <span className="font-semibold text-xs text-gray-900">Features:</span>
+                      <ul className="list-disc list-inside text-xs text-gray-800 mt-1">
+                        {service.features.map((feature, idx) => (
+                          <li key={idx}>{feature}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="flex flex-wrap gap-4 border-t border-gray-100 pt-2 mt-auto">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4 text-gray-700" />
+                        <span className="text-xs text-gray-900">{service.duration}</span>
                       </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-600">
-                        <div className="flex items-center space-x-2">
-                          <Clock className="h-4 w-4 text-gray-300" />
-                          <span className="text-sm text-gray-300">{service.duration}</span>
+                      {service.price && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-medium text-gray-900">R {service.price.replace(/R|r/,'')}</span>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <DollarSign className="h-4 w-4 text-gray-300" />
-                          <span className="text-sm font-medium text-gray-100">{service.price}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <MapPin className="h-4 w-4 text-gray-300" />
-                          <span className="text-sm text-gray-300">{service.location}</span>
-                        </div>
+                      )}
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4 text-gray-700" />
+                        <span className="text-xs text-gray-900">{service.location}</span>
                       </div>
                     </div>
-                    
                     <Button 
-                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:!bg-gradient-to-r hover:!from-blue-800 hover:!to-purple-800 text-white hover:!text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 mt-auto"
+                      className="w-full bg-gray-900 hover:bg-gray-700 text-white py-2 rounded mt-4 text-sm"
                       onClick={() => {
                         if (service.title === "Academic Tutoring") {
                           navigate("/tutorials");
+                        } else if (service.title === "University Application Assistance") {
+                          setSelectedCategory("universities");
+                          setTimeout(() => {
+                            const el = document.getElementById('universities');
+                            if (el) el.scrollIntoView({ behavior: 'smooth' });
+                          }, 100);
                         } else {
                           navigate("/booking", { state: { service: service.title } });
                         }
                       }}
                     >
-                      <span>{service.title === "Academic Tutoring" ? "Choose Grade & Subject" : "Book This Service"}</span>
-                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      <span>{service.title === "Academic Tutoring" ? "Choose Grade & Subject" : service.title === "University Application Assistance" ? "View Universities" : "Book This Service"}</span>
                     </Button>
                   </CardContent>
                 </Card>

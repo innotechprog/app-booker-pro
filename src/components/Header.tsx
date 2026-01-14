@@ -52,7 +52,7 @@ const Header = () => {
         {/* Right side - Login Button (only show on Education page) */}
         {isActive("/education") && (
           <div className="hidden md:flex items-center space-x-4">
-            <Button asChild variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white rounded-full px-6 py-2">
+            <Button asChild variant="outline" className="border-white text-white hover:bg-white hover:text-primary border-2 rounded-full px-6 py-2">
               <Link to="/learner/login">Login</Link>
             </Button>
           </div>
@@ -92,7 +92,7 @@ const Header = () => {
             
             {isActive("/education") && (
               <div className="pt-4 border-t border-border space-y-3">
-                <Button asChild variant="outline" className="w-full border-primary text-primary hover:bg-primary hover:text-white rounded-full">
+                <Button asChild variant="outline" className="w-full border-white text-white hover:bg-white hover:text-primary border-2 rounded-full">
                   <Link to="/learner/login" onClick={() => setIsMobileMenuOpen(false)}>
                     Login
                   </Link>

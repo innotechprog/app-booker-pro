@@ -39,6 +39,7 @@ import LearnerSubjectsPage from "./pages/LearnerSubjectsPage";
 import ITSolutions from "./pages/ITSolutions";
 import NotFound from "./pages/NotFound";
 import Contact from "./pages/Contact";
+import ApplicationHelp from "./pages/ApplicationHelp";
 
 const queryClient = new QueryClient();
 
@@ -85,6 +86,7 @@ const App = () => (
             <Route path="/learner/packages" element={<Packages />} />
             <Route path="/it-solutions" element={<ITSolutions />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/application-help" element={<ApplicationHelp />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
