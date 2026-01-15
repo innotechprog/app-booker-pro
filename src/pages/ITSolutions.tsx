@@ -37,7 +37,7 @@ const ITSolutions = () => {
       description: "Custom website and web application development using modern technologies and best practices",
       features: ["Responsive Design", "E-commerce Solutions", "CMS Development", "API Integration"],
       duration: "2-8 weeks",
-      price: "R5000",
+      price: "R1500",
       rating: 4.9,
       reviews: 127,
       location: "Remote & On-site",
@@ -135,7 +135,7 @@ const ITSolutions = () => {
       <SEO page="it-solutions" />
 
       {/* Hero Section - Modern & Tasty */}
-      <div className="relative bg-gradient-to-br from-blue-900 via-blue-700 to-blue-400 overflow-hidden py-24 flex items-center justify-center min-h-[480px]">
+      <div className="relative bg-gradient-to-b from-[#0a183d] via-[#183a7a] to-[#07122c] overflow-hidden py-24 flex items-center justify-center min-h-[480px]">
         {/* Decorative SVG background */}
         <div className="absolute inset-0 opacity-30 pointer-events-none select-none">
           <svg width="100%" height="100%" viewBox="0 0 1440 480" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
@@ -145,29 +145,27 @@ const ITSolutions = () => {
           </svg>
         </div>
         <div className="relative z-10 w-full max-w-3xl mx-auto px-6">
-          <div className="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-10 flex flex-col items-center">
-            <h1 className="text-5xl md:text-6xl font-extrabold text-white drop-shadow mb-4 tracking-tight">
-              <span className="bg-gradient-to-r from-yellow-300 via-blue-300 to-blue-600 bg-clip-text text-transparent">IT Solutions</span>
-            </h1>
-            <p className="text-lg md:text-2xl text-blue-100 max-w-2xl mx-auto leading-relaxed mb-8 font-medium">
-              Empowering your business with <span className="text-yellow-200 font-bold">modern web, mobile, cloud, and security</span> services for the digital age.
+          <div className="w-full max-w-3xl mx-auto px-6 text-center">
+            <h1 className="text-6xl md:text-7xl font-bold text-white mb-6">IT Solutions</h1>
+            <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed mb-8">
+              Comprehensive IT services including web, mobile, cloud, and cybersecurity to empower your business for the digital age.
             </p>
             <div className="flex flex-wrap justify-center gap-4 mb-8">
-              <div className="flex items-center space-x-2 bg-white/30 backdrop-blur px-4 py-2 rounded-full shadow">
-                <CheckCircle className="h-5 w-5 text-blue-700" />
-                <span className="text-blue-900 font-semibold">Expert Developers</span>
+              <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+                <CheckCircle className="h-5 w-5 text-white" />
+                <span className="text-white">Expert Developers</span>
               </div>
-              <div className="flex items-center space-x-2 bg-white/30 backdrop-blur px-4 py-2 rounded-full shadow">
-                <CheckCircle className="h-5 w-5 text-blue-700" />
-                <span className="text-blue-900 font-semibold">24/7 Support</span>
+              <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+                <CheckCircle className="h-5 w-5 text-white" />
+                <span className="text-white">24/7 Support</span>
               </div>
-              <div className="flex items-center space-x-2 bg-white/30 backdrop-blur px-4 py-2 rounded-full shadow">
-                <CheckCircle className="h-5 w-5 text-blue-700" />
-                <span className="text-blue-900 font-semibold">Modern Technologies</span>
+              <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+                <CheckCircle className="h-5 w-5 text-white" />
+                <span className="text-white">Modern Technologies</span>
               </div>
-              <div className="flex items-center space-x-2 bg-white/30 backdrop-blur px-4 py-2 rounded-full shadow">
-                <CheckCircle className="h-5 w-5 text-blue-700" />
-                <span className="text-blue-900 font-semibold">Cloud & Security</span>
+              <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+                <CheckCircle className="h-5 w-5 text-white" />
+                <span className="text-white">Cloud & Security</span>
               </div>
             </div>
             <Button
@@ -284,13 +282,13 @@ const ITSolutions = () => {
                           <span className="text-sm text-gray-700">{service.location}</span>
                         </div>
                       </div>
-                      <Button 
+                      {/* <Button 
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl shadow-md mt-4"
                         onClick={() => navigate("/booking", { state: { service: service.title } })}
                       >
                         <span>Get This Service</span>
                         <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
+                      </Button> */}
                     </CardContent>
                   </Card>
                 );
@@ -355,7 +353,10 @@ const ITSolutions = () => {
               Contact our IT specialists to discuss your needs and find the perfect technology solution for your business.
             </p>
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl">
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl"
+                onClick={() => navigate('/contact')}
+              >
                 <Users className="mr-2 h-4 w-4" />
                 Contact Us
               </Button>
@@ -371,62 +372,7 @@ const ITSolutions = () => {
         </div>
       </div>
       
-      {/* Clients Section */}
-      <div className="relative bg-white py-16">
-        <div className="max-w-6xl mx-auto px-6">
-          <h3 className="text-3xl font-bold text-gray-900 mb-8 text-center">Our Clients</h3>
-          <div className="relative">
-            <button
-              type="button"
-              aria-label="Scroll left"
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-blue-600 border border-blue-700 rounded-full shadow p-2 hover:bg-blue-700 transition"
-              onClick={() => {
-                const el = document.getElementById('clients-carousel');
-                if (el) el.scrollBy({ left: -300, behavior: 'smooth' });
-              }}
-            >
-              <svg width="24" height="24" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
-            </button>
-            <div id="clients-carousel" className="overflow-x-auto scroll-smooth" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-              <style>{`
-                #clients-carousel::-webkit-scrollbar { display: none; }
-              `}</style>
-              <div className="flex gap-8 items-center min-w-[600px] md:min-w-[900px] lg:min-w-[1200px] px-2">
-                {[
-                  {logo: "https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg", name: "React Corp"},
-                  {logo: "https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg", name: "Microsoft"},
-                  {logo: "https://upload.wikimedia.org/wikipedia/commons/6/6a/JavaScript-logo.png", name: "JS Solutions"},
-                  {logo: "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg", name: "Netflix"},
-                  {logo: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg", name: "Google"},
-                  {logo: "https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg", name: "Facebook"},
-                  {logo: "https://upload.wikimedia.org/wikipedia/commons/9/96/SAP_2011_logo.svg", name: "SAP"},
-                  {logo: "https://upload.wikimedia.org/wikipedia/commons/5/5f/IBM_logo.svg", name: "IBM"},
-                  {logo: "https://upload.wikimedia.org/wikipedia/commons/1/1b/Apple_logo_grey.svg", name: "Apple"},
-                  {logo: "https://upload.wikimedia.org/wikipedia/commons/6/6e/Amazon_Web_Services_Logo.svg", name: "AWS"},
-                  {logo: "https://upload.wikimedia.org/wikipedia/commons/2/2c/Adobe_Corporate_Logo.png", name: "Adobe"},
-                  {logo: "https://upload.wikimedia.org/wikipedia/commons/3/3e/PayPal_2014_logo.svg", name: "PayPal"},
-                ].map((client, idx) => (
-                  <div key={idx} className="flex flex-col items-center bg-gray-50 rounded-xl shadow p-4 min-w-[140px] transition-transform hover:scale-105">
-                    <img src={client.logo} alt={client.name} className="h-12 mb-2 object-contain" />
-                    <span className="text-gray-700 text-sm font-medium text-center whitespace-nowrap">{client.name}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <button
-              type="button"
-              aria-label="Scroll right"
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-blue-600 border border-blue-700 rounded-full shadow p-2 hover:bg-blue-700 transition"
-              onClick={() => {
-                const el = document.getElementById('clients-carousel');
-                if (el) el.scrollBy({ left: 300, behavior: 'smooth' });
-              }}
-            >
-              <svg width="24" height="24" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* Clients Section hidden for now */}
       {/* FAQ Section */}
       <div className="bg-white py-16">
         <div className="max-w-3xl mx-auto px-6">

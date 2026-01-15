@@ -4,7 +4,7 @@ import nodemailer from "nodemailer";
 const router = express.Router();
 
 router.post("/send-contact", async (req, res) => {
-  const { name, email, message } = req.body;
+  const { name, email, phone, service, message } = req.body;
   if (!name || !email || !message) {
     return res.status(400).json({ error: "Missing required fields" });
   }
@@ -25,7 +25,12 @@ router.post("/send-contact", async (req, res) => {
       from: `IB Innovative Solutions <${process.env.EMAIL_USER}>`,
       to: process.env.CONTACT_EMAIL || process.env.EMAIL_USER,
       subject: "New Contact Us Message",
-      text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
+      text:
+        `Name: ${name}\n` +
+        `Email: ${email}\n` +
+        `Cellphone: ${phone || "-"}\n` +
+        `Service Interested In: ${service || "-"}\n` +
+        `Message: ${message}`,
     });
     return res.status(200).json({ success: true });
   } catch (error) {

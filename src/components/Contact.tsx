@@ -4,19 +4,69 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Mail, Phone, MapPin, Clock } from "lucide-react";
 
+import { useState } from "react";
+
 const Contact = () => {
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    service: "",
+    message: ""
+  });
+  const [status, setStatus] = useState("");
+  const [isSending, setIsSending] = useState(false);
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.id]: e.target.value });
+  };
+
+  const isValidCellphone = (cell) => {
+    return /^\d{10,15}$/.test(cell.replace(/\s+/g, ""));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus("");
+    if (!form.firstName || !form.lastName || !form.email || !form.message || !form.phone) {
+      setStatus("Please fill in all required fields.");
+      return;
+    }
+    if (!isValidCellphone(form.phone)) {
+      setStatus("Cellphone must contain only numbers (10-15 digits).");
+      return;
+    }
+    setIsSending(true);
+    try {
+      const res = await fetch("http://localhost:5000/api/contact/send-contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.firstName + " " + form.lastName,
+          email: form.email,
+          phone: form.phone,
+          service: form.service,
+          message: form.message
+        })
+      });
+      if (res.ok) {
+        setStatus("Message sent successfully!");
+        setForm({ firstName: "", lastName: "", email: "", phone: "", service: "", message: "" });
+      } else {
+        const data = await res.json();
+        setStatus(data.error || "Failed to send message. Please try again.");
+      }
+    } catch {
+      setStatus("Failed to send message. Please try again.");
+    }
+    setIsSending(false);
+  };
+
   return (
     <section className="py-20 px-6 relative">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <h2 className="text-5xl font-bold text-gray-900 mb-6 bg-gradient-to-r from-gray-900 to-blue-600 bg-clip-text text-transparent">
-            Contact Us
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Get in touch with us for any inquiries or to request our services. We're here to help you succeed.
-          </p>
-        </div>
+        {/* Header removed as requested */}
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
           {/* Contact Information */}
@@ -87,14 +137,16 @@ const Contact = () => {
           <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
             <h3 className="text-3xl font-bold text-gray-900 mb-6">Send us a Message</h3>
             
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="firstName" className="text-gray-700 font-semibold">First Name</Label>
                   <Input 
                     id="firstName" 
                     placeholder="John" 
-                    className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg transition-all duration-300 bg-gray-50 focus:bg-white"
+                    value={form.firstName}
+                    onChange={handleChange}
+                    className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg transition-all duration-300 bg-gray-50 focus:bg-white text-gray-900"
                   />
                 </div>
                 <div className="space-y-2">
@@ -102,7 +154,9 @@ const Contact = () => {
                   <Input 
                     id="lastName" 
                     placeholder="Doe" 
-                    className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg transition-all duration-300 bg-gray-50 focus:bg-white"
+                    value={form.lastName}
+                    onChange={handleChange}
+                    className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg transition-all duration-300 bg-gray-50 focus:bg-white text-gray-900"
                   />
                 </div>
               </div>
@@ -114,15 +168,21 @@ const Contact = () => {
                     id="email" 
                     type="email" 
                     placeholder="john@example.com" 
-                    className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg transition-all duration-300 bg-gray-50 focus:bg-white"
+                    value={form.email}
+                    onChange={handleChange}
+                    className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg transition-all duration-300 bg-gray-50 focus:bg-white text-gray-900"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone" className="text-gray-700 font-semibold">Phone</Label>
                   <Input 
                     id="phone" 
-                    placeholder="076 2538318" 
-                    className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg transition-all duration-300 bg-gray-50 focus:bg-white"
+                    placeholder="0762538318" 
+                    value={form.phone}
+                    onChange={handleChange}
+                    className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg transition-all duration-300 bg-gray-50 focus:bg-white text-gray-900"
+                    inputMode="numeric"
+                    pattern="\d*"
                   />
                 </div>
               </div>
@@ -131,6 +191,8 @@ const Contact = () => {
                 <Label htmlFor="service" className="text-gray-700 font-semibold">Service Interested In</Label>
                 <select 
                   id="service" 
+                  value={form.service}
+                  onChange={handleChange}
                   className="w-full h-12 px-4 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-gray-50 focus:bg-white text-gray-900"
                 >
                   <option value="">Select a service</option>
@@ -148,16 +210,22 @@ const Contact = () => {
                   id="message" 
                   placeholder="Tell us about your project or inquiry..."
                   rows={4}
-                  className="border-2 border-gray-200 focus:border-blue-500 rounded-lg transition-all duration-300 resize-none bg-gray-50 focus:bg-white"
+                  value={form.message}
+                  onChange={handleChange}
+                  className="border-2 border-gray-200 focus:border-blue-500 rounded-lg transition-all duration-300 resize-none bg-gray-50 focus:bg-white text-gray-900"
                 />
               </div>
               
               <Button 
                 type="submit" 
                 className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                disabled={isSending}
               >
-                Send Message
+                {isSending ? "Sending..." : "Send Message"}
               </Button>
+              {status && (
+                <div className={`mt-2 text-center text-sm font-semibold ${status.includes("success") ? "text-green-600" : "text-red-600"}`}>{status}</div>
+              )}
             </form>
           </div>
         </div>
