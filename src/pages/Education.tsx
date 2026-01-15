@@ -55,16 +55,20 @@ const Education = () => {
   // Update URL when category changes
   const handleCategoryChange = (categoryId: string) => {
     setSelectedCategory(categoryId);
-    const newUrl = categoryId === 'all' 
-      ? '/education' 
-      : `/education?category=${categoryId}`;
-    navigate(newUrl, { replace: true });
+    if (categoryId === 'universities') {
+      navigate('/universities', { replace: true });
+    } else {
+      const newUrl = categoryId === 'all' 
+        ? '/education' 
+        : `/education?category=${categoryId}`;
+      navigate(newUrl, { replace: true });
+    }
   };
 
   const categories = [
     { id: "all", name: "All Services", icon: GraduationCap },
     { id: "tutorials", name: "Tutorials", icon: BookOpen },
-    { id: "universities", name: "Universities", icon: Building2 }
+    { id: "universities", name: "Universities", icon: Building2, redirect: true }
   ];
 
      const southAfricanUniversities = [
@@ -78,7 +82,8 @@ const Education = () => {
        established: 1829,
        ranking: "Top 200 globally",
        programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 2,
@@ -90,7 +95,8 @@ const Education = () => {
        established: 1896,
        ranking: "Top 300 globally",
        programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 3,
@@ -102,7 +108,8 @@ const Education = () => {
        established: 1866,
        ranking: "Top 400 globally",
        programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science", "Theology"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 4,
@@ -114,7 +121,8 @@ const Education = () => {
        established: 1908,
        ranking: "Top 500 globally",
        programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science", "Education"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 5,
@@ -126,7 +134,8 @@ const Education = () => {
        established: 2005,
        ranking: "Top 600 globally",
        programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science", "Education"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 6,
@@ -138,7 +147,8 @@ const Education = () => {
        established: 2004,
        ranking: "Top 700 globally",
        programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science", "Agriculture"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 7,
@@ -150,7 +160,8 @@ const Education = () => {
        established: 1904,
        ranking: "Top 800 globally",
        programs: ["Arts", "Commerce", "Education", "Law", "Pharmacy", "Science"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 8,
@@ -162,7 +173,8 @@ const Education = () => {
        established: 1904,
        ranking: "Top 900 globally",
        programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Natural Sciences"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 9,
@@ -174,7 +186,8 @@ const Education = () => {
        established: 2004,
        ranking: "Top 1000 globally",
        programs: ["Arts", "Commerce", "Education", "Engineering", "Health Sciences", "Law", "Natural Sciences"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 10,
@@ -186,7 +199,8 @@ const Education = () => {
        established: 2005,
        ranking: "Top 1500 globally",
        programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Science"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 11,
@@ -198,7 +212,8 @@ const Education = () => {
        established: 1982,
        ranking: "Top 2000 globally",
        programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Science"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 12,
@@ -210,7 +225,8 @@ const Education = () => {
        established: 1916,
        ranking: "Top 2500 globally",
        programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Science"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 13,
@@ -222,7 +238,8 @@ const Education = () => {
        established: 1959,
        ranking: "Top 1000 globally",
        programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Natural Sciences"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 14,
@@ -234,7 +251,8 @@ const Education = () => {
        established: 1960,
        ranking: "Top 3000 globally",
        programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Science"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 15,
@@ -246,7 +264,8 @@ const Education = () => {
        established: 2005,
        ranking: "Top 3500 globally",
        programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Science"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 16,
@@ -258,7 +277,8 @@ const Education = () => {
        established: 2005,
        ranking: "Top 2000 globally",
        programs: ["Applied Sciences", "Business", "Education", "Engineering", "Health Sciences"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 17,
@@ -270,7 +290,8 @@ const Education = () => {
        established: 1981,
        ranking: "Top 2500 globally",
        programs: ["Applied Sciences", "Business", "Engineering", "Health Sciences"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 18,
@@ -282,7 +303,8 @@ const Education = () => {
        established: 2002,
        ranking: "Top 3000 globally",
        programs: ["Applied Sciences", "Business", "Engineering", "Health Sciences"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 19,
@@ -294,7 +316,8 @@ const Education = () => {
        established: 1979,
        ranking: "Top 3500 globally",
        programs: ["Applied Sciences", "Business", "Engineering"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 20,
@@ -306,7 +329,8 @@ const Education = () => {
        established: 2004,
        ranking: "Top 2000 globally",
        programs: ["Applied Sciences", "Business", "Engineering", "Health Sciences"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 21,
@@ -318,7 +342,8 @@ const Education = () => {
        established: 1966,
        ranking: "Top 2500 globally",
        programs: ["Applied Sciences", "Business", "Engineering", "Health Sciences"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 22,
@@ -330,7 +355,8 @@ const Education = () => {
        established: 1873,
        ranking: "Top 1000 globally",
        programs: ["Arts", "Commerce", "Education", "Law", "Science"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 23,
@@ -342,7 +368,8 @@ const Education = () => {
        established: 2014,
        ranking: "New University",
        programs: ["Arts", "Commerce", "Education", "Natural Sciences"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      },
      {
        id: 24,
@@ -354,7 +381,8 @@ const Education = () => {
        established: 2014,
        ranking: "New University",
        programs: ["Agriculture", "Arts", "Commerce", "Education"],
-       icon: Building2
+       icon: Building2,
+       lateApplication: true
      }
    ];
 
@@ -479,7 +507,7 @@ const Education = () => {
               filteredUniversities.map((university) => {
                 const IconComponent = university.icon;
                 return (
-                  <Card key={university.id} className="group hover:shadow-2xl transition-all duration-300 border-0 shadow-xl bg-white/95 backdrop-blur-sm h-full flex flex-col">
+                  <Card key={university.id} className={`group hover:shadow-2xl transition-all duration-300 border-0 shadow-xl h-full flex flex-col ${university.lateApplication ? 'bg-green-100' : 'bg-white/95 backdrop-blur-sm'}`}> 
                     <CardHeader className="pb-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center space-x-3">
@@ -494,6 +522,9 @@ const Education = () => {
                               <MapPinIcon className="h-4 w-4 text-gray-500" />
                               <span className="text-sm text-gray-600">{university.location}</span>
                             </div>
+                            {university.lateApplication && (
+                              <Badge className="bg-green-600 text-white ml-1 animate-pulse">Late Application Open</Badge>
+                            )}
                           </div>
                         </div>
                         <Badge className={`${
@@ -886,11 +917,7 @@ const Education = () => {
                         if (service.title === "Academic Tutoring") {
                           navigate("/tutorials");
                         } else if (service.title === "University Application Assistance") {
-                          setSelectedCategory("universities");
-                          setTimeout(() => {
-                            const el = document.getElementById('universities');
-                            if (el) el.scrollIntoView({ behavior: 'smooth' });
-                          }, 100);
+                          navigate("/universities");
                         } else {
                           navigate("/booking", { state: { service: service.title } });
                         }

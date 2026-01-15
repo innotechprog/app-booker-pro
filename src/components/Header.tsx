@@ -49,8 +49,8 @@ const Header = () => {
           </Link>
         </nav>
 
-        {/* Right side - Login Button (only show on Education page) */}
-        {isActive("/education") && (
+        {/* Right side - Login Button (show on Education and Universities pages) */}
+        {(isActive("/education") || isActive("/universities")) && (
           <div className="hidden md:flex items-center space-x-4">
             <Button asChild variant="outline" className="border-white text-white hover:bg-white hover:text-primary border-2 rounded-full px-6 py-2">
               <Link to="/learner/login">Login</Link>
@@ -90,7 +90,7 @@ const Header = () => {
               IT Solutions
             </Link>
             
-            {isActive("/education") && (
+            {(isActive("/education") || isActive("/universities")) && (
               <div className="pt-4 border-t border-border space-y-3">
                 <Button asChild variant="outline" className="w-full border-white text-white hover:bg-white hover:text-primary border-2 rounded-full">
                   <Link to="/learner/login" onClick={() => setIsMobileMenuOpen(false)}>

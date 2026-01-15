@@ -102,32 +102,24 @@ const Footer = () => {
               <div className="flex items-center space-x-3">
                 <Phone className="h-5 w-5 text-blue-400" />
                 <a 
-                  href="tel:+27762538318" 
+                  href="tel:0684240852" 
                   className="text-gray-300 hover:text-white transition-colors"
                 >
-                  076 2538318
+                  068 424 0852
                 </a>
               </div>
               <div className="flex items-center space-x-3">
                 <Mail className="h-5 w-5 text-blue-400" />
                 <a 
-                  href="mailto:info@ib-innovativesolutions.co.za" 
+                  href="mailto:info@ib-innovativesolutions.com" 
                   className="text-gray-300 hover:text-white transition-colors"
                 >
-                  info@ib-innovativesolutions.co.za
+                  info@ib-innovativesolutions.com
                 </a>
               </div>
               <div className="flex items-start space-x-3">
                 <MapPin className="h-5 w-5 text-blue-400 mt-1" />
-                <a 
-                  href="https://maps.google.com/?q=123+Innovation+Street+Tech+City+TC+12345" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-gray-300 hover:text-white transition-colors"
-                >
-                  123 Innovation Street<br />
-                  Tech City, TC 12345
-                </a>
+                <span className="text-gray-300">Available online only</span>
               </div>
             </div>
           </div>

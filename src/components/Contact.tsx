@@ -34,10 +34,10 @@ const Contact = () => {
                   <Phone className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <h4 className="text-xl font-bold text-gray-900 mb-2">Phone</h4>
+                  <h4 className="text-xl font-bold text-gray-900 mb-2">Phone / WhatsApp</h4>
                   <div className="space-y-1">
-                    <a href="tel:+27762538318" className="block text-gray-600 hover:text-blue-600 transition-colors">
-                      076 2538318
+                    <a href="tel:0684240852" className="block text-gray-600 hover:text-blue-600 transition-colors">
+                      068 424 0852
                     </a>
                   </div>
                 </div>
@@ -50,8 +50,8 @@ const Contact = () => {
                 <div>
                   <h4 className="text-xl font-bold text-gray-900 mb-2">Email</h4>
                   <div className="space-y-1">
-                    <a href="mailto:info@ib-innovativesolutions.co.za" className="block text-gray-600 hover:text-green-600 transition-colors">
-                      info@ib-innovativesolutions.co.za
+                    <a href="mailto:info@ib-innovativesolutions.com" className="block text-gray-600 hover:text-green-600 transition-colors">
+                      info@ib-innovativesolutions.com
                     </a>
                   </div>
                 </div>
@@ -62,16 +62,8 @@ const Contact = () => {
                   <MapPin className="h-6 w-6 text-purple-600" />
                 </div>
                 <div>
-                  <h4 className="text-xl font-bold text-gray-900 mb-2">Address</h4>
-                  <a 
-                    href="https://maps.google.com/?q=123+Innovation+Street+Tech+City+TC+12345" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="block text-gray-600 hover:text-purple-600 transition-colors"
-                  >
-                    123 Innovation Street<br />
-                    Tech City, TC 12345
-                  </a>
+                  <h4 className="text-xl font-bold text-gray-900 mb-2">Location</h4>
+                  <span className="block text-gray-600">Available online only</span>
                 </div>
               </div>
               

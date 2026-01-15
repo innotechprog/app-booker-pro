@@ -27,7 +27,7 @@ const ApplicationHelp = () => {
     setIsSending(true);
     setStatus("Sending...");
     try {
-      const res = await fetch("/api/application-help/send-application-help", {
+      const res = await fetch("http://localhost:5000/api/application-help/send-application-help", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -47,6 +47,14 @@ const ApplicationHelp = () => {
   return (
     <div className="max-w-lg mx-auto py-16 px-4">
       <h1 className="text-3xl font-bold mb-6">University Application Help Request</h1>
+      <div className="mb-6 bg-blue-50 border-l-4 border-blue-600 p-4 rounded text-black">
+        <p className="mb-2">For urgent assistance, you can:</p>
+        <div className="ml-2">
+          <div>Email: <a href="mailto:innocent38318@gmail.com" className="text-black underline">innocent38318@gmail.com</a></div>
+          <div>Call: <a href="tel:0684240852" className="text-black underline">068 424 0852</a></div>
+        </div>
+        <p className="mt-2">Or fill out the form below for application help.</p>
+      </div>
       <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-xl shadow">
         <div>
           <label className="block font-medium mb-1 text-black" htmlFor="name">Full Name</label>
@@ -78,11 +86,12 @@ const ApplicationHelp = () => {
           <input
             id="cellphone"
             name="cellphone"
+            type="tel"
             value={form.cellphone}
             onChange={handleChange}
             required
             placeholder="e.g. 071 234 5678"
-            className="w-full border rounded px-3 py-2"
+            className="w-full border rounded px-3 py-2 text-black"
           />
         </div>
         <div>
@@ -93,7 +102,7 @@ const ApplicationHelp = () => {
             value={form.message}
             onChange={handleChange}
             placeholder="How can we help you with your application?"
-            className="w-full border rounded px-3 py-2"
+            className="w-full border rounded px-3 py-2 text-black"
           />
         </div>
         <button
@@ -103,7 +112,13 @@ const ApplicationHelp = () => {
         >
           {isSending ? 'Sending...' : 'Send Request'}
         </button>
-        {status && <div className="mt-2 text-center text-sm text-red-600">{status}</div>}
+        {/* Show success in green, error in red, hide 'Sending...' */}
+        {status === 'Request sent successfully!' && (
+          <div className="mt-2 text-center text-sm text-green-600 font-semibold">{status}</div>
+        )}
+        {status && status !== 'Request sent successfully!' && status !== 'Sending...' && (
+          <div className="mt-2 text-center text-sm text-red-600">{status}</div>
+        )}
       </form>
     </div>
   );

@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Universities from "./pages/Universities";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PackageProvider } from "@/contexts/PackageContext";
@@ -70,6 +71,7 @@ const App = () => (
         <Route path="/admin/students" element={<AdminStudentManagement />} />
         <Route path="/tutor-booking/:tutorId" element={<TutorBooking />} />
             <Route path="/education" element={<Education />} />
+            <Route path="/universities" element={<Universities />} />
             <Route path="/tutorials/available" element={<AvailableTutorials />} />
             <Route path="/tutorials/discussion/:tutorialId" element={<TutorialDiscussion />} />
             <Route path="/tutor/:tutorId" element={<TutorProfile />} />

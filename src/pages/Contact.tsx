@@ -31,6 +31,11 @@ const Contact = () => {
       <div className="bg-blue-50 py-16 min-h-[60vh]">
         <div className="max-w-xl mx-auto px-6 bg-white rounded-xl shadow p-8">
           <h1 className="text-3xl font-bold text-blue-900 mb-6 text-center">Contact Us</h1>
+          <div className="mb-8 text-center space-y-2">
+            <div className="text-gray-700"><strong>Email:</strong> <a href="mailto:info@ib-innovativesolutions.com" className="text-blue-700 hover:underline">info@ib-innovativesolutions.com</a></div>
+            <div className="text-gray-700"><strong>Phone/WhatsApp:</strong> <a href="tel:0684240852" className="text-blue-700 hover:underline">068 424 0852</a></div>
+            <div className="text-gray-700"><strong>Location:</strong> Available online only</div>
+          </div>
           {submitted ? (
             <div className="text-green-700 text-center text-lg font-medium">Thank you for reaching out! We'll get back to you soon.</div>
           ) : (
