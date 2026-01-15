@@ -18,7 +18,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://applyonline.uct.ac.za/",
     type: "Public",
     established: 1829,
-    ranking: "Top 200 globally",
     programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science"],
     icon: Building2,
     lateApplication: true
@@ -31,7 +30,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://www.wits.ac.za/applications/",
     type: "Public",
     established: 1896,
-    ranking: "Top 300 globally",
     programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science"],
     icon: Building2,
     lateApplication: true
@@ -44,7 +42,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://student.sun.ac.za//signup",
     type: "Public",
     established: 1866,
-    ranking: "Top 400 globally",
     programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science", "Theology"],
     icon: Building2,
     lateApplication: true
@@ -57,7 +54,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://www.up.ac.za/online-application",
     type: "Public",
     established: 1908,
-    ranking: "Top 500 globally",
     programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science", "Education"],
     icon: Building2,
     lateApplication: true
@@ -70,7 +66,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://registration.uj.ac.za/pls/prodi41/gen.gw1pkg.gw1startup?x_processcode=ITS_OAP",
     type: "Public",
     established: 2005,
-    ranking: "Top 600 globally",
     programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science", "Education"],
     icon: Building2,
     lateApplication: true
@@ -83,7 +78,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://www.cao.ac.za/Apply.aspx?content=Apply",
     type: "Public",
     established: 2004,
-    ranking: "Top 700 globally",
     programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science", "Agriculture"],
     icon: Building2,
     lateApplication: true
@@ -96,7 +90,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://ross.ru.ac.za/",
     type: "Public",
     established: 1904,
-    ranking: "Top 800 globally",
     programs: ["Arts", "Commerce", "Education", "Law", "Pharmacy", "Science"],
     icon: Building2,
     lateApplication: true
@@ -109,7 +102,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://apply.ufs.ac.za/",
     type: "Public",
     established: 1904,
-    ranking: "Top 900 globally",
     programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Natural Sciences"],
     icon: Building2,
     lateApplication: true
@@ -122,7 +114,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://studies.nwu.ac.za/undergraduate-studies/application",
     type: "Public",
     established: 2004,
-    ranking: "Top 1000 globally",
     programs: ["Arts", "Commerce", "Education", "Engineering", "Health Sciences", "Law", "Natural Sciences"],
     icon: Building2,
     lateApplication: true
@@ -135,7 +126,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://ulc-prod-webserver.ul.ac.za/pls/prodi41/gen.gw1pkg.gw1view",
     type: "Public",
     established: 2005,
-    ranking: "Top 1500 globally",
     programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Science"],
     icon: Building2,
     lateApplication: true
@@ -148,7 +138,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://univenierp01.univen.ac.za/pls/prodi41/gen.gw1pkg.gw1startup?x_processcode=ITS_OAP",
     type: "Public",
     established: 1982,
-    ranking: "Top 2000 globally",
     programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Science"],
     icon: Building2,
     lateApplication: true
@@ -161,7 +150,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://ienabler.ufh.ac.za/pls/prodi41/w99pkg.mi_login",
     type: "Public",
     established: 1916,
-    ranking: "Top 2500 globally",
     programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Science"],
     icon: Building2,
     lateApplication: true
@@ -174,7 +162,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://www.uwc.ac.za/admission-and-financial-aid/apply",
     type: "Public",
     established: 1959,
-    ranking: "Top 1000 globally",
     programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Natural Sciences"],
     icon: Building2,
     lateApplication: true
@@ -187,7 +174,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://www.cao.ac.za/Apply.aspx?content=Apply",
     type: "Public",
     established: 1960,
-    ranking: "Top 3000 globally",
     programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Science"],
     icon: Building2,
     lateApplication: true
@@ -200,7 +186,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://wsu.ac.za/index.php/en/undergraduate-programmes/new-students/admission-requirement",
     type: "Public",
     established: 2005,
-    ranking: "Top 3500 globally",
     programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Science"],
     icon: Building2,
     lateApplication: true
@@ -213,7 +198,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://alecto.cput.ac.za/pls/prodi41/gen.gw1pkg.gw1startup?x_processcode=ITS_OAP",
     type: "Public",
     established: 2005,
-    ranking: "Top 2000 globally",
     programs: ["Applied Sciences", "Business", "Education", "Engineering", "Health Sciences"],
     icon: Building2
   },
@@ -225,7 +209,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://www.cut.ac.za/apply",
     type: "Public",
     established: 1981,
-    ranking: "Top 2500 globally",
     programs: ["Applied Sciences", "Business", "Engineering", "Health Sciences"],
     icon: Building2
   },
@@ -237,7 +220,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://www.cao.ac.za/Apply.aspx?content=Apply",
     type: "Public",
     established: 2002,
-    ranking: "Top 3000 globally",
     programs: ["Applied Sciences", "Business", "Engineering", "Health Sciences"],
     icon: Building2
   },
@@ -249,7 +231,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://www.cao.ac.za/Apply.aspx?content=Apply",
     type: "Public",
     established: 1979,
-    ranking: "Top 3500 globally",
     programs: ["Applied Sciences", "Business", "Engineering"],
     icon: Building2
   },
@@ -261,7 +242,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://applications-prod.tut.ac.za/",
     type: "Public",
     established: 2004,
-    ranking: "Top 2000 globally",
     programs: ["Applied Sciences", "Business", "Engineering", "Health Sciences"],
     icon: Building2,
     lateApplication: true
@@ -274,7 +254,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://www.vut.ac.za/apply",
     type: "Public",
     established: 1966,
-    ranking: "Top 2500 globally",
     programs: ["Applied Sciences", "Business", "Engineering", "Health Sciences"],
     icon: Building2,
     lateApplication: true
@@ -287,7 +266,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://www.unisa.ac.za/apply",
     type: "Public",
     established: 1873,
-    ranking: "Top 1000 globally",
     programs: ["Arts", "Commerce", "Education", "Law", "Science"],
     icon: Building2,
     lateApplication: true
@@ -300,7 +278,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://applications-prod.spu.ac.za/",
     type: "Public",
     established: 2014,
-    ranking: "New University",
     programs: ["Arts", "Commerce", "Education", "Natural Sciences"],
     icon: Building2,
     lateApplication: true
@@ -313,7 +290,6 @@ const southAfricanUniversities = [
     applicationUrl: "https://www.ump.ac.za/Study-with-us/Application-Process/Online-Applications.aspx",
     type: "Public",
     established: 2014,
-    ranking: "New University",
     programs: ["Agriculture", "Arts", "Commerce", "Education"],
     icon: Building2,
     lateApplication: true
@@ -339,17 +315,17 @@ const Universities = () => {
       <SEO
         page="universities"
         title="South African Universities | IB Innovative Solutions"
-        description="Explore all public universities in South Africa, their programs, and application links. Powered by IB Innovative Solutions."
-        keywords="universities, south africa, university applications, IB Innovative Solutions, education, public universities, apply online"
+        description="IBIS - Innovative Business Solutions"
+        keywords="universities, south africa, university applications, late application, university assistance, IB Innovative Solutions, education, public universities, apply online, university help"
         ogTitle="South African Universities | IB Innovative Solutions"
-        ogDescription="Explore all public universities in South Africa, their programs, and application links. Powered by IB Innovative Solutions."
+        ogDescription="IBIS - Innovative Business Solutions"
         ogImage="/ib-logo.png"
         ogType="website"
         ogUrl="https://ib-innovativesolutions.com/universities"
         twitterCard="summary_large_image"
         twitterSite="@ibis_solutions"
         twitterTitle="South African Universities | IB Innovative Solutions"
-        twitterDescription="Explore all public universities in South Africa, their programs, and application links. Powered by IB Innovative Solutions."
+        twitterDescription="IBIS - Innovative Business Solutions"
         twitterImage="/ib-logo.png"
       />
       <div className="relative bg-white">
@@ -446,10 +422,6 @@ const Universities = () => {
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-600">Established:</span>
                             <span className="font-medium text-gray-900">{university.established}</span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Global Ranking:</span>
-                            <span className="font-medium text-gray-900">{university.ranking}</span>
                           </div>
                         </div>
                        

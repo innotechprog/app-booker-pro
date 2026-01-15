@@ -38,17 +38,25 @@ const Hero = () => {
               size="lg" 
               variant="secondary"
               className="bg-gray-800 hover:bg-gray-700 text-white px-8 py-4 text-lg font-semibold rounded-lg"
+              onClick={() => window.location.href = '/contact'}
             >
-              Request a quote
+              Contact Us
             </Button>
-            
-            <Button 
-              size="lg" 
-              variant="outline"
-              className="border-white text-white hover:bg-white hover:text-gray-900 px-8 py-4 text-lg font-semibold rounded-lg"
+            <Button
+              asChild
+              size="lg"
+              variant="secondary"
+              className="bg-green-500 hover:bg-green-600 text-white px-8 py-4 text-lg font-semibold rounded-lg"
             >
-              <MessageCircle className="mr-2 h-5 w-5" />
-              Whatsapp us
+              <a
+                href="https://wa.me/+27684240852"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="WhatsApp Us"
+              >
+                <i className="bi bi-whatsapp text-2xl" aria-hidden="true"></i>
+                WhatsApp Us
+              </a>
             </Button>
           </div>
         </div>

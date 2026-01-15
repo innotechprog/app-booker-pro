@@ -197,7 +197,7 @@ const SEO = ({
             "availableLanguage": "English"
           },
           "sameAs": [
-            "https://facebook.com/ibisolutions",
+            "https://www.facebook.com/profile.php?id=61584161858604",
             "https://twitter.com/ibis_solutions",
             "https://linkedin.com/company/ibisolutions"
           ],

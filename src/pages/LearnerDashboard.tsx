@@ -32,7 +32,6 @@ import {
   Eye,
   Save,
   X,
-  Heart,
   Send,
   BarChart3,
   PieChart,
@@ -1306,21 +1305,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
             <p className="text-2xl font-bold text-orange-600">85%</p>
           </Card>
           
-          <Card className="text-center p-4 bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200 hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Target className="h-6 w-6 text-yellow-600" />
-            </div>
-            <h3 className="font-semibold text-gray-700 text-sm">🔥 Streak</h3>
-            <p className="text-2xl font-bold text-yellow-600">{studyStreak}</p>
-          </Card>
-          
-          <Card className="text-center p-4 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Award className="h-6 w-6 text-purple-600" />
-            </div>
-            <h3 className="font-semibold text-gray-700 text-sm">Badges</h3>
-            <p className="text-2xl font-bold text-purple-600">{totalBadges}</p>
-          </Card>
+          {/* Streak and Badges cards removed as requested */}
         </div>
         )}
 
@@ -1716,38 +1701,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
 
           <TabsContent value="tutorials" className="mt-6">
             <div className="space-y-6">
-              {/* Bookmarked Tutorials */}
-              {bookmarkedTutorials.length > 0 && (
-                <Card className="bg-gradient-to-br from-pink-50 to-rose-50 border-pink-200 shadow-sm">
-                  <CardHeader className="border-b border-pink-100">
-                    <CardTitle className="flex items-center text-gray-900">
-                      <Heart className="mr-2 h-5 w-5 text-pink-600 fill-pink-600" />
-                      My Favorites
-                    </CardTitle>
-                    <p className="text-gray-600">Your bookmarked tutorials for quick access</p>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <div className="flex gap-3 overflow-x-auto pb-2">
-                      {bookmarkedTutorials.map((id) => (
-                        <div key={id} className="min-w-[200px] p-3 bg-white rounded-lg border border-pink-200">
-                          <p className="text-sm font-medium text-gray-900">Tutorial #{id}</p>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="w-full mt-2 text-pink-600"
-                            onClick={async () => {
-                              try {
-                                const response = await tutorialsAPI.removeBookmark(id);
-                                if (response.success) {
-                              const newBookmarks = bookmarkedTutorials.filter(b => b !== id);
-                              setBookmarkedTutorials(newBookmarks);
-                                }
-                              } catch (error) {
-                                console.error('Error removing bookmark:', error);
-                                alert('Failed to remove bookmark. Please try again.');
-                              }
-                            }}
-                          >
+              {/* Bookmarked Tutorials section removed as requested */}
                             <X className="h-4 w-4 mr-1" />
                             Remove
                           </Button>
@@ -2023,7 +1977,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                       ))}
                     </div>
                     <p className="text-sm text-gray-600">
-                      {studyStreak >= 7 ? "Amazing! You're on fire! 🎉" : `Keep going! ${7 - studyStreak} more day${(7 - studyStreak) !== 1 ? 's' : ''} to reach 7-day streak!`}
+                      {studyStreak >= 7 ? "Keep going! You've reached a 7-day streak." : `Keep going! ${7 - studyStreak} more day${(7 - studyStreak) !== 1 ? 's' : ''} to reach 7-day streak!`}
                     </p>
                   </div>
                 </CardContent>
@@ -2056,29 +2010,9 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                       </div>
                     )}
 
-                    {/* 3-Day Streak */}
-                    {studyStreak >= 3 && (
-                      <div className="text-center p-4 bg-yellow-50 rounded-lg border-2 border-yellow-200">
-                        <div className="text-4xl mb-2">🔥</div>
-                        <p className="font-semibold text-sm text-gray-900">On Fire!</p>
-                        <p className="text-xs text-gray-600">3-day study streak</p>
-                      </div>
-                    )}
-
-                    {/* 7-Day Streak */}
-                    {studyStreak >= 7 && (
-                      <div className="text-center p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
-                        <div className="text-4xl mb-2">🏆</div>
-                        <p className="font-semibold text-sm text-gray-900">Week Warrior</p>
-                        <p className="text-xs text-gray-600">7-day study streak</p>
-                      </div>
-                    )}
-
-                    {/* First Note */}
-                    {notes.length > 0 && (
-                      <div className="text-center p-4 bg-purple-50 rounded-lg border-2 border-purple-200">
-                        <div className="text-4xl mb-2">📝</div>
-                        <p className="font-semibold text-sm text-gray-900">Note Taker</p>
+                    {/* 3-Day Streak removed as requested */}
+                    {/* 7-Day Streak removed as requested */}
+                    {/* First Note removed as requested */}
                         <p className="text-xs text-gray-600">Created first note</p>
                       </div>
                     )}
@@ -2168,11 +2102,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                       <p className="text-3xl font-bold text-green-600">+15%</p>
                       <p className="text-sm text-gray-600 mt-1">This Month</p>
                     </div>
-                    <div className="text-center p-6 bg-purple-50 rounded-lg">
-                      <Award className="h-10 w-10 text-purple-600 mx-auto mb-3" />
-                      <p className="text-3xl font-bold text-purple-600">Top 20%</p>
-                      <p className="text-sm text-gray-600 mt-1">Ranking</p>
-                    </div>
+                    {/* Top 20% Ranking removed as requested */}
                   </div>
                 </CardContent>
               </Card>

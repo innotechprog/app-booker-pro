@@ -97,19 +97,19 @@ const ServicesSection = () => {
           })}
         </div>
         
-        {/* Call to action section */}
+        {/* Contact Us Button section */}
         <div className="text-center">
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 shadow-xl">
-            <h3 className="text-2xl font-bold text-white mb-4">Ready to Get Started?</h3>
+            <h3 className="text-2xl font-bold text-white mb-4">Have questions or need a custom solution?</h3>
             <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
-              Choose from our wide range of services and let us help you achieve your goals with professional excellence.
+              Reach out to our team and we’ll help you find the perfect service for your needs.
             </p>
             <Button 
               size="lg"
               className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-              onClick={() => navigate("/book-service")}
+              onClick={() => navigate("/contact")}
             >
-              Get Started Today
+              Contact Us
             </Button>
           </div>
         </div>

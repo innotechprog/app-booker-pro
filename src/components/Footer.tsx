@@ -26,18 +26,7 @@ const Footer = () => {
               Your trusted partner for innovative solutions. We provide comprehensive services to help you achieve your goals with excellence and reliability.
             </p>
             <div className="flex space-x-4">
-              <Button size="sm" variant="ghost" className="text-gray-300 hover:text-white hover:bg-gray-800">
-                <Facebook className="h-5 w-5" />
-              </Button>
-              <Button size="sm" variant="ghost" className="text-gray-300 hover:text-white hover:bg-gray-800">
-                <Twitter className="h-5 w-5" />
-              </Button>
-              <Button size="sm" variant="ghost" className="text-gray-300 hover:text-white hover:bg-gray-800">
-                <Instagram className="h-5 w-5" />
-              </Button>
-              <Button size="sm" variant="ghost" className="text-gray-300 hover:text-white hover:bg-gray-800">
-                <Linkedin className="h-5 w-5" />
-              </Button>
+              {/* Social media links removed as requested */}
             </div>
           </div>
 
