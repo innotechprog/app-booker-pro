@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import ScrollToTop from "@/components/ScrollToTop";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Bell, Calendar, User, LogOut, ChevronDown } from "lucide-react";
@@ -74,6 +75,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   return (
     <>
+      <ScrollToTop />
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
         {/* Header */}
         <div className="bg-white/10 backdrop-blur-sm border-b border-white/20">

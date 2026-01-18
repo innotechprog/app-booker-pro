@@ -301,6 +301,9 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 
 const Universities = () => {
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const [universitySearch, setUniversitySearch] = React.useState("");
   const filteredUniversities = southAfricanUniversities.filter(university =>
     university.name.toLowerCase().includes(universitySearch.toLowerCase()) ||

@@ -75,7 +75,7 @@ const Header = () => {
 
       {/* Mobile Navigation */}
       {isMobileMenuOpen && (
-        <div className="absolute top-full left-0 right-0 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/40 border-t border-white/10 md:hidden z-50">
+        <div className="absolute top-full left-0 right-0 bg-gradient-to-br from-[#101a3c] to-[#0a0f1c] border-t border-white/10 md:hidden z-50 shadow-lg">
           <nav className="flex flex-col space-y-4 p-4">
             <Link to="/" className={`${getLinkClasses("/")} py-2`} onClick={() => setIsMobileMenuOpen(false)}>
               Home
