@@ -16,7 +16,7 @@
 Create a file named `.env.local` in the root of your project (same level as `package.json`):
 
 ```env
-VITE_API_URL=http://localhost:5000/api
+VITE_API_URL=http://72.62.31.228:5000/api
 ```
 
 ### 2. Start Backend Server

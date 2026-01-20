@@ -320,16 +320,6 @@ const Universities = () => {
         title="South African Universities | IB Innovative Solutions"
         description="IBIS - Innovative Business Solutions"
         keywords="universities, south africa, university applications, late application, university assistance, IB Innovative Solutions, education, public universities, apply online, university help"
-        ogTitle="South African Universities | IB Innovative Solutions"
-        ogDescription="IBIS - Innovative Business Solutions"
-        ogImage="/ib-logo.png"
-        ogType="website"
-        ogUrl="https://ib-innovativesolutions.com/universities"
-        twitterCard="summary_large_image"
-        twitterSite="@ibis_solutions"
-        twitterTitle="South African Universities | IB Innovative Solutions"
-        twitterDescription="IBIS - Innovative Business Solutions"
-        twitterImage="/ib-logo.png"
       />
       <div className="relative bg-white">
         <div className="absolute inset-0"></div>

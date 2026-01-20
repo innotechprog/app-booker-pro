@@ -1,5 +1,6 @@
 
-import ScrollToTop from "@/components/ScrollToTop";
+import ScrollToTop from "./ScrollToTop";
+import Header from "./Header";
 
 interface LayoutProps {
   children: React.ReactNode;

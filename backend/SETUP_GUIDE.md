@@ -110,7 +110,7 @@ Or use command line:
 curl http://localhost:5000/health
 
 # Test login
-curl -X POST http://localhost:5000/api/auth/login ^
+curl -X POST https://ib-backend.ib-innovativesolutions.com/api/auth/login ^
   -H "Content-Type: application/json" ^
   -d "{\"email\":\"demo@student.com\",\"password\":\"demo123\"}"
 ```

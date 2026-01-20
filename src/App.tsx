@@ -3,16 +3,26 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import ScrollToTop from "@/components/ScrollToTop";
 import ComingSoon from "./pages/ComingSoon";
 import Index from "./pages/Index";
 import Contact from "./pages/Contact";
 import Education from "./pages/Education";
 import ITSolutions from "./pages/ITSolutions";
 import Universities from "./pages/Universities";
+import LearnerLogin from "./pages/LearnerLogin";
+import LearnerRegister from "./pages/LearnerRegister";
+import LearnerDashboard from "./pages/LearnerDashboard";
+import LearnerDashboardHome from "./pages/LearnerDashboardHome";
+import LearnerNotesPage from "./pages/LearnerNotesPage";
+import LearnerProfilePage from "./pages/LearnerProfilePage";
+import LearnerSubjectsPage from "./pages/LearnerSubjectsPage";
+import LearnerTutorialsPage from "./pages/LearnerTutorialsPage";
+import LearnerTutorsPage from "./pages/LearnerTutorsPage";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PackageProvider } from "@/contexts/PackageContext";
+
+import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +42,15 @@ const App = () => (
                 <Route path="/education" element={<Education />} />
                 <Route path="/it-solutions" element={<ITSolutions />} />
                 <Route path="/universities" element={<Universities />} />
+                <Route path="/learner/login" element={<LearnerLogin />} />
+                <Route path="/learner/register" element={<LearnerRegister />} />
+                <Route path="/learner/dashboard" element={<LearnerDashboard />} />
+                <Route path="/learner/dashboard/home" element={<LearnerDashboardHome />} />
+                <Route path="/learner/notes" element={<LearnerNotesPage />} />
+                <Route path="/learner/profile" element={<LearnerProfilePage />} />
+                <Route path="/learner/subjects" element={<LearnerSubjectsPage />} />
+                <Route path="/learner/tutorials" element={<LearnerTutorialsPage />} />
+                <Route path="/learner/tutors" element={<LearnerTutorsPage />} />
                 {/* All other routes show Coming Soon */}
                 <Route path="*" element={<ComingSoon />} />
               </Routes>
