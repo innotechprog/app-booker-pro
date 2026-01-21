@@ -1702,15 +1702,6 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
           <TabsContent value="tutorials" className="mt-6">
             <div className="space-y-6">
               {/* Bookmarked Tutorials section removed as requested */}
-                            <X className="h-4 w-4 mr-1" />
-                            Remove
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
               
               {/* All Tutorials */}
               <div>
@@ -2012,10 +2003,6 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
 
                     {/* 3-Day Streak removed as requested */}
                     {/* 7-Day Streak removed as requested */}
-                    {/* First Note removed as requested */}
-                        <p className="text-xs text-gray-600">Created first note</p>
-                      </div>
-                    )}
 
                     {/* 10 Notes */}
                     {notes.length >= 10 && (
