@@ -1,3 +1,5 @@
+import Packages from "./pages/Packages";
+                <Route path="/learner/packages" element={<Packages />} />
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +14,14 @@ import Universities from "./pages/Universities";
 import LearnerLogin from "./pages/LearnerLogin";
 import LearnerRegister from "./pages/LearnerRegister";
 import LearnerDashboard from "./pages/LearnerDashboard";
+import LearnerDashboardHome from "./pages/LearnerDashboardHome";
+import LearnerLogin from "./pages/LearnerLogin";
+import LearnerNotesPage from "./pages/LearnerNotesPage";
+import LearnerProfilePage from "./pages/LearnerProfilePage";
+import LearnerRegister from "./pages/LearnerRegister";
+import LearnerSubjectsPage from "./pages/LearnerSubjectsPage";
+import LearnerTutorialsPage from "./pages/LearnerTutorialsPage";
+import LearnerTutorsPage from "./pages/LearnerTutorsPage";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PackageProvider } from "@/contexts/PackageContext";
@@ -39,6 +49,12 @@ const App = () => (
                 <Route path="/learner/login" element={<LearnerLogin />} />
                 <Route path="/learner/register" element={<LearnerRegister />} />
                 <Route path="/learner/dashboard" element={<LearnerDashboard />} />
+                <Route path="/learner/dashboard/home" element={<LearnerDashboardHome />} />
+                <Route path="/learner/notes" element={<LearnerNotesPage />} />
+                <Route path="/learner/profile" element={<LearnerProfilePage />} />
+                <Route path="/learner/subjects" element={<LearnerSubjectsPage />} />
+                <Route path="/learner/tutorials" element={<LearnerTutorialsPage />} />
+                <Route path="/learner/tutors" element={<LearnerTutorsPage />} />
                 {/* All other routes show Coming Soon */}
                 <Route path="*" element={<ComingSoon />} />
               </Routes>
