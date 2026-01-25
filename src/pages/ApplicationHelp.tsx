@@ -27,7 +27,7 @@ const ApplicationHelp = () => {
     setIsSending(true);
     setStatus("Sending...");
     try {
-      const res = await fetch("https://ib-backend.ib-innovativesolutions.com/api/application-help/send-application-help", {
+      const res = await fetch("http://localhost:5000/api/api/application-help/send-application-help", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

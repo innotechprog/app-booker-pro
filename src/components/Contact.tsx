@@ -39,7 +39,7 @@ const Contact = () => {
     }
     setIsSending(true);
     try {
-      const res = await fetch("https://ib-backend.ib-innovativesolutions.com/api/contact/send-contact", {
+      const res = await fetch("http://localhost:5000/api/contact/send-contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
