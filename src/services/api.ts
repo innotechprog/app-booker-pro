@@ -371,3 +371,28 @@ export const clearAuth = () => {
   localStorage.removeItem('learnerData');
 };
 
+// =============================================
+// SMART APPLY API (uses same nodemailer as contact)
+// =============================================
+
+export const smartApplyAPI = {
+  sendEmails: async (payload: {
+    emails: { to: string; subject: string; body: string }[];
+    userEmail: string;
+    userName?: string;
+    cvBase64?: string;
+    cvFileName?: string;
+  }) => {
+    const res = await fetch(`${API_BASE_URL}smart-apply/send-emails`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || `Server error: ${res.status} ${res.statusText}`);
+    }
+    return res.json();
+  }
+};
+

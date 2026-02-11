@@ -27,7 +27,8 @@ const ApplicationHelp = () => {
     setIsSending(true);
     setStatus("Sending...");
     try {
-      const res = await fetch("http://localhost:5000/api/api/application-help/send-application-help", {
+      const apiBase = import.meta.env.VITE_API_URL || "http://localhost:5000/api/";
+      const res = await fetch(`${apiBase}application-help/send-application-help`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

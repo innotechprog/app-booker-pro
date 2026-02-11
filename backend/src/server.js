@@ -17,6 +17,7 @@ import subjectsRoutes from './routes/subjects.js';
 import packagesRoutes from './routes/packages.js';
 import applicationHelpRoutes from './routes/applicationHelp.js';
 import contactRoutes from './routes/contact.js';
+import smartApplyRoutes from './routes/smartApply.js';
 
 // Load environment variables
 dotenv.config();
@@ -72,7 +73,7 @@ app.options('*', cors({
   allowedHeaders: ['Content-Type','Authorization'],
   optionsSuccessStatus: 204,
 }));
-app.use(express.json()); // Parse JSON bodies
+app.use(express.json({ limit: '10mb' })); // Parse JSON (10mb for CV base64)
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
 // Health check (before rate limiting)
@@ -110,6 +111,7 @@ app.use('/api/subjects', subjectsRoutes);
 app.use('/api/packages', packagesRoutes);
 app.use('/api/application-help', applicationHelpRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/smart-apply', smartApplyRoutes);
 
 // Welcome route
 app.get('/', (req, res) => {
