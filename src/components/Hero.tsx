@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { MessageCircle } from "lucide-react";
 import heroImage from "@/images/hero.png";
 
 const Hero = () => {
@@ -46,16 +45,10 @@ const Hero = () => {
               asChild
               size="lg"
               variant="secondary"
-              className="bg-green-500 hover:bg-green-600 text-white px-8 py-4 text-lg font-semibold rounded-lg"
+              className="bg-gray-800 hover:bg-gray-700 text-white px-8 py-4 text-lg font-semibold rounded-lg border border-gray-600"
             >
-              <a
-                href="https://wa.me/+27684240852"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="WhatsApp Us"
-              >
-                <i className="bi bi-whatsapp text-2xl" aria-hidden="true"></i>
-                WhatsApp Us
+              <a href="#services" aria-label="Learn more about our services">
+                Learn more
               </a>
             </Button>
           </div>

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
+import ibLogoWhite from "@/images/ib-logo-white.png";
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -28,9 +29,13 @@ const Header = () => {
     <header className="w-full px-4 sm:px-6 py-3 sm:py-4 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/40 border-b border-white/10">
       <div className="flex items-center justify-between">
       <div className="flex items-center">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-          IBIS<span className="text-primary">.</span>
-        </h1>
+          <Link to="/" className="flex items-center focus:outline-none">
+            <img
+              src={ibLogoWhite}
+              alt="IB Innovative Solutions - IBIS"
+              className="h-8 sm:h-9 w-auto"
+            />
+          </Link>
       </div>
       
         {/* Desktop Navigation */}
@@ -46,6 +51,9 @@ const Header = () => {
           </Link>
           <Link to="/it-solutions" className={getLinkClasses("/it-solutions")}>
             IT Solutions
+          </Link>
+          <Link to="/smart-apply" className={getLinkClasses("/smart-apply")}>
+            Smart Apply
           </Link>
         </nav>
 
@@ -88,6 +96,9 @@ const Header = () => {
             </Link>
             <Link to="/it-solutions" className={`${getLinkClasses("/it-solutions")} py-2`} onClick={() => setIsMobileMenuOpen(false)}>
               IT Solutions
+            </Link>
+            <Link to="/smart-apply" className={`${getLinkClasses("/smart-apply")} py-2`} onClick={() => setIsMobileMenuOpen(false)}>
+              Smart Apply
             </Link>
             
             {(isActive("/education") || isActive("/universities")) && (

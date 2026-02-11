@@ -23,7 +23,7 @@ function Index() {
       </div>
 
       {/* Services section with enhanced styling */}
-      <div className="relative">
+      <div id="services" className="relative scroll-mt-20">
         <div className="absolute inset-0 bg-gradient-to-b from-white to-gray-50"></div>
         <div className="relative z-10">
           <ServicesSection />

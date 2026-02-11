@@ -17,13 +17,22 @@ import {
   GraduationCap,
   Users,
   FileText,
-  Globe
+  Globe,
+  Sparkles
 } from "lucide-react";
+
+interface ServiceItem {
+  name: string;
+  icon: React.ComponentType<{ className?: string }>;
+  route: string;
+  description: string;
+  features?: string[];
+}
 
 const ServicesSection = () => {
   const navigate = useNavigate();
 
-  const services = [
+  const services: ServiceItem[] = [
     { 
       name: "Education", 
       icon: GraduationCap, 
@@ -41,6 +50,12 @@ const ServicesSection = () => {
       icon: Monitor, 
       route: "/book-service",
       description: "Professional IT services including web development, system maintenance, and technical support"
+    },
+    { 
+      name: "Smart Apply", 
+      icon: Sparkles, 
+      route: "/smart-apply",
+      description: "Apply to many companies at once. AI generates tailored email subjects and bodies—view and edit before sending"
     }
   ];
 
@@ -58,7 +73,7 @@ const ServicesSection = () => {
         </div>
         
         {/* Services Grid with enhanced styling */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
           {services.map((service, index) => {
             const IconComponent = service.icon;
             return (

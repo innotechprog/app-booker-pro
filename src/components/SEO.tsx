@@ -1,132 +1,157 @@
 import { Helmet } from 'react-helmet-async';
 
+// Absolute site URL for canonical, OG images (required for social sharing)
+const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://ib-innovativesolutions.com';
+
 interface SEOProps {
   title?: string;
   description?: string;
   keywords?: string;
   image?: string;
+  imageAlt?: string;
   url?: string;
   type?: string;
   page?: string;
+  noindex?: boolean;
 }
 
-const SEO = ({ 
-  title, 
-  description, 
-  keywords, 
-  image, 
-  url, 
+const SEO = ({
+  title,
+  description,
+  keywords,
+  image,
+  imageAlt,
+  url,
   type = "website",
-  page = "home"
+  page = "home",
+  noindex = false
 }: SEOProps) => {
-  // Default SEO data for different pages
+  // SEO data: titles 50–60 chars, descriptions 150–160 chars (Google guidelines)
   const seoData = {
     home: {
-      title: "IB Innovative Solutions - Solutions You Can Trust Everyday",
-      description: "IBIS provides comprehensive professional services including education support, IT solutions, and personal assistance. Get reliable, secure, and efficient services across Gauteng, South Africa.",
-      keywords: "IBIS, IB Innovative Solutions, professional services, education support, IT solutions, personal assistance, errand running, delivery services, tutoring, university applications, South Africa, Gauteng, Johannesburg, Pretoria",
-      image: "/og-image-home.jpg",
-      url: "https://ibis.com"
+      title: "IB Innovative Solutions | Education, IT & Smart Apply",
+      description: "Trusted professional services: tutoring, university applications, IT solutions, Send Me & Smart Apply bulk job applications. Gauteng & South Africa.",
+      keywords: "IBIS, IB Innovative Solutions, education, tutoring, university applications, IT solutions, Send Me, Smart Apply, bulk job apply, South Africa, Gauteng, Johannesburg, Pretoria",
+      image: "/ib-logo-white.png",
+      url: `${SITE_URL}`,
     },
     education: {
-      title: "Education Services - IBIS | Tutoring, University Applications & Career Guidance",
-      description: "Comprehensive educational support including tutoring, university applications, career guidance, and access to all South African universities. Expert educational consulting and online learning solutions.",
-      keywords: "education services, tutoring, university applications, South African universities, career guidance, educational consulting, online learning, academic support, UCT, Wits, Stellenbosch, Pretoria University",
+      title: "Education Services | Tutoring & University Applications - IBIS",
+      description: "Tutoring, university applications & career guidance. Access all South African universities. Expert educational consulting & online learning. IBIS.",
+      keywords: "education, tutoring, university applications, South African universities, career guidance, UCT, Wits, Stellenbosch, academic support, IBIS",
       image: "/og-image-education.jpg",
-      url: "https://ibis.com/education"
+      url: `${SITE_URL}/education`,
     },
     tutorials: {
-      title: "Online Tutorials - IBIS | Personalized Tutoring for All Grades & Subjects",
-      description: "Get expert tutoring for any grade (1-12) and subject. Personalized learning with flexible scheduling, comprehensive curriculum coverage, and progress tracking. Choose from Basic, Standard, or Premium packages.",
-      keywords: "online tutorials, tutoring, personalized learning, grade 1-12, university tutoring, mathematics, english, science, history, art, music, computer science, homework help, test preparation, South Africa",
+      title: "Online Tutorials | Personalized Tutoring Grades 1-12 - IBIS",
+      description: "Expert tutoring for any grade and subject. Flexible scheduling, curriculum coverage & progress tracking. Basic, Standard & Premium packages.",
+      keywords: "online tutorials, tutoring, grades 1-12, mathematics, science, homework help, test prep, South Africa, IBIS",
       image: "/og-image-tutorials.jpg",
-      url: "https://ibis.com/tutorials"
+      url: `${SITE_URL}/tutorials`,
     },
     bookService: {
-      title: "Send Me Services - IBIS | Personal Assistance & Errand Running",
-      description: "Your trusted helping hand for all your errands and tasks. Professional delivery services, personal assistance, household tasks, and business support across Gauteng, South Africa.",
-      keywords: "send me services, errand running, delivery services, personal assistance, household tasks, business support, grocery shopping, prescription pickup, dry cleaning, meal delivery, South Africa, Gauteng",
+      title: "Send Me Services | Personal Assistance & Errands - IBIS",
+      description: "Errand running, delivery & personal assistance. Household tasks & business support across Gauteng. Your trusted helping hand.",
+      keywords: "Send Me, errand running, delivery, personal assistance, household tasks, Gauteng, South Africa, IBIS",
       image: "/og-image-send-me.jpg",
-      url: "https://ibis.com/book-service"
+      url: `${SITE_URL}/book-service`,
     },
     itSolutions: {
-      title: "IT Solutions - IBIS | Web Development & Technical Support",
-      description: "Professional IT services including web development, system maintenance, technical support, and digital solutions. Expert technology consulting and implementation services.",
-      keywords: "IT solutions, web development, system maintenance, technical support, digital solutions, technology consulting, software development, IT services, South Africa",
+      title: "IT Solutions | Web Development & Tech Support - IBIS",
+      description: "Web development, system maintenance & technical support. Digital solutions & technology consulting. Professional IT services.",
+      keywords: "IT solutions, web development, tech support, digital solutions, software development, South Africa, IBIS",
       image: "/og-image-it.jpg",
-      url: "https://ibis.com/it-solutions"
+      url: `${SITE_URL}/it-solutions`,
+    },
+    smartApply: {
+      title: "Smart Apply | Bulk Job Applications with AI Emails - IBIS",
+      description: "Apply to many companies at once. AI generates email subjects & bodies. Add emails & topics, edit, then send. Bulk job applications made easy.",
+      keywords: "Smart Apply, bulk job applications, AI email generator, job applications, mass apply, job search, South Africa, IBIS",
+      image: "/og-image-smart-apply.jpg",
+      url: `${SITE_URL}/smart-apply`,
+    },
+    contact: {
+      title: "Contact Us | Get in Touch - IB Innovative Solutions",
+      description: "Contact IBIS for education, IT, Send Me or Smart Apply. Phone, email & online enquiries. We respond promptly. Gauteng, South Africa.",
+      keywords: "contact IBIS, get in touch, customer service, enquiry, South Africa, Gauteng, WhatsApp, support",
+      image: "/ib-logo-white.png",
+      url: `${SITE_URL}/contact`,
     },
     login: {
       title: "Login - IBIS | Access Your Account",
-      description: "Login to your IBIS account to manage your services, bookings, and access exclusive features. Secure and easy access to your personalized dashboard.",
-      keywords: "IBIS login, account access, user dashboard, secure login, service management, booking management",
+      description: "Log in to your IBIS account. Manage services, bookings and your dashboard. Secure access.",
+      keywords: "IBIS login, account access, user dashboard, secure login",
       image: "/og-image-login.jpg",
-      url: "https://ibis.com/login"
+      url: `${SITE_URL}/learner/login`,
     },
     register: {
       title: "Register - IBIS | Create Your Account",
-      description: "Join IBIS today and access our comprehensive range of professional services. Create your account to start booking education support, IT solutions, and personal assistance services.",
-      keywords: "IBIS register, create account, sign up, join IBIS, service booking, user registration",
+      description: "Join IBIS. Create your account to book education, IT solutions and personal assistance services.",
+      keywords: "IBIS register, sign up, join IBIS, service booking, registration",
       image: "/og-image-register.jpg",
-      url: "https://ibis.com/register"
+      url: `${SITE_URL}/learner/register`,
     },
     booking: {
       title: "Book Services - IBIS | Easy Online Booking",
-      description: "Book your preferred IBIS services online. Easy booking for education support, IT solutions, and personal assistance. Secure payment options and flexible scheduling.",
-      keywords: "book services, online booking, service reservation, IBIS booking, education booking, IT services booking, personal assistance booking",
+      description: "Book IBIS services online. Education, IT and personal assistance. Secure payment and flexible scheduling.",
+      keywords: "book services, online booking, IBIS booking, service reservation",
       image: "/og-image-booking.jpg",
-      url: "https://ibis.com/booking"
+      url: `${SITE_URL}/booking`,
     },
     dashboard: {
       title: "Dashboard - IBIS | Manage Your Services",
-      description: "Access your IBIS dashboard to manage bookings, view service history, and track your account. Personalized dashboard for all your service needs.",
-      keywords: "IBIS dashboard, service management, booking history, account dashboard, user dashboard",
+      description: "Manage your IBIS bookings, service history and account. Personalized dashboard.",
+      keywords: "IBIS dashboard, service management, booking history",
       image: "/og-image-dashboard.jpg",
-      url: "https://ibis.com/dashboard"
+      url: `${SITE_URL}/dashboard`,
     },
     billing: {
-      title: "Billing & Payments - IBIS | Secure Payment Processing",
-      description: "Secure billing and payment processing for IBIS services. Multiple payment options including PayFast and bank transfer. Transparent pricing and invoice management.",
-      keywords: "billing, payments, PayFast, bank transfer, invoice management, secure payments, IBIS billing",
+      title: "Billing & Payments - IBIS | Secure Payments",
+      description: "Secure billing for IBIS services. PayFast, bank transfer. Transparent pricing and invoices.",
+      keywords: "billing, payments, PayFast, invoice, IBIS",
       image: "/og-image-billing.jpg",
-      url: "https://ibis.com/billing"
+      url: `${SITE_URL}/billing`,
     },
     agentRegister: {
       title: "Agent Registration - IBIS | Join Our Team",
-      description: "Become an IBIS agent or service provider. Join our team and help deliver exceptional services. Flexible registration process with comprehensive support.",
-      keywords: "agent registration, service provider registration, join IBIS, become an agent, IBIS careers, service provider application",
+      description: "Become an IBIS agent or service provider. Flexible registration and support.",
+      keywords: "agent registration, join IBIS, service provider, IBIS careers",
       image: "/og-image-agent-register.jpg",
-      url: "https://ibis.com/agent-register"
+      url: `${SITE_URL}/agent-register`,
     },
     adminDashboard: {
       title: "Admin Dashboard - IBIS | System Administration",
-      description: "Administrative dashboard for IBIS system management. Monitor applications, manage users, and oversee service operations.",
-      keywords: "admin dashboard, system administration, IBIS admin, user management, application monitoring",
+      description: "IBIS admin dashboard. Monitor applications, manage users and operations.",
+      keywords: "admin dashboard, IBIS admin, user management",
       image: "/og-image-admin.jpg",
-      url: "https://ibis.com/admin"
+      url: `${SITE_URL}/admin`,
     },
     agentDashboard: {
       title: "Agent Dashboard - IBIS | Service Management",
-      description: "Agent dashboard for managing service requests, tracking assignments, and monitoring performance. Professional tools for IBIS agents.",
-      keywords: "agent dashboard, service management, agent tools, assignment tracking, performance monitoring",
+      description: "Manage service requests, assignments and performance. Tools for IBIS agents.",
+      keywords: "agent dashboard, service management, IBIS agents",
       image: "/og-image-agent-dashboard.jpg",
-      url: "https://ibis.com/agent-dashboard"
+      url: `${SITE_URL}/agent-dashboard`,
     },
     invoices: {
       title: "Invoices - IBIS | Invoice Management",
-      description: "Manage your IBIS invoices and payment history. View, download, and track all your service invoices in one place.",
-      keywords: "invoices, invoice management, payment history, IBIS invoices, service invoices",
+      description: "View, download and track your IBIS invoices and payment history.",
+      keywords: "invoices, invoice management, IBIS, payment history",
       image: "/og-image-invoices.jpg",
-      url: "https://ibis.com/invoices"
+      url: `${SITE_URL}/invoices`,
     },
     notFound: {
-      title: "Page Not Found - IBIS | 404 Error",
-      description: "The page you're looking for doesn't exist. Return to IBIS homepage to access our services.",
-      keywords: "404, page not found, error page, IBIS services",
+      title: "Page Not Found (404) - IB Innovative Solutions",
+      description: "This page doesn't exist. Return to IBIS homepage for education, IT, Send Me and Smart Apply services.",
+      keywords: "404, page not found, IBIS",
       image: "/og-image-404.jpg",
-      url: "https://ibis.com/404"
-    }
+      url: `${SITE_URL}/404`,
+    },
   };
+
+  // Pages that should not be indexed (private/account pages)
+  const noindexPages = new Set(['login', 'register', 'dashboard', 'adminDashboard', 'agentDashboard', 'billing', 'invoices']);
+  const shouldNoindex = noindex || noindexPages.has(page);
 
   // Get SEO data for current page
   const currentSeo = seoData[page as keyof typeof seoData] || seoData.home;
@@ -135,57 +160,56 @@ const SEO = ({
   const finalTitle = title || currentSeo.title;
   const finalDescription = description || currentSeo.description;
   const finalKeywords = keywords || currentSeo.keywords;
-  const finalImage = image || currentSeo.image;
+  const finalImagePath = image || currentSeo.image;
+  const finalImage = finalImagePath.startsWith('http') ? finalImagePath : `${SITE_URL}${finalImagePath}`;
   const finalUrl = url || currentSeo.url;
+  const finalImageAlt = imageAlt || `${finalTitle} - IB Innovative Solutions`;
 
   return (
     <Helmet>
-      {/* Basic Meta Tags */}
+      {/* Primary Meta Tags (SEO standards: title 50-60 chars, description 150-160 chars) */}
       <title>{finalTitle}</title>
       <meta name="description" content={finalDescription} />
       <meta name="keywords" content={finalKeywords} />
       <meta name="author" content="IB Innovative Solutions" />
-      <meta name="robots" content="index, follow" />
-      <meta name="language" content="English" />
+      <meta name="robots" content={shouldNoindex ? "noindex, nofollow" : "index, follow"} />
+      <meta name="googlebot" content={shouldNoindex ? "noindex, nofollow" : "index, follow"} />
+      <meta name="language" content="en" />
       <meta name="revisit-after" content="7 days" />
-      
-      {/* Open Graph Meta Tags */}
+      <link rel="canonical" href={finalUrl} />
+
+      {/* Open Graph (Facebook, LinkedIn): absolute URLs required */}
       <meta property="og:title" content={finalTitle} />
       <meta property="og:description" content={finalDescription} />
       <meta property="og:image" content={finalImage} />
+      <meta property="og:image:alt" content={finalImageAlt} />
       <meta property="og:url" content={finalUrl} />
       <meta property="og:type" content={type} />
       <meta property="og:site_name" content="IB Innovative Solutions" />
-      <meta property="og:locale" content="en_US" />
-      
-      {/* Twitter Card Meta Tags */}
+      <meta property="og:locale" content="en_ZA" />
+
+      {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={finalTitle} />
       <meta name="twitter:description" content={finalDescription} />
       <meta name="twitter:image" content={finalImage} />
+      <meta name="twitter:image:alt" content={finalImageAlt} />
       <meta name="twitter:site" content="@ibis_solutions" />
-      
-      {/* Additional Meta Tags */}
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+      {/* Theme / PWA (viewport lives in index.html only) */}
       <meta name="theme-color" content="#2563eb" />
       <meta name="msapplication-TileColor" content="#2563eb" />
       
-      {/* Canonical URL */}
-      <link rel="canonical" href={finalUrl} />
-      
-      {/* Favicon - Simple icon reference */}
-      <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-      
-      {/* Structured Data */}
+      {/* Structured Data (Schema.org) - Organization + WebSite for SEO */}
       <script type="application/ld+json">
         {JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Organization",
           "name": "IB Innovative Solutions",
           "alternateName": "IBIS",
-          "url": "https://ibis.com",
-          "logo": "https://ib-innovativesolutions.co.za/logo.png",
-          "description": "Solutions you can trust everyday. Comprehensive professional services including education support, IT solutions, and personal assistance.",
+          "url": SITE_URL,
+          "logo": `${SITE_URL}/ib-logo-white.png`,
+          "description": "Solutions you can trust everyday. Education support, IT solutions, Send Me and Smart Apply bulk job applications. South Africa.",
           "address": {
             "@type": "PostalAddress",
             "addressRegion": "Gauteng",
@@ -194,7 +218,10 @@ const SEO = ({
           "contactPoint": {
             "@type": "ContactPoint",
             "contactType": "customer service",
-            "availableLanguage": "English"
+            "telephone": "+27-68-424-0852",
+            "email": "info@ib-innovativesolutions.com",
+            "availableLanguage": "English",
+            "areaServed": "ZA"
           },
           "sameAs": [
             "https://www.facebook.com/profile.php?id=61584161858604",
@@ -214,32 +241,22 @@ const SEO = ({
             "@type": "OfferCatalog",
             "name": "IBIS Services",
             "itemListElement": [
-              {
-                "@type": "Offer",
-                "itemOffered": {
-                  "@type": "Service",
-                  "name": "Education Services",
-                  "description": "Tutoring, university applications, and career guidance"
-                }
-              },
-              {
-                "@type": "Offer",
-                "itemOffered": {
-                  "@type": "Service",
-                  "name": "Send Me Services",
-                  "description": "Personal assistance and errand running"
-                }
-              },
-              {
-                "@type": "Offer",
-                "itemOffered": {
-                  "@type": "Service",
-                  "name": "IT Solutions",
-                  "description": "Web development and technical support"
-                }
-              }
+              { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Education Services", "description": "Tutoring, university applications, career guidance" } },
+              { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Send Me Services", "description": "Personal assistance and errand running" } },
+              { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "IT Solutions", "description": "Web development and technical support" } },
+              { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Smart Apply", "description": "Bulk job applications with AI-generated emails" } }
             ]
           }
+        })}
+      </script>
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "IB Innovative Solutions",
+          "url": SITE_URL,
+          "description": "Professional services: education, IT solutions, Send Me, Smart Apply. Gauteng & South Africa.",
+          "publisher": { "@type": "Organization", "name": "IB Innovative Solutions" }
         })}
       </script>
     </Helmet>

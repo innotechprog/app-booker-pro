@@ -13,6 +13,7 @@ import Index from "./pages/Index";
 import Contact from "./pages/Contact";
 import Education from "./pages/Education";
 import ITSolutions from "./pages/ITSolutions";
+import SmartApply from "./pages/SmartApply";
 import Universities from "./pages/Universities";
 import LearnerDashboard from "./pages/LearnerDashboard";
 import LearnerDashboardHome from "./pages/LearnerDashboardHome";
@@ -42,6 +43,7 @@ const App = () => (
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/education" element={<Education />} />
                 <Route path="/it-solutions" element={<ITSolutions />} />
+                <Route path="/smart-apply" element={<SmartApply />} />
                 <Route path="/universities" element={<Universities />} />
                 <Route path="/learner/login" element={<LearnerLogin />} />
                 <Route path="/learner/register" element={<LearnerRegister />} />
