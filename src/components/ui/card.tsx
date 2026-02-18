@@ -2,6 +2,9 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+const hasLightBg = (cls: string | undefined) =>
+  cls && (/bg-white(?!\/[12]\d)|bg-gray-(50|100|200|300)|bg-\[\#f[\da-f]*\]/i.test(cls ?? ""));
+
 const Card = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -10,6 +13,7 @@ const Card = React.forwardRef<
     ref={ref}
     className={cn(
       "rounded-lg border bg-card text-card-foreground shadow-sm",
+      hasLightBg(className) && "text-gray-900",
       className
     )}
     {...props}

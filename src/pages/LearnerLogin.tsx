@@ -25,7 +25,7 @@ const LearnerLogin = () => {
         try {
           await loginWithGoogle(credential);
           toast.success("Successfully signed in with Google");
-          navigate("/learner/dashboard");
+          navigate("/learner/dashboard", { state: { fromLogin: true } });
         } catch (err: any) {
           setError(err.message || "Google sign in failed. Please try again.");
           toast.error(err.message || "Google sign in failed");
@@ -47,7 +47,7 @@ const LearnerLogin = () => {
 
     try {
       await login(form.email, form.password);
-      navigate("/learner/dashboard");
+      navigate("/learner/dashboard", { state: { fromLogin: true } });
     } catch (err: any) {
       setError(err.message || "Invalid credentials. Please try again.");
     } finally {
@@ -97,8 +97,8 @@ const LearnerLogin = () => {
             {/* Google Login Button */}
             <Button
               type="button"
-              variant="outline"
-              className="w-full h-12 border-gray-300 hover:bg-gray-50 text-gray-900 hover:text-gray-900 bg-white"
+              variant="outlineLight"
+              className="w-full h-12"
               onClick={handleGoogleLogin}
               disabled={isGoogleLoading}
             >

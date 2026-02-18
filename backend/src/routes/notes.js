@@ -46,8 +46,14 @@ router.post('/', protect, async (req, res) => {
 
     const result = await query(
       'INSERT INTO notes (user_id, title, body, category) VALUES (?, ?, ?, ?)',
-      [req.user.id, title || 'Untitled', body, category || 'general']
+      [req.user.id, title || 'Untitled', body ?? '', category || 'general']
     );
+
+    const noteId = result?.insertId ?? result?.[0]?.insertId;
+    if (noteId == null) {
+      console.error('Notes create: unexpected insert result', result);
+      return res.status(500).json({ success: false, message: 'Note was not created. Please try again.' });
+    }
 
     // Check if this is first note for achievement
     const noteCount = await query(
@@ -69,10 +75,16 @@ router.post('/', protect, async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Note created successfully',
-      noteId: result.insertId
+      noteId
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error creating note', error: error.message });
+    console.error('Error creating note:', error);
+    res.status(500).json({
+      success: false,
+      message: error.code === 'ER_NO_SUCH_TABLE'
+        ? 'Notes feature is not set up. Please run the database setup.'
+        : (error.message || 'Error creating note. Please try again.')
+    });
   }
 });
 

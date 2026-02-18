@@ -1,6 +1,8 @@
 // API Service for Backend Communication
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/';
+// Normalize base URL so we don't end up with double slashes
+const RAW_API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = RAW_API_BASE_URL.replace(/\/+$/, '');
 
 // Helper to get auth token
 const getToken = (): string | null => {
@@ -271,6 +273,46 @@ export const tutorialsAPI = {
 
   getBookmarks: async () => {
     return await fetchWithAuth('/tutorials/bookmarks/my');
+  }
+};
+
+// =============================================
+// TUTORS API
+// =============================================
+
+export const tutorsAPI = {
+  getAll: async (subject?: string) => {
+    const url = subject && subject !== 'all' ? `/tutors?subject=${encodeURIComponent(subject)}` : '/tutors';
+    return await fetchWithAuth(url);
+  },
+
+  getById: async (tutorId: string | number) => {
+    return await fetchWithAuth(`/tutors/${tutorId}`);
+  }
+};
+
+// =============================================
+// BOOKINGS API
+// =============================================
+
+export const bookingsAPI = {
+  create: async (bookingData: {
+    tutorId: string | number;
+    subject?: string;
+    date: string;
+    time: string;
+    duration: string;
+    sessionType?: string;
+    notes?: string;
+  }) => {
+    return await fetchWithAuth('/bookings', {
+      method: 'POST',
+      body: JSON.stringify(bookingData)
+    });
+  },
+
+  getAll: async () => {
+    return await fetchWithAuth('/bookings');
   }
 };
 

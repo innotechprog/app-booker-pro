@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import SEO from "@/components/SEO";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
-import { subjectsAPI } from "@/services/api";
+import { subjectsAPI, tutorsAPI, tutorialsAPI } from "@/services/api";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { 
@@ -76,8 +76,8 @@ interface TutorProfile {
   department: string;
 }
 
-// Mock data - in a real app, this would come from an API
-const mockTutorials: TutorialItem[] = [
+// Fallback mock tutorials when API returns empty
+const fallbackMockTutorials: TutorialItem[] = [
   { 
     id: 1, 
     title: "Introduction to Algebra", 
@@ -93,7 +93,7 @@ const mockTutorials: TutorialItem[] = [
     grade: "Grade 9-10",
     subject: "Mathematics",
     videoThumbnail: "https://images.unsplash.com/photo-1509228468518-180dd4864904?w=400&h=225&fit=crop",
-    videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    videoUrl: "https://www.youtube.com/watch?v=J8l2O_AGYEw",
     description: "Learn the fundamentals of algebra including variables, constants, and basic equations. Perfect for beginners starting their algebra journey.",
     dateAdded: "2024-01-15",
     isPopular: true,
@@ -114,7 +114,7 @@ const mockTutorials: TutorialItem[] = [
     grade: "Grade 10-11",
     subject: "Mathematics",
     videoThumbnail: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=225&fit=crop",
-    videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    videoUrl: "https://www.youtube.com/watch?v=J8l2O_AGYEw",
     description: "Explore different types of functions and learn to graph them with various transformations and applications.",
     dateAdded: "2024-01-12",
     isPopular: false,
@@ -135,7 +135,7 @@ const mockTutorials: TutorialItem[] = [
     grade: "Grade 11-12",
     subject: "Mathematics",
     videoThumbnail: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&h=225&fit=crop",
-    videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    videoUrl: "https://www.youtube.com/watch?v=J8l2O_AGYEw",
     description: "Master quadratic equations through step-by-step problem solving and graphical analysis. Includes factorization and completing the square methods.",
     dateAdded: "2024-01-20",
     isPopular: false,
@@ -156,7 +156,7 @@ const mockTutorials: TutorialItem[] = [
     grade: "Grade 10-11",
     subject: "Mathematics",
     videoThumbnail: "https://images.unsplash.com/photo-1509228468518-180dd4864904?w=400&h=225&fit=crop",
-    videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    videoUrl: "https://www.youtube.com/watch?v=J8l2O_AGYEw",
     description: "Introduction to trigonometric functions, angles, and basic trigonometric identities with practical examples.",
     dateAdded: "2024-01-25",
     isPopular: false,
@@ -305,9 +305,19 @@ const mockTutorProfiles: TutorProfile[] = [
   }
 ];
 
+const slugToId: Record<string, string> = {
+  "sarah-johnson": "1",
+  "michael-chen": "2",
+  "emma-williams": "3",
+  "david-brown": "4",
+};
+
 const TutorProfile = () => {
   const { tutorId } = useParams<{ tutorId: string }>();
   const navigate = useNavigate();
+  const [tutor, setTutor] = useState<TutorProfile | null>(null);
+  const [tutorTutorials, setTutorTutorials] = useState<TutorialItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("recent");
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<TutorialItem | null>(null);
@@ -319,6 +329,95 @@ const TutorProfile = () => {
   const [enrolledSubjects, setEnrolledSubjects] = useState<string[]>([]);
   const [discussionThreads, setDiscussionThreads] = useState<any[]>([]);
   const { user, isAuthenticated } = useAuth();
+
+  // Resolve tutor ID (numeric or slug)
+  const resolvedTutorId = tutorId && /^\d+$/.test(tutorId) ? tutorId : slugToId[tutorId || ""] || tutorId;
+
+  // Load tutor and tutorials from API
+  useEffect(() => {
+    const loadTutor = async () => {
+      if (!resolvedTutorId) {
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        const [tutorRes, tutorialsRes] = await Promise.all([
+          tutorsAPI.getById(resolvedTutorId),
+          tutorialsAPI.getAll({ tutorId: resolvedTutorId })
+        ]);
+        if (tutorRes.success && tutorRes.tutor) {
+          const t = tutorRes.tutor;
+          setTutor({
+            id: String(t.id),
+            name: t.name,
+            photo: t.photo_url || "",
+            bio: t.bio || "",
+            rating: t.rating || 0,
+            totalStudents: t.students || 0,
+            totalTutorials: tutorialsRes.tutorials?.length || 0,
+            experience: t.experience || "",
+            education: "",
+            specializations: t.specializations || [],
+            achievements: [],
+            contactEmail: t.email || "",
+            contactPhone: t.phone || "",
+            joinedDate: "",
+            school: "IBIS Education",
+            department: t.subject || ""
+          });
+          if (tutorialsRes.success && tutorialsRes.tutorials) {
+            setTutorTutorials(tutorialsRes.tutorials.map((tut: any) => ({
+              id: tut.id,
+              title: tut.title || "",
+              duration: `${tut.duration_minutes || 60} min`,
+              difficulty: tut.difficulty || "Beginner",
+              school: "IBIS Education",
+              tutor: tut.tutor_name || t.name,
+              tutorPhoto: tut.tutor_photo || t.photo_url || "",
+              tutorBio: tut.tutor_bio || t.bio || "",
+              rating: parseFloat(tut.rating) || 0,
+              topics: (tut.description || "").split(" ").slice(0, 5).filter(Boolean) || [],
+              views: tut.views || 0,
+              grade: tut.grade || "",
+              subject: tut.subject || "",
+              videoThumbnail: tut.thumbnail_url || "",
+              videoUrl: tut.video_url || "https://www.youtube.com/watch?v=J8l2O_AGYEw",
+              description: tut.description || "",
+              dateAdded: tut.created_at ? new Date(tut.created_at).toISOString().split("T")[0] : "",
+              isPopular: !!tut.is_popular,
+              isRecent: false
+            })));
+          } else {
+            setTutorTutorials([]);
+          }
+        } else {
+          // Fallback to mock for slug-based URLs
+          const mockTutor = mockTutorProfiles.find(t => t.id === tutorId);
+          if (mockTutor) {
+            setTutor(mockTutor);
+            setTutorTutorials(fallbackMockTutorials.filter(t => t.tutor === mockTutor.name));
+          } else {
+            setTutor(null);
+            setTutorTutorials([]);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading tutor:", err);
+        const mockTutor = mockTutorProfiles.find(t => t.id === tutorId || t.id === resolvedTutorId);
+        if (mockTutor) {
+          setTutor(mockTutor);
+          setTutorTutorials(fallbackMockTutorials.filter(t => t.tutor === mockTutor.name));
+        } else {
+          setTutor(null);
+          setTutorTutorials([]);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadTutor();
+  }, [resolvedTutorId, tutorId]);
 
   // Check if learner is logged in
   const isLearnerLoggedIn = () => {
@@ -364,15 +463,6 @@ const TutorProfile = () => {
 
     loadEnrolledSubjects();
   }, [isAuthenticated, user]);
-
-  // Find tutor profile
-  const tutor = mockTutorProfiles.find(t => t.id === tutorId);
-
-  // Get tutor's tutorials
-  const tutorTutorials = useMemo(() => {
-    if (!tutor) return [];
-    return mockTutorials.filter(t => t.tutor === tutor.name);
-  }, [tutor]);
 
   // Check if learner is enrolled in a subject that the tutor teaches
   const isEnrolledInTutorSubject = () => {
@@ -421,10 +511,9 @@ const TutorProfile = () => {
       setShowLoginPrompt(true);
       return;
     }
-    
-    // If logged in, proceed with booking
-    // In a real app, this would redirect to a booking form or calendar
-    alert(`Booking session with ${tutorial.tutor} for "${tutorial.title}"`);
+    if (!tutor) return;
+    const tid = resolvedTutorId || tutor.id;
+    navigate(`/tutor-booking/${tid}?subject=${encodeURIComponent(tutorial.subject)}`);
   };
 
   const handleAccessRestricted = (requiredLevel: AccessLevel) => {
@@ -505,9 +594,17 @@ const TutorProfile = () => {
     }
   }, [selectedVideo, showDiscussion]);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center text-gray-600">Loading tutor profile...</div>
+      </div>
+    );
+  }
+
   if (!tutor) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Tutor Not Found</h1>
           <Button onClick={() => navigate('/tutorials/available')}>

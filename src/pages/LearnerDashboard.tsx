@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
-import { notesAPI, calendarAPI, notificationsAPI, learnerAPI, messagesAPI, tutorialsAPI } from "@/services/api";
+import { notesAPI, calendarAPI, notificationsAPI, learnerAPI, messagesAPI, tutorialsAPI, tutorsAPI } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -57,6 +57,7 @@ interface LearnerDashboardProps {
 
 const LearnerDashboard = ({ initialTab = "profile", hideTabs = false, showProfileForm = false }: LearnerDashboardProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated, updateUser } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -109,9 +110,15 @@ const LearnerDashboard = ({ initialTab = "profile", hideTabs = false, showProfil
   const [showNotifications, setShowNotifications] = useState(false);
   const [newEventTitle, setNewEventTitle] = useState("");
 
-  // Tutor Subject Selection
+  // Tutors from API (for Available Tutors section)
+  const [apiTutors, setApiTutors] = useState<any[]>([]);
+
+  // Tutor Subject Selection - show only subjects the learner has enrolled in
   const [selectedSubject, setSelectedSubject] = useState('all');
-  const [availableSubjects] = useState(['all', 'Mathematics', 'Physics', 'Chemistry', 'English', 'History', 'Biology']);
+  const availableSubjects = useMemo(() => {
+    const enrolled = profile?.subjects || [];
+    return ['all', ...enrolled];
+  }, [profile?.subjects]);
   const [newEventDate, setNewEventDate] = useState("");
   const [newEventTime, setNewEventTime] = useState("");
   const [newEventType, setNewEventType] = useState("study");
@@ -120,8 +127,9 @@ const LearnerDashboard = ({ initialTab = "profile", hideTabs = false, showProfil
   const [newSubject, setNewSubject] = useState("");
   const [showAddSubject, setShowAddSubject] = useState(false);
 
-  // Welcome header visibility
-  const [showWelcome, setShowWelcome] = useState(true);
+  // Welcome header visibility - only show after login, not when navigating via dashboard link
+  const fromLogin = (location.state as { fromLogin?: boolean })?.fromLogin ?? false;
+  const [showWelcome, setShowWelcome] = useState(fromLogin);
 
   // Calculate profile completion percentage
   const calculateProfileCompletion = (profile: any) => {
@@ -203,6 +211,16 @@ const LearnerDashboard = ({ initialTab = "profile", hideTabs = false, showProfil
           console.error('Error loading messages:', error);
         }
 
+        // Load tutors from API (for Available Tutors section)
+        try {
+          const tutorsResponse = await tutorsAPI.getAll();
+          if (tutorsResponse.success && tutorsResponse.tutors) {
+            setApiTutors(tutorsResponse.tutors);
+          }
+        } catch (error) {
+          console.error('Error loading tutors:', error);
+        }
+
         setIsLoadingData(false);
       } catch (error) {
         console.error('Error loading dashboard data:', error);
@@ -278,9 +296,10 @@ const LearnerDashboard = ({ initialTab = "profile", hideTabs = false, showProfil
         setNoteBody("");
         setNoteCategory("general");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating note:', error);
-      alert('Failed to create note. Please try again.');
+      const message = error?.message || 'Failed to create note. Please try again.';
+      alert(message);
     }
   };
 
@@ -1131,8 +1150,8 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
     return getPersonalizedTutorials(grade, subjects).slice(0, 6); // Show first 6 recommendations
   }, [profile]);
 
+  // Tutors for Messages section (from conversations)
   const tutors = useMemo(() => {
-    // Use conversations from messages API if available, otherwise fallback to sample data
     if (messages.length > 0) {
       return messages.map(conv => ({
         id: conv.tutor_id,
@@ -1145,26 +1164,16 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
         lastMessageTime: conv.last_message_time
       }));
     }
-    
-    // Fallback sample data
-    const g = profile?.grade || "";
-    return [
-      { id: 1, name: "Dr. Sarah Johnson", subject: "Mathematics", grade: g },
-      { id: 2, name: "Prof. Michael Chen", subject: "Science", grade: g },
-      { id: 3, name: "Ms. L. Dlamini", subject: "English", grade: g },
-    ];
+    return [];
   }, [messages, profile]);
 
-  // Filter tutors based on selected subject
+  // Available tutors from API, filtered by selected subject
   const filteredTutors = useMemo(() => {
-    if (selectedSubject === 'all') {
-      return tutors;
-    }
-    return tutors.filter(tutor => 
-      tutor.subject?.toLowerCase().includes(selectedSubject.toLowerCase()) ||
-      tutor.specialization?.toLowerCase().includes(selectedSubject.toLowerCase())
+    if (selectedSubject === 'all') return apiTutors;
+    return apiTutors.filter(tutor =>
+      tutor.subject?.toLowerCase().includes(selectedSubject.toLowerCase())
     );
-  }, [tutors, selectedSubject]);
+  }, [apiTutors, selectedSubject]);
 
   return (
     <DashboardLayout>
@@ -1190,7 +1199,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                   </p>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" onClick={clearAllNotifications} className="text-gray-600 hover:text-gray-900">
+              <Button variant="ghostLight" size="sm" onClick={clearAllNotifications}>
                 <X className="h-4 w-4 mr-1" />
                 Clear All
               </Button>
@@ -1359,7 +1368,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                 <div>
                   <Label htmlFor="eventType" className="text-sm text-gray-700">Type</Label>
                   <Select value={newEventType} onValueChange={setNewEventType}>
-                    <SelectTrigger className="mt-1">
+                    <SelectTrigger className="mt-1 w-full bg-white border-gray-300 text-gray-900">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1414,7 +1423,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                           </div>
                         </div>
                         <Button
-                          variant="ghost"
+                          variant="ghostLight"
                           size="icon"
                           onClick={() => deleteCalendarEvent(event.id)}
                           className="text-gray-400 hover:text-red-600"
@@ -1485,7 +1494,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                         <CardDescription className="text-gray-600">Manage your account details and learning preferences</CardDescription>
                       </div>
                       {!isEditing ? (
-                        <Button onClick={() => setIsEditing(true)} variant="outline">
+                        <Button onClick={() => setIsEditing(true)} variant="outlineLight">
                           <Edit className="mr-2 h-4 w-4" />
                           Edit Profile
                         </Button>
@@ -1495,7 +1504,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                             <Save className="mr-2 h-4 w-4" />
                             Save Changes
                           </Button>
-                          <Button onClick={() => setIsEditing(false)} variant="outline">
+                          <Button onClick={() => setIsEditing(false)} variant="outlineLight">
                             <X className="mr-2 h-4 w-4" />
                             Cancel
                           </Button>
@@ -1533,7 +1542,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                         <Label htmlFor="grade" className="text-sm font-semibold text-gray-700">Grade Level</Label>
                         {isEditing ? (
                           <Select value={profile?.grade || ''} onValueChange={(v) => setProfile({...profile, grade: v})}>
-                            <SelectTrigger className="text-base">
+                            <SelectTrigger className="w-full text-base bg-white border-gray-300 text-gray-900">
                               <SelectValue placeholder="Select your grade" />
                             </SelectTrigger>
                             <SelectContent>
@@ -1582,7 +1591,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                         {isEditing && (
                           <Button
                             type="button"
-                            variant="outline"
+                            variant="outlineLight"
                             size="sm"
                             onClick={() => setShowAddSubject(!showAddSubject)}
                           >
@@ -1617,7 +1626,11 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                             <Badge
                               key={idx}
                               variant="secondary"
-                              className={`px-3 py-1 text-sm flex items-center gap-2 ${isEditing ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}
+                              className={`px-3 py-1 text-sm flex items-center gap-2 ${
+                                isEditing
+                                  ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                                  : 'bg-green-100 text-green-800 hover:bg-green-200'
+                              }`}
                             >
                               📚 {subject}
                               {isEditing && (
@@ -1646,7 +1659,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                           onChange={(e) => setProfile({...profile, goals: e.target.value})}
                           placeholder="What are your learning objectives?"
                           rows={4}
-                          className="text-base"
+                          className="text-base bg-white border-gray-300 text-gray-900"
                         />
                       ) : (
                         <p className="text-gray-900 text-base font-medium bg-gray-50 px-4 py-3 rounded-md border border-gray-200 min-h-[100px]">
@@ -1712,6 +1725,17 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
 
           <TabsContent value="tutors" className="mt-6">
             <div className="space-y-6">
+              {hideTabs && (
+                <div className="mb-6">
+                  <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <User className="h-7 w-7 text-blue-600" />
+                    Find Tutors
+                  </h1>
+                  <p className="text-gray-600 mt-1">
+                    Browse tutors, start a conversation, or book a session.
+                  </p>
+                </div>
+              )}
               {/* Messages Section */}
               <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 shadow-sm">
                 <CardHeader className="border-b border-blue-100">
@@ -1734,7 +1758,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                             <p className="text-xs text-gray-600">{selectedTutor.subject}</p>
                           </div>
                         </div>
-                        <Button variant="ghost" size="sm" onClick={() => setSelectedTutor(null)}>
+                        <Button variant="ghostLight" size="sm" onClick={() => setSelectedTutor(null)}>
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
@@ -1772,14 +1796,14 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                           className="flex-1"
                           onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                         />
-                        <Button onClick={sendMessage} className="bg-blue-600 hover:bg-blue-700">
+                        <Button onClick={sendMessage} className="bg-blue-600 hover:bg-blue-700 text-white">
                           <Send className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                    <div className="text-center py-8 text-gray-600">
+                      <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-400" />
                       <p>Select a tutor below to start a conversation</p>
                     </div>
                   )}
@@ -1793,22 +1817,33 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                     <BookOpen className="mr-2 h-5 w-5 text-purple-600" />
                     Choose Subject
                   </CardTitle>
-                  <p className="text-gray-600">Select a subject to find specialized tutors</p>
+                  <p className="text-gray-600">
+                    {availableSubjects.length > 1
+                      ? "Select a subject to find specialized tutors"
+                      : "Add subjects in your profile to find tutors for your enrolled subjects"}
+                  </p>
                 </CardHeader>
                 <CardContent className="pt-6">
+                  {availableSubjects.length === 1 && (
+                    <div className="mb-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                      <p className="text-sm text-amber-800">
+                        💡 No subjects enrolled yet. Go to your <Link to="/learner/profile" className="font-medium underline hover:text-amber-900">Profile</Link> and add subjects of interest to see tutors here.
+                      </p>
+                    </div>
+                  )}
                   <div className="flex flex-wrap gap-3">
                     {availableSubjects.map((subject) => (
                       <Button
                         key={subject}
-                        variant={selectedSubject === subject ? "default" : "outline"}
+                        variant={selectedSubject === subject ? "default" : "outlineLight"}
                         onClick={() => setSelectedSubject(subject)}
                         className={`transition-all duration-200 ${
-                          selectedSubject === subject 
-                            ? 'bg-purple-600 hover:bg-purple-700 text-white' 
-                            : 'border-gray-300 text-gray-700 hover:bg-purple-50 hover:border-purple-300'
+                          selectedSubject === subject
+                            ? "bg-purple-600 hover:bg-purple-700 text-white"
+                            : "hover:bg-purple-100 hover:border-purple-300"
                         }`}
                       >
-                        {subject === 'all' ? 'All Subjects' : subject}
+                        {subject === "all" ? "All Subjects" : subject}
                       </Button>
                     ))}
                   </div>
@@ -1828,8 +1863,8 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                   <CardTitle className="flex items-center text-gray-900">
                     <User className="mr-2 h-5 w-5 text-blue-600" />
                     Available Tutors
-                    {selectedSubject !== 'all' && (
-                      <Badge variant="secondary" className="ml-2">
+                    {selectedSubject !== "all" && (
+                      <Badge className="ml-2 bg-purple-100 text-purple-800 border-0">
                         {selectedSubject}
                       </Badge>
                     )}
@@ -1841,9 +1876,9 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                 </CardHeader>
                 <CardContent>
                   {filteredTutors.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500">
-                      <BookOpen className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                      <p className="text-lg font-medium mb-2">No tutors found</p>
+<div className="text-center py-12 text-gray-600">
+                        <BookOpen className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                        <p className="text-lg font-medium mb-2 text-gray-900">No tutors found</p>
                       <p className="text-sm">
                         {selectedSubject === 'all' 
                           ? 'No tutors are currently available.' 
@@ -1852,7 +1887,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                       </p>
                       {selectedSubject !== 'all' && (
                         <Button
-                          variant="outline"
+                          variant="outlineLight"
                           onClick={() => setSelectedSubject('all')}
                           className="mt-4"
                         >
@@ -1868,10 +1903,14 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                           <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
                             <User className="h-8 w-8 text-white" />
                           </div>
-                          <CardTitle className="text-lg">{t.name}</CardTitle>
-                          <div className="flex items-center justify-center space-x-2">
-                            <Badge variant="secondary">{t.subject}</Badge>
-                            <Badge variant="outline">{t.grade}</Badge>
+                          <CardTitle className="text-lg text-gray-900">{t.name}</CardTitle>
+                          <div className="flex items-center justify-center flex-wrap gap-2 mt-2">
+                            <Badge className="bg-blue-100 text-blue-800 border-0 hover:bg-blue-200">
+                              {t.subject}
+                            </Badge>
+                            <Badge variant="outline" className="border-gray-300 text-gray-700">
+                              {t.grade}
+                            </Badge>
                           </div>
                         </CardHeader>
                         <CardContent className="text-center">
@@ -1900,16 +1939,16 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                             </div>
                           </div>
                           <div className="space-y-2">
-                            <Button 
-                              className="w-full" 
+                            <Button
+                              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                               size="sm"
                               onClick={() => bookTutorSession(t)}
                             >
                               Book Session
                             </Button>
-                            <Button 
-                              variant="outline" 
-                              className="w-full" 
+                            <Button
+                              variant="outlineLight"
+                              className="w-full"
                               size="sm"
                               onClick={() => selectTutor(t)}
                             >
@@ -1935,10 +1974,10 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                   <p className="text-gray-600">Tutors you've worked with</p>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-8 text-gray-500">
-                    <User className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                    <p>You haven't worked with any tutors yet.</p>
-                    <p className="text-sm">Book your first session to get started!</p>
+                  <div className="text-center py-8 text-gray-600">
+                    <User className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                    <p className="font-medium">You haven't worked with any tutors yet.</p>
+                    <p className="text-sm mt-1">Book your first session above to get started!</p>
                   </div>
                 </CardContent>
               </Card>
@@ -2252,9 +2291,8 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                     New Note
                   </Button>
                   <Button 
-                    variant="outline"
+                    variant="outlineLight"
                     onClick={() => setActiveTab('notes')}
-                    className="border-gray-300"
                   >
                     <BookMarked className="h-4 w-4 mr-2" />
                     View All
@@ -2378,29 +2416,29 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                   </CardHeader>
                   <CardContent className="pt-4 space-y-2">
                     <Button
-                      variant="outline"
+                      variant="outlineLight"
                       size="sm"
                       onClick={() => generateAISuggestions(noteCategory)}
                       disabled={isAiGenerating}
-                      className="w-full bg-white border-gray-300 hover:bg-gray-50 justify-start"
+                      className="w-full justify-start"
                     >
                       <Brain className="h-4 w-4 mr-2" />
                       Get Suggestions
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="outlineLight"
                       size="sm"
                       onClick={() => setNoteBody(noteBody + '\n\n## Summary\n\n## Key Takeaways\n\n## Questions\n\n## References')}
-                      className="w-full bg-white border-gray-300 hover:bg-gray-50 justify-start"
+                      className="w-full justify-start"
                     >
                       <FileText className="h-4 w-4 mr-2" />
                       Add Structure
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="outlineLight"
                       size="sm"
                       onClick={() => setNoteBody(noteBody + '\n\n## Practice Questions\n\n1. \n2. \n3. ')}
-                      className="w-full bg-white border-gray-300 hover:bg-gray-50 justify-start"
+                      className="w-full justify-start"
                     >
                       <Target className="h-4 w-4 mr-2" />
                       Add Questions
@@ -2423,10 +2461,10 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                       {aiSuggestions.map((suggestion, index) => (
                         <Button
                           key={index}
-                          variant="outline"
+                          variant="outlineLight"
                           size="sm"
                           onClick={() => applyAISuggestion(suggestion)}
-                          className="justify-start text-left h-auto p-3 bg-white border-gray-300 hover:bg-gray-50"
+                          className="justify-start text-left h-auto p-3"
                         >
                           <Lightbulb className="h-4 w-4 mr-2 text-yellow-600 flex-shrink-0" />
                           <span className="text-sm text-gray-900">{suggestion}</span>
@@ -2500,7 +2538,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                       {notesPreview && (
                         <Button 
                           onClick={() => readNote({ title: noteTitle || 'Untitled', body: notesPreview, category: noteCategory })}
-                          variant="outline" 
+                          variant="outlineLight" 
                           size="sm"
                           className="text-blue-600 border-blue-300 hover:bg-blue-50"
                         >
@@ -2542,7 +2580,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                       </CardTitle>
                       <Button 
                         onClick={() => readNote({ title: editNoteTitle || 'Untitled', body: editNoteBody, category: editNoteCategory })}
-                        variant="outline" 
+                        variant="outlineLight" 
                         size="sm"
                         className="text-blue-600 border-blue-300 hover:bg-blue-50"
                       >
@@ -2593,7 +2631,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                         <Save className="h-4 w-4 mr-2" />
                         Save Changes
                       </Button>
-                      <Button onClick={cancelEditNote} variant="outline" className="flex-1">
+                      <Button onClick={cancelEditNote} variant="outlineLight" className="flex-1">
                         <X className="h-4 w-4 mr-2" />
                         Cancel
                       </Button>
@@ -2606,29 +2644,26 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                       </Label>
                       <div className="flex flex-wrap gap-2">
                         <Button
-                          variant="outline"
+                          variant="outlineLight"
                           size="sm"
                           onClick={() => setEditNoteBody(editNoteBody + '\n\n## Summary\n\n## Key Points\n\n## Examples')}
-                          className="bg-white border-gray-300 hover:bg-gray-50"
                         >
                           <FileText className="h-4 w-4 mr-2" />
                           Add sections
                         </Button>
                         <Button
-                          variant="outline"
+                          variant="outlineLight"
                           size="sm"
                           onClick={() => setEditNoteBody(editNoteBody + '\n\n**Important:** \n\n**Remember:** \n\n**Note:** ')}
-                          className="bg-white border-gray-300 hover:bg-gray-50"
                         >
                           <Lightbulb className="h-4 w-4 mr-2" />
                           Add highlights
                         </Button>
                         <Button
-                          variant="outline"
+                          variant="outlineLight"
                           size="sm"
                           onClick={() => generateAISuggestions(editNoteCategory)}
                           disabled={isAiGenerating}
-                          className="bg-white border-gray-300 hover:bg-gray-50"
                         >
                           <Brain className="h-4 w-4 mr-2" />
                           Get suggestions
@@ -2643,7 +2678,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                       </Label>
                       <div className="flex flex-wrap gap-2">
                         <Button
-                          variant="outline"
+                          variant="outlineLight"
                           size="sm"
                           onClick={() => {
                             const currentBody = editNoteBody;
@@ -2664,13 +2699,12 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                             setEditNoteBody(correctedNote);
                           }}
                           disabled={!editNoteBody.trim()}
-                          className="bg-white border-gray-300 hover:bg-gray-50"
                         >
                           <Wand2 className="h-4 w-4 mr-2" />
                           Correct Grammar
                         </Button>
                         <Button
-                          variant="outline"
+                          variant="outlineLight"
                           size="sm"
                           onClick={() => {
                             // Apply content improvements based on category
@@ -2700,7 +2734,6 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                             setEditNoteBody(improvedNote);
                           }}
                           disabled={!editNoteBody.trim()}
-                          className="bg-white border-gray-300 hover:bg-gray-50"
                         >
                           <Sparkles className="h-4 w-4 mr-2" />
                           Improve Content
@@ -2735,7 +2768,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                         <div className="text-xs text-gray-500">
                           Rate: {readingSettings.rate}x | Pitch: {readingSettings.pitch} | Vol: {readingSettings.volume}
                         </div>
-                        <Button onClick={stopReading} variant="outline" className="border-red-300 text-red-600 hover:bg-red-50">
+                        <Button onClick={stopReading} variant="outlineLight" className="flex-1 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700">
                           <VolumeX className="h-4 w-4 mr-2" />
                           Stop Reading
                         </Button>
@@ -2827,7 +2860,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                     <div className="flex-1">
                       <Input 
                         placeholder="Search notes by title or content..."
-                        className="bg-white border-gray-300"
+                        className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-500"
                         value={notesSearch}
                         onChange={(e) => setNotesSearch(e.target.value)}
                       />
@@ -2835,10 +2868,10 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                     
                     {/* Category Filter */}
                     <Select value={notesFilter} onValueChange={setNotesFilter}>
-                      <SelectTrigger className="w-full md:w-[200px]">
+                      <SelectTrigger className="w-full md:w-[200px] bg-white border-gray-300 text-gray-900 placeholder:text-gray-500">
                         <SelectValue placeholder="Filter by category" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white border-gray-200 text-gray-900">
                         <SelectItem value="all">All Categories</SelectItem>
                         <SelectItem value="general">📝 General</SelectItem>
                         <SelectItem value="mathematics">🔢 Mathematics</SelectItem>
@@ -2851,10 +2884,10 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
 
                     {/* Sort Options */}
                     <Select value={notesSortBy} onValueChange={setNotesSortBy}>
-                      <SelectTrigger className="w-full md:w-[150px]">
+                      <SelectTrigger className="w-full md:w-[150px] bg-white border-gray-300 text-gray-900 placeholder:text-gray-500">
                         <SelectValue placeholder="Sort by" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white border-gray-200 text-gray-900">
                         <SelectItem value="newest">Newest First</SelectItem>
                         <SelectItem value="oldest">Oldest First</SelectItem>
                         <SelectItem value="title">Title A-Z</SelectItem>
@@ -2936,7 +2969,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                               </div>
                               <div className="flex gap-2">
                                 <Button 
-                                  variant="outline" 
+                                  variant="outlineLight" 
                                   onClick={()=>readNote(n)} 
                                   size="sm" 
                                   className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50"
@@ -2955,7 +2988,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                                   )}
                               </Button>
                                 <Button 
-                                  variant="outline" 
+                                  variant="outlineLight" 
                                   onClick={()=>editNote(n)} 
                                   size="sm" 
                                   className="flex-1 border-gray-200 text-gray-600 hover:bg-gray-50"
@@ -2964,7 +2997,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                                   Edit
                                 </Button>
                                 <Button 
-                                  variant="outline" 
+                                  variant="outlineLight" 
                                   onClick={()=>deleteNote(n.id)} 
                                   size="sm" 
                                   className="border-red-200 text-red-600 hover:bg-red-50"

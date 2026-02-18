@@ -362,7 +362,7 @@ const SmartApply = () => {
       {/* Body - whole section white */}
       <div className="bg-white min-h-screen">
         <div className="max-w-4xl mx-auto px-6 py-12">
-          <Card className="border-0 shadow-xl bg-[#f5f5f5]">
+          <Card className="border-0 shadow-xl bg-[#f5f5f5] text-gray-900">
           <CardHeader>
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
@@ -585,7 +585,7 @@ const SmartApply = () => {
               )}
             <div className="space-y-4">
               {emails.map((email) => (
-                <Card key={email.id} className="overflow-hidden border border-gray-200 bg-white/80 shadow-sm">
+                <Card key={email.id} className="overflow-hidden border border-gray-200 bg-white/80 shadow-sm text-gray-900">
                   <div
                     className="flex items-center justify-between p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50/50 transition-colors"
                     onClick={() => toggleExpand(email.id)}
@@ -682,9 +682,9 @@ const SmartApply = () => {
               <h3 className="text-sm font-semibold text-gray-900">Step 4: Sending results</h3>
               {isSending ? (
                 <div className="space-y-4">
-                  <p className="text-gray-600">Sending emails from {userDetails.email}…</p>
+                  <p className="text-gray-700">Sending emails from {userDetails.email}…</p>
                   <Progress value={sendProgress} className="h-3" />
-                  <p className="text-sm text-gray-500">{sendProgress}%</p>
+                  <p className="text-sm text-gray-600">{sendProgress}%</p>
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -704,7 +704,7 @@ const SmartApply = () => {
                           <p className="text-sm text-gray-500">No emails sent yet.</p>
                         ) : (
                           sentEmails.map((e) => (
-                            <div key={e.id} className="flex items-center gap-2 p-2 rounded bg-green-50 text-sm">
+                            <div key={e.id} className="flex items-center gap-2 p-2 rounded bg-green-50 text-sm text-gray-900">
                               <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
                               <span className="truncate">{e.companyEmail}</span>
                             </div>
@@ -721,7 +721,7 @@ const SmartApply = () => {
                           <p className="text-sm text-gray-500">No failed emails.</p>
                         ) : (
                           failedEmails.map(({ email, error }) => (
-                            <div key={email.id} className="p-2 rounded bg-red-50 text-sm">
+                            <div key={email.id} className="p-2 rounded bg-red-50 text-sm text-gray-900">
                               <div className="flex items-center gap-2">
                                 <XCircle className="h-4 w-4 text-red-600 shrink-0" />
                                 <span className="truncate font-medium">{email.companyEmail}</span>

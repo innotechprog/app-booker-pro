@@ -13,9 +13,9 @@ import { ArrowLeft, Search, Star, Clock, Users, MapPin, Eye, Play, Filter, User,
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { TutorialItem, mockTutorials, getPersonalizedTutorials } from "@/data/tutorials";
+import { TutorialItem } from "@/data/tutorials";
 import { useAuth } from "@/contexts/AuthContext";
-import { subjectsAPI } from "@/services/api";
+import { subjectsAPI, tutorialsAPI, bookingsAPI } from "@/services/api";
 
 type AvailableTutorialsProps = { hideHeader?: boolean };
 
@@ -49,8 +49,55 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
   const [processingBooking, setProcessingBooking] = useState(false);
   const [enrolledSubjects, setEnrolledSubjects] = useState<string[]>([]);
   const [discussionThreads, setDiscussionThreads] = useState<any[]>([]);
+  const [tutorials, setTutorials] = useState<TutorialItem[]>([]);
+  const [tutorialsLoading, setTutorialsLoading] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
   const { user, isAuthenticated } = useAuth();
+
+  // Map API tutorial to TutorialItem format
+  const mapApiTutorial = (t: any): TutorialItem & { tutorId?: number } => ({
+    id: t.id,
+    title: t.title || "",
+    duration: `${t.duration_minutes || 60} min`,
+    difficulty: t.difficulty || "Beginner",
+    school: "IBIS Education",
+    tutor: t.tutor_name || "Tutor",
+    tutorPhoto: t.tutor_photo || "",
+    tutorBio: t.tutor_bio || "",
+    rating: parseFloat(t.rating) || 0,
+    topics: (t.description || "").split(" ").slice(0, 5).filter(Boolean) || [],
+    views: t.views || 0,
+    grade: t.grade || "",
+    subject: t.subject || "",
+    videoThumbnail: t.thumbnail_url || "",
+    videoUrl: t.video_url || "https://www.youtube.com/watch?v=J8l2O_AGYEw",
+    description: t.description || "",
+    dateAdded: t.created_at ? new Date(t.created_at).toISOString().split("T")[0] : "",
+    isPopular: !!t.is_popular,
+    isRecent: !!t.created_at && new Date(t.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    tutorId: t.tutor_id
+  });
+
+  // Load tutorials from API
+  useEffect(() => {
+    const loadTutorials = async () => {
+      try {
+        setTutorialsLoading(true);
+        const res = await tutorialsAPI.getAll({});
+        if (res.success && res.tutorials) {
+          setTutorials(res.tutorials.map(mapApiTutorial));
+        } else {
+          setTutorials([]);
+        }
+      } catch (err) {
+        console.error("Error loading tutorials:", err);
+        setTutorials([]);
+      } finally {
+        setTutorialsLoading(false);
+      }
+    };
+    loadTutorials();
+  }, []);
 
   // Check if learner is logged in
   const isLearnerLoggedIn = () => {
@@ -111,15 +158,16 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
     );
   };
 
-  // Get tutor ID from tutor name (simple mapping for now)
-  const getTutorId = (tutorName: string) => {
+  // Get tutor ID for navigation (use tutorId from API when available)
+  const getTutorId = (tutorial: TutorialItem & { tutorId?: number }) => {
+    if (tutorial.tutorId) return String(tutorial.tutorId);
     const tutorMap: Record<string, string> = {
-      'Dr. Sarah Johnson': 'sarah-johnson',
-      'Prof. Michael Chen': 'michael-chen',
-      'Dr. Emma Williams': 'emma-williams',
-      'Prof. David Brown': 'david-brown',
+      'Dr. Sarah Johnson': '1',
+      'Prof. Michael Chen': '2',
+      'Dr. Emma Williams': '3',
+      'Prof. David Brown': '4',
     };
-    return tutorMap[tutorName] || tutorName.toLowerCase().replace(/\s+/g, '-');
+    return tutorMap[tutorial.tutor] || tutorial.tutor.toLowerCase().replace(/\s+/g, '-');
   };
 
   // Handle booking session with authentication check
@@ -143,35 +191,53 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
   // Handle booking submission
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!bookingData.date || !bookingData.time) {
       toast.error("Please select date and time for the session");
       return;
     }
 
-    if (!selectedTutorialForBooking) {
+    const tutorial = selectedTutorialForBooking as (TutorialItem & { tutorId?: number });
+    if (!tutorial) {
       toast.error("No tutorial selected");
+      return;
+    }
+
+    const tutorId = tutorial.tutorId;
+    if (!tutorId) {
+      toast.error("Tutor information is missing. Please book from the Tutors page instead.");
       return;
     }
 
     setProcessingBooking(true);
 
     try {
-      // Simulate API call - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      toast.success("Live session booked successfully! You will receive a confirmation email shortly.");
-      setShowBookingModal(false);
-      setSelectedTutorialForBooking(null);
-      setBookingData({
-        date: '',
-        time: '',
-        duration: '1',
-        sessionType: 'online',
-        notes: ''
+      const res = await bookingsAPI.create({
+        tutorId: String(tutorId),
+        subject: tutorial.subject,
+        date: bookingData.date,
+        time: bookingData.time,
+        duration: bookingData.duration,
+        sessionType: bookingData.sessionType,
+        notes: bookingData.notes
       });
-    } catch (error) {
-      toast.error("Failed to book session. Please try again.");
+
+      if (res.success) {
+        toast.success("Live session booked successfully! You will receive a confirmation email shortly.");
+        setShowBookingModal(false);
+        setSelectedTutorialForBooking(null);
+        setBookingData({
+          date: "",
+          time: "",
+          duration: "1",
+          sessionType: "online",
+          notes: ""
+        });
+      } else {
+        throw new Error(res.message || "Booking failed");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to book session. Please try again.");
     } finally {
       setProcessingBooking(false);
     }
@@ -258,7 +324,7 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
 
   // Filter tutorials based on search and filters
   const filtered = useMemo(() => {
-    let result = mockTutorials;
+    let result = [...tutorials];
 
     // Text search
     if (query.trim()) {
@@ -317,17 +383,17 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
     }
 
     return result;
-  }, [query, selectedGrade, selectedSubject, selectedDifficulty, selectedTutor, sortBy]);
+  }, [tutorials, query, selectedGrade, selectedSubject, selectedDifficulty, selectedTutor, sortBy]);
 
   // Get unique values for filter dropdowns
-  const uniqueGrades = useMemo(() => [...new Set(mockTutorials.map(t => t.grade))], []);
-  const uniqueSubjects = useMemo(() => [...new Set(mockTutorials.map(t => t.subject))], []);
-  const uniqueDifficulties = useMemo(() => [...new Set(mockTutorials.map(t => t.difficulty))], []);
-  const uniqueTutors = useMemo(() => [...new Set(mockTutorials.map(t => t.tutor))], []);
+  const uniqueGrades = useMemo(() => [...new Set(tutorials.map(t => t.grade).filter(Boolean))], [tutorials]);
+  const uniqueSubjects = useMemo(() => [...new Set(tutorials.map(t => t.subject).filter(Boolean))], [tutorials]);
+  const uniqueDifficulties = useMemo(() => [...new Set(tutorials.map(t => t.difficulty).filter(Boolean))], [tutorials]);
+  const uniqueTutors = useMemo(() => [...new Set(tutorials.map(t => t.tutor).filter(Boolean))], [tutorials]);
 
   // Get popular and recent tutorials for stats
-  const popularTutorials = useMemo(() => mockTutorials.filter(t => t.isPopular).length, []);
-  const recentTutorials = useMemo(() => mockTutorials.filter(t => t.isRecent).length, []);
+  const popularTutorials = useMemo(() => tutorials.filter(t => t.isPopular).length, [tutorials]);
+  const recentTutorials = useMemo(() => tutorials.filter(t => t.isRecent).length, [tutorials]);
 
   // Generate suggestions for autocomplete
   const suggestions = useMemo(() => {
@@ -339,7 +405,7 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
 
     if (current.length > 0) {
       // Add matching tutors, schools, subjects, grades, and topics
-      mockTutorials.forEach(t => {
+      tutorials.forEach(t => {
         if (t.tutor.toLowerCase().includes(current.toLowerCase())) pool.push(t.tutor);
         if (t.school.toLowerCase().includes(current.toLowerCase())) pool.push(t.school);
         if (t.subject.toLowerCase().includes(current.toLowerCase())) pool.push(t.subject);
@@ -355,7 +421,7 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
     }
 
     return [...new Set(pool)].slice(0, 8);
-  }, [query, uniqueTutors, uniqueSubjects]);
+  }, [query, uniqueTutors, uniqueSubjects, tutorials]);
 
   // Add token to query
   const addTokenToQuery = (token: string) => {
@@ -403,7 +469,7 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
             {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div className="text-center">
-                <div className="text-3xl font-bold">{mockTutorials.length}</div>
+                <div className="text-3xl font-bold">{tutorials.length}</div>
                 <div className="text-white/80">Total Tutorials</div>
               </div>
               <div className="text-center">
@@ -477,7 +543,7 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
 
           {/* Filters Button */}
           <Button
-            variant="outline"
+            variant="outlineLight"
             onClick={() => setShowFilters(!showFilters)}
             className="w-full lg:w-auto"
           >
@@ -627,7 +693,11 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
 
         {/* Tutorial Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {filtered.map((tutorial) => (
+          {tutorialsLoading ? (
+            <div className="col-span-full text-center py-12 text-gray-500">Loading tutorials...</div>
+          ) : filtered.length === 0 ? (
+            <div className="col-span-full text-center py-12 text-gray-500">No tutorials found.</div>
+          ) : filtered.map((tutorial) => (
             <Card key={tutorial.id} className="shadow-sm hover:shadow-md transition-shadow bg-white">
               <div className="relative">
                 <img
@@ -661,9 +731,13 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
 
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
-                  <Badge variant="secondary" className="text-xs text-gray-900">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setSelectedSubject(tutorial.subject); }}
+                    className="inline-flex items-center rounded-full border border-gray-300 bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-800 transition-colors hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  >
                     {tutorial.subject}
-                  </Badge>
+                  </button>
                   <div className="flex items-center text-yellow-500">
                     <Star className="h-3 w-3 fill-current" />
                     <span className="text-xs ml-1 text-gray-600">{tutorial.rating}</span>
@@ -699,28 +773,33 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
                 </div>
 
                 <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center flex-1">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/tutor/${getTutorId(tutorial)}`)}
+                    className="flex items-center flex-1 text-left rounded-lg hover:bg-gray-50 p-1 -m-1 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  >
                     <img
                       src={tutorial.tutorPhoto}
                       alt={tutorial.tutor}
-                      className="w-8 h-8 rounded-full mr-2"
+                      className="w-8 h-8 rounded-full mr-2 flex-shrink-0"
                     />
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900">{tutorial.tutor}</p>
                       <p className="text-xs text-gray-700">{tutorial.school}</p>
                     </div>
-                  </div>
-                  {isEnrolledInTutorialSubject(tutorial) && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                      onClick={() => navigate(`/tutor/${getTutorId(tutorial.tutor)}`)}
-                    >
-                      <User className="h-3 w-3 mr-1" />
-                      View Profile
-                    </Button>
-                  )}
+                  </button>
+                  <Button
+                    size="sm"
+                    variant="ghostLight"
+                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 flex-shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/tutor/${getTutorId(tutorial)}`);
+                    }}
+                  >
+                    <User className="h-3 w-3 mr-1" />
+                    View Profile
+                  </Button>
                 </div>
 
                 <div className="flex flex-wrap gap-1 mb-3">
@@ -739,7 +818,7 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
                 <div className="flex flex-col gap-2">
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="outlineLight"
                     className="w-full"
                     onClick={() => openVideoModal(tutorial)}
                   >
@@ -778,7 +857,7 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
               <span>{selectedVideo?.title}</span>
               <div className="flex gap-2">
                 <Button
-                  variant="outline"
+                  variant="outlineLight"
                   size="sm"
                   onClick={() => {
                     setShowVideoModal(false);
@@ -884,10 +963,10 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
                           <Button 
                             className="w-full" 
                             size="sm"
-                            variant="outline"
+                            variant="outlineLight"
                             onClick={() => {
                               setShowVideoModal(false);
-                              navigate(`/tutor/${getTutorId(selectedVideo.tutor)}`);
+                              navigate(`/tutor/${getTutorId(selectedVideo)}`);
                             }}
                           >
                             <User className="mr-1 h-3 w-3" />
@@ -941,11 +1020,11 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
               <Button asChild className="flex-1">
                 <a href="/learner/register">Register</a>
               </Button>
-              <Button asChild variant="outline" className="flex-1">
+              <Button asChild variant="outlineLight" className="flex-1">
                 <a href="/learner/login">Login</a>
               </Button>
             </div>
-            <Button variant="ghost" onClick={() => setShowLoginPrompt(false)}>
+            <Button variant="ghostLight" onClick={() => setShowLoginPrompt(false)}>
               Cancel
             </Button>
           </div>
@@ -964,7 +1043,7 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
               <Button asChild className="flex-1">
                 <a href="/learner/register">Register Now</a>
               </Button>
-              <Button variant="outline" onClick={() => setShowUpgradePrompt(false)}>
+              <Button variant="outlineLight" onClick={() => setShowUpgradePrompt(false)}>
                 Maybe Later
               </Button>
             </div>
@@ -1159,7 +1238,7 @@ const AvailableTutorials = ({ hideHeader = false }: AvailableTutorialsProps) => 
               <div className="flex gap-3 pt-4 border-t">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="outlineLight"
                   onClick={() => {
                     setShowBookingModal(false);
                     setSelectedTutorialForBooking(null);

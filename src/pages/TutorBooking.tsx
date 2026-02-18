@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import LearnerLayout from "@/components/LearnerLayout";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { User, Star, Clock, MapPin, ArrowLeft, Calendar, BookOpen, Video, Users } from "lucide-react";
 import { toast } from "sonner";
+import { tutorsAPI, bookingsAPI } from "@/services/api";
 
 interface Tutor {
   id: string;
@@ -52,79 +53,87 @@ const TutorBooking = () => {
       return;
     }
 
-    // Mock tutor data - replace with actual API call
-    const mockTutors: Tutor[] = [
-      {
-        id: "1",
-        name: "Dr. Sarah Johnson",
-        subject: "Mathematics",
-        grade: "Grade 10-12",
-        rating: 4.9,
-        reviews: 127,
-        experience: "5+ years",
-        students: 500,
-        rate: 300,
-        bio: "Passionate mathematics educator with a PhD in Applied Mathematics. Specializes in calculus, algebra, and geometry. I make complex concepts simple and engaging.",
-        specializations: ["Calculus", "Algebra", "Geometry", "Statistics"],
-        availability: ["Monday", "Wednesday", "Friday", "Saturday"]
-      },
-      {
-        id: "2",
-        name: "Prof. Michael Chen",
-        subject: "Physics",
-        grade: "Grade 11-12",
-        rating: 4.8,
-        reviews: 89,
-        experience: "8+ years",
-        students: 350,
-        rate: 350,
-        bio: "Experienced physics professor with a focus on making physics concepts accessible. Expert in mechanics, thermodynamics, and quantum physics.",
-        specializations: ["Mechanics", "Thermodynamics", "Quantum Physics", "Electromagnetism"],
-        availability: ["Tuesday", "Thursday", "Sunday"]
+    const fetchTutor = async () => {
+      if (!tutorId) {
+        setLoading(false);
+        toast.error("Invalid tutor");
+        navigate('/learner/dashboard');
+        return;
       }
-    ];
+      try {
+        const res = await tutorsAPI.getById(tutorId);
+        if (res.success && res.tutor) {
+          const t = res.tutor;
+          setTutor({
+            id: String(t.id),
+            name: t.name,
+            subject: t.subject || '',
+            grade: t.grade || 'Grade 10-12',
+            rating: t.rating || 0,
+            reviews: t.reviews || 0,
+            experience: t.experience || '',
+            students: t.students || 0,
+            rate: t.rate || 0,
+            bio: t.bio || '',
+            specializations: t.specializations || [],
+            availability: t.availability || []
+          });
+          const subjectFromUrl = searchParams.get('subject');
+          setBookingData(prev => ({ ...prev, subject: subjectFromUrl || t.subject || '' }));
+        } else {
+          toast.error("Tutor not found");
+          navigate('/learner/dashboard');
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to load tutor");
+        navigate('/learner/dashboard');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    const selectedTutor = mockTutors.find(t => t.id === tutorId);
-    if (selectedTutor) {
-      setTutor(selectedTutor);
-      // Use subject from URL parameter if available, otherwise use tutor's default subject
-      const subjectFromUrl = searchParams.get('subject');
-      setBookingData(prev => ({ ...prev, subject: subjectFromUrl || selectedTutor.subject }));
-    } else {
-      toast.error("Tutor not found");
-      navigate('/learner/dashboard');
-    }
-    setLoading(false);
-  }, [tutorId, isAuthenticated, navigate]);
+    fetchTutor();
+  }, [tutorId, isAuthenticated, navigate, searchParams]);
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!bookingData.date || !bookingData.time) {
       toast.error("Please select date and time for the session");
       return;
     }
 
-    setProcessing(true);
+    if (!tutor) return;
 
-    // Simulate booking submission
-    setTimeout(() => {
+    setProcessing(true);
+    try {
+      const res = await bookingsAPI.create({
+        tutorId: tutor.id,
+        subject: bookingData.subject || undefined,
+        date: bookingData.date,
+        time: bookingData.time,
+        duration: bookingData.duration,
+        sessionType: bookingData.sessionType || undefined,
+        notes: bookingData.notes || undefined
+      });
+
+      if (res.success) {
+        toast.success("Tutoring session booked successfully! You will receive a confirmation email shortly.");
+        navigate('/learner/dashboard');
+      } else {
+        throw new Error(res.message || "Booking failed");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to book session");
+    } finally {
       setProcessing(false);
-      toast.success("Tutoring session booked successfully! You will receive a confirmation email shortly.");
-      navigate('/learner/dashboard');
-    }, 2000);
+    }
   };
 
   if (loading) {
     return (
-      <LearnerLayout>
-        <div style={{ 
-          minHeight: '100vh', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          backgroundColor: '#f9fafb'
-        }}>
+      <DashboardLayout>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
           <div style={{ textAlign: 'center' }}>
             <div style={{ 
               width: '50px', 
@@ -140,20 +149,14 @@ const TutorBooking = () => {
             </h2>
           </div>
         </div>
-      </LearnerLayout>
+      </DashboardLayout>
     );
   }
 
   if (!tutor) {
     return (
-      <LearnerLayout>
-        <div style={{ 
-          minHeight: '100vh', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          backgroundColor: '#f9fafb'
-        }}>
+      <DashboardLayout>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
           <div style={{ textAlign: 'center' }}>
             <h2 style={{ color: '#dc2626', fontSize: '18px', fontWeight: '600' }}>
               Tutor not found
@@ -176,17 +179,13 @@ const TutorBooking = () => {
             </button>
           </div>
         </div>
-      </LearnerLayout>
+      </DashboardLayout>
     );
   }
 
   return (
-    <LearnerLayout>
-      <div style={{ 
-        minHeight: '100vh', 
-        backgroundColor: '#f9fafb',
-        padding: '20px'
-      }}>
+    <DashboardLayout>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8 px-4">
         <div style={{ 
           maxWidth: '1200px', 
           margin: '0 auto'
@@ -415,6 +414,7 @@ const TutorBooking = () => {
                         id="notes"
                         value={bookingData.notes}
                         onChange={(e) => setBookingData({...bookingData, notes: e.target.value})}
+                        className="text-gray-900 bg-white placeholder:text-gray-500"
                         style={{
                           width: '100%',
                           padding: '12px',
@@ -655,7 +655,12 @@ const TutorBooking = () => {
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                       {tutor.availability.map((day, index) => (
-                        <Badge key={index} variant="outline" style={{ fontSize: '10px' }}>
+                        <Badge
+                          key={index}
+                          variant="outline"
+                          className="text-gray-800 border-gray-400 bg-white hover:bg-gray-50"
+                          style={{ fontSize: '10px' }}
+                        >
                           {day}
                         </Badge>
                       ))}
@@ -667,7 +672,7 @@ const TutorBooking = () => {
           </div>
         </div>
       </div>
-    </LearnerLayout>
+    </DashboardLayout>
   );
 };
 

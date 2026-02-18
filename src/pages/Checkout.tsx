@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useParams, useNavigate } from "react-router-dom";
-import LearnerLayout from "@/components/LearnerLayout";
+import DashboardLayout from "@/components/DashboardLayout";
+import { packagesAPI, subjectsAPI } from "@/services/api";
 
 interface Package {
   id: string;
@@ -51,56 +52,65 @@ const Checkout = () => {
       return;
     }
 
-    // Mock package data - replace with actual API call
-    const mockPackages: Package[] = [
-      {
-        id: "2",
-        name: "Premium Package",
-        description: "Most popular choice for serious learners",
-        price: 2999.00,
-        originalPrice: 4499.00,
-        duration: "3 Months",
-        features: [
-          "20 hours of tutoring",
-          "Premium study materials",
-          "Priority support",
-          "Advanced progress tracking",
-          "Group study sessions",
-          "Exam preparation",
-          "24/7 chat support"
-        ],
-        category: "premium"
-      },
-      {
-        id: "3",
-        name: "Enterprise Package",
-        description: "Complete learning solution for advanced students",
-        price: 5999.00,
-        originalPrice: 8999.00,
-        duration: "6 Months",
-        features: [
-          "50 hours of tutoring",
-          "All premium materials",
-          "Dedicated tutor",
-          "Custom study plans",
-          "Unlimited group sessions",
-          "Exam preparation",
-          "Career counseling",
-          "24/7 priority support",
-          "Certificate of completion"
-        ],
-        category: "enterprise"
+    const loadPackage = async () => {
+      try {
+        setLoading(true);
+        // Handle subject packages (from Packages page)
+        if (packageId?.startsWith('subject-')) {
+          const subjRes = await subjectsAPI.getAll({});
+          if (subjRes.success && subjRes.subjects) {
+            const subjectId = packageId.replace('subject-', '');
+            const subj = subjRes.subjects.find((s: any) => String(s.id) === subjectId);
+            if (subj) {
+              setPackageData({
+                id: packageId,
+                name: subj.name,
+                description: `Enroll in ${subj.name} for personalized learning`,
+                price: 0,
+                duration: 'Monthly',
+                features: [`Access to ${subj.name} content`, 'Progress tracking', 'Tutor support'],
+                category: subj.category || 'basic'
+              });
+            } else {
+              navigate('/learner/packages');
+            }
+          } else {
+            navigate('/learner/packages');
+          }
+        } else {
+          // Service packages (premium, enterprise, etc.)
+          const res = await packagesAPI.getAll();
+          if (res.success && res.packages) {
+            const pkg = res.packages.find((p: any) => p.id === packageId || String(p.id) === packageId);
+            if (pkg) {
+              const features = Array.isArray(pkg.features) ? pkg.features : (typeof pkg.features === 'string' ? JSON.parse(pkg.features || '[]') : []);
+              setPackageData({
+                id: pkg.id,
+                name: pkg.name,
+                description: pkg.description || '',
+                price: parseFloat(pkg.price) || 0,
+                originalPrice: parseFloat(pkg.price) * 1.2 || undefined,
+                duration: pkg.duration || '',
+                features,
+                category: pkg.category || 'basic'
+              });
+            } else {
+              navigate('/learner/packages');
+            }
+          } else {
+            navigate('/learner/packages');
+          }
+        }
+      } catch (err) {
+        console.error('Error loading package:', err);
+        navigate('/learner/packages');
+      } finally {
+        setLoading(false);
       }
-    ];
+    };
 
-    const selectedPackage = mockPackages.find(pkg => pkg.id === packageId);
-    if (selectedPackage) {
-      setPackageData(selectedPackage);
-    } else {
-      navigate('/packages');
-    }
-    setLoading(false);
-  }, [packageId, isAuthenticated, navigate, user]);
+    loadPackage();
+  }, [packageId, isAuthenticated, navigate]);
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,7 +151,7 @@ const Checkout = () => {
 
   if (loading) {
     return (
-      <LearnerLayout>
+      <DashboardLayout>
         <div style={{ 
           minHeight: '100vh', 
           display: 'flex', 
@@ -164,13 +174,13 @@ const Checkout = () => {
             </h2>
           </div>
         </div>
-      </LearnerLayout>
+      </DashboardLayout>
     );
   }
 
   if (!packageData) {
     return (
-      <LearnerLayout>
+      <DashboardLayout>
         <div style={{ 
           minHeight: '100vh', 
           display: 'flex', 
@@ -200,12 +210,12 @@ const Checkout = () => {
             </button>
           </div>
         </div>
-      </LearnerLayout>
+      </DashboardLayout>
     );
   }
 
   return (
-    <LearnerLayout>
+    <DashboardLayout>
       <div style={{ 
         minHeight: '100vh', 
         backgroundColor: '#f9fafb',
@@ -896,7 +906,7 @@ const Checkout = () => {
           </div>
         </div>
       </div>
-    </LearnerLayout>
+    </DashboardLayout>
   );
 };
 

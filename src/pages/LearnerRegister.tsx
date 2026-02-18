@@ -47,7 +47,7 @@ const LearnerRegister = () => {
         try {
           await loginWithGoogle(credential);
           toast.success("Successfully signed up with Google");
-          navigate("/learner/dashboard");
+          navigate("/learner/dashboard", { state: { fromLogin: true } });
         } catch (err: any) {
           setError(err.message || "Google sign up failed. Please try again.");
           toast.error(err.message || "Google sign up failed");
@@ -69,7 +69,7 @@ const LearnerRegister = () => {
 
     try {
       await register(form);
-      navigate("/learner/dashboard");
+      navigate("/learner/dashboard", { state: { fromLogin: true } });
     } catch (err: any) {
       setError(err.message || "Registration failed. Please try again.");
     } finally {
@@ -119,8 +119,8 @@ const LearnerRegister = () => {
             {/* Google Signup Button */}
             <Button
               type="button"
-              variant="outline"
-              className="w-full h-12 border-gray-300 hover:bg-gray-50 text-gray-900 hover:text-gray-900 bg-white"
+              variant="outlineLight"
+              className="w-full h-12"
               onClick={handleGoogleSignup}
               disabled={isGoogleLoading}
             >

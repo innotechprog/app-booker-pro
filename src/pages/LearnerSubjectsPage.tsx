@@ -329,7 +329,7 @@ const LearnerSubjectsPage = () => {
                     </CardTitle>
                     <Button
                       size="sm"
-                      variant="outline"
+                      variant="outlineLight"
                       onClick={() => navigate('/learner/packages')}
                     >
                       <Plus className="h-4 w-4 mr-1" />
@@ -391,7 +391,7 @@ const LearnerSubjectsPage = () => {
                               </div>
                             </div>
                             <Button
-                              variant="ghost"
+                              variant="ghostLight"
                               size="icon"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -565,7 +565,7 @@ const LearnerSubjectsPage = () => {
                                   <span className="text-xs text-gray-500">{guide.size}</span>
                                 </div>
                               </div>
-                              <Button size="sm" variant="ghost">
+                              <Button size="sm" variant="ghostLight">
                                 <Download className="h-4 w-4" />
                               </Button>
                             </div>
@@ -677,7 +677,7 @@ const LearnerSubjectsPage = () => {
                               </div>
                               <h4 className="font-semibold text-sm text-gray-900 mb-1">{resource.title}</h4>
                               <p className="text-xs text-gray-500 mb-3">{resource.items}</p>
-                              <Button size="sm" variant="outline" className="w-full">
+                              <Button size="sm" variant="outlineLight" className="w-full">
                                 Practice
                               </Button>
                             </div>
@@ -709,7 +709,7 @@ const LearnerSubjectsPage = () => {
                               <h4 className="font-semibold text-sm text-gray-900">{link.title}</h4>
                               <p className="text-xs text-gray-600 mt-1">{link.description}</p>
                             </div>
-                            <Button size="sm" variant="outline">
+                            <Button size="sm" variant="outlineLight">
                               Visit
                             </Button>
                           </div>

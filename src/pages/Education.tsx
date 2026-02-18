@@ -496,7 +496,7 @@ const Education = () => {
               />
             </div>
             {universitySearch && (
-              <p className="text-center text-white/80 mt-4">
+              <p className="text-center text-gray-700 mt-4">
                 Showing {filteredUniversities.length} of {southAfricanUniversities.length} universities
               </p>
             )}
@@ -569,8 +569,8 @@ const Education = () => {
                      
                       <div className="flex space-x-2 pt-4 border-t border-gray-200 mt-auto">
                         <Button 
-                          variant="outline"
-                          className="flex-1 bg-white text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-700"
+                          variant="outlineLight"
+                          className="flex-1 text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-700"
                           onClick={() => window.open(university.website, '_blank')}
                         >
                           <Globe className="mr-2 h-4 w-4" />
@@ -597,7 +597,7 @@ const Education = () => {
                     No universities match your search for "{universitySearch}"
                   </p>
                   <Button 
-                    variant="outline" 
+                    variant="outlineLight" 
                     onClick={() => setUniversitySearch("")}
                     className="text-blue-600 border-blue-600 hover:bg-blue-50"
                   >
@@ -712,7 +712,7 @@ const Education = () => {
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">Premium Features</h3>
                   <p className="text-gray-600 mb-4 flex-1">Unlock advanced features and get priority support.</p>
-                  <Button asChild variant="outline" className="border-purple-600 text-purple-600 hover:bg-purple-50 mt-auto">
+                  <Button asChild variant="outlineLight" className="border-purple-600 text-purple-600 hover:bg-purple-50 mt-auto">
                     <Link to="/learner">Upgrade Now</Link>
                   </Button>
                 </div>
@@ -739,7 +739,7 @@ const Education = () => {
                 return (
                   <Button
                     key={category.id}
-                    variant={selectedCategory === category.id ? "default" : "outline"}
+                    variant={selectedCategory === category.id ? "default" : "outlineLight"}
                     onClick={() => handleCategoryChange(category.id)}
                     className={`flex items-center space-x-2 px-6 py-3 rounded-xl transition-all duration-300 ${
                       selectedCategory === category.id
@@ -948,7 +948,7 @@ const Education = () => {
                 <Phone className="mr-2 h-4 w-4" />
                 Call Us
               </Button>
-              <Button variant="outline" className="border-white text-white hover:bg-white hover:text-gray-900 hover:border-white px-8 py-3 rounded-xl transition-all duration-300">
+              <Button variant="outlineLight" className="px-8 py-3 rounded-xl">
                 <Mail className="mr-2 h-4 w-4" />
                 Email Us
               </Button>

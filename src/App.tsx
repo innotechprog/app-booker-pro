@@ -20,6 +20,11 @@ import LearnerDashboardHome from "./pages/LearnerDashboardHome";
 import LearnerSubjectsPage from "./pages/LearnerSubjectsPage";
 import LearnerTutorialsPage from "./pages/LearnerTutorialsPage";
 import LearnerTutorsPage from "./pages/LearnerTutorsPage";
+import TutorProfile from "./pages/TutorProfile";
+import TutorBooking from "./pages/TutorBooking";
+import AvailableTutorials from "./pages/AvailableTutorials";
+import Billing from "./pages/Billing";
+import Checkout from "./pages/Checkout";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PackageProvider } from "@/contexts/PackageContext";
@@ -55,6 +60,11 @@ const App = () => (
                 <Route path="/learner/tutorials" element={<LearnerTutorialsPage />} />
                 <Route path="/learner/packages" element={<Packages />} />
                 <Route path="/learner/tutors" element={<LearnerTutorsPage />} />
+                <Route path="/tutor/:tutorId" element={<TutorProfile />} />
+                <Route path="/tutor-booking/:tutorId" element={<TutorBooking />} />
+                <Route path="/tutorials/available" element={<AvailableTutorials />} />
+                <Route path="/billing" element={<Billing />} />
+                <Route path="/checkout/:packageId" element={<Checkout />} />
                 {/* All other routes show Coming Soon */}
                 <Route path="*" element={<ComingSoon />} />
               </Routes>
