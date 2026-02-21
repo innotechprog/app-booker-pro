@@ -46,9 +46,12 @@ npm install
 
 3. Set up environment variables:
 ```bash
-# Create a .env file in the root directory
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+# Copy .env.example and set your values
+cp .env.example .env
+
+# Backend: this app uses ib-backend for all API calls (auth, Smart Apply, contact, etc.).
+# Point VITE_API_URL to your running ib-backend (default: http://localhost:5000/api).
+VITE_API_URL=http://localhost:5000/api
 ```
 
 4. Start the development server:

@@ -69,6 +69,16 @@ const Footer = () => {
                   IT Solutions
                 </a>
               </li>
+              <li>
+                <a href="/smart-apply" className="text-gray-300 hover:text-white transition-colors">
+                  Smart Apply
+                </a>
+              </li>
+              <li>
+                <a href="/recruiters" className="text-gray-300 hover:text-white transition-colors">
+                  Recruiters
+                </a>
+              </li>
             </ul>
           </div>
 

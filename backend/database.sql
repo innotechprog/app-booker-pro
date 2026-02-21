@@ -22,9 +22,16 @@ CREATE TABLE IF NOT EXISTS users (
   goals TEXT,
   is_premium BOOLEAN DEFAULT FALSE,
   profile_completion INT DEFAULT 0,
+  candidate_category VARCHAR(20) DEFAULT NULL COMMENT 'Smart Apply: general (Grade 12) or professional',
+  cv_overview TEXT DEFAULT NULL,
+  cv_work_experience TEXT DEFAULT NULL,
+  cv_education TEXT DEFAULT NULL,
+  cv_certifications TEXT DEFAULT NULL,
+  cv_key_skills TEXT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_email (email)
+  INDEX idx_email (email),
+  INDEX idx_candidate_category (candidate_category)
 );
 
 -- 2. Subjects Table

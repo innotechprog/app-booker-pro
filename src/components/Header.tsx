@@ -55,6 +55,12 @@ const Header = () => {
           <Link to="/smart-apply" className={getLinkClasses("/smart-apply")}>
             Smart Apply
           </Link>
+          <Link to="/smart-apply/apply" className={getLinkClasses("/smart-apply/apply")}>
+            Apply to multiple emails
+          </Link>
+          <Link to="/jobs" className={getLinkClasses("/jobs")}>
+            Jobs
+          </Link>
         </nav>
 
         {/* Right side - Login Button (show on Education and Universities pages) */}
@@ -99,6 +105,12 @@ const Header = () => {
             </Link>
             <Link to="/smart-apply" className={`${getLinkClasses("/smart-apply")} py-2`} onClick={() => setIsMobileMenuOpen(false)}>
               Smart Apply
+            </Link>
+            <Link to="/smart-apply/apply" className={`${getLinkClasses("/smart-apply/apply")} py-2`} onClick={() => setIsMobileMenuOpen(false)}>
+              Apply to multiple emails
+            </Link>
+            <Link to="/jobs" className={`${getLinkClasses("/jobs")} py-2`} onClick={() => setIsMobileMenuOpen(false)}>
+              Jobs
             </Link>
             
             {(isActive("/education") || isActive("/universities")) && (

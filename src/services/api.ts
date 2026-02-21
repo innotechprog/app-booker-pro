@@ -56,7 +56,7 @@ const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
 // =============================================
 
 export const authAPI = {
-  register: async (userData: { fullName: string; email: string; password: string; grade?: string }) => {
+  register: async (userData: { fullName: string; email: string; password: string; grade?: string; phone?: string }) => {
     const data = await fetchWithAuth('/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData)
@@ -414,8 +414,27 @@ export const clearAuth = () => {
 };
 
 // =============================================
-// SMART APPLY API (uses same nodemailer as contact)
+// SMART APPLY API (standalone – uses smart_apply_candidates, own token)
 // =============================================
+
+const SMART_APPLY_TOKEN_KEY = 'smart_apply_token';
+
+const getSmartApplyToken = (): string | null => localStorage.getItem(SMART_APPLY_TOKEN_KEY);
+
+const fetchWithSmartApplyAuth = async (url: string, options: RequestInit = {}) => {
+  const token = getSmartApplyToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {})
+  };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const response = await fetch(`${API_BASE_URL}${url}`, { ...options, headers });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.message || data.error || `Server error: ${response.status}`);
+  }
+  return response.json();
+};
 
 export const smartApplyAPI = {
   sendEmails: async (payload: {
@@ -433,6 +452,59 @@ export const smartApplyAPI = {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error || `Server error: ${res.status} ${res.statusText}`);
+    }
+    return res.json();
+  },
+
+  register: async (payload: { fullName: string; email: string; password: string; phone?: string }) => {
+    const res = await fetch(`${API_BASE_URL}/smart-apply/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || 'Registration failed');
+    if (data.token) localStorage.setItem(SMART_APPLY_TOKEN_KEY, data.token);
+    return data;
+  },
+
+  login: async (email: string, password: string) => {
+    const res = await fetch(`${API_BASE_URL}/smart-apply/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || 'Invalid email or password');
+    if (data.token) localStorage.setItem(SMART_APPLY_TOKEN_KEY, data.token);
+    return data;
+  },
+
+  getProfile: async () => {
+    const data = await fetchWithSmartApplyAuth('/smart-apply/profile');
+    return data?.profile ? data : { profile: null };
+  },
+
+  saveProfile: async (payload: {
+    category: 'general' | 'professional';
+    overview?: string | null;
+    workExperience?: string | null;
+    education?: string | null;
+    certifications?: string | null;
+    keySkills?: string | null;
+  }) => {
+    return await fetchWithSmartApplyAuth('/smart-apply/profile', {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  getCandidates: async (category?: 'general' | 'professional') => {
+    const q = category ? `?category=${category}` : '';
+    const res = await fetch(`${API_BASE_URL}/smart-apply/candidates${q}`);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || `Server error: ${res.status}`);
     }
     return res.json();
   }

@@ -9,11 +9,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ComingSoon from "./pages/ComingSoon";
+import BookService from "./pages/BookService";
+import Booking from "./pages/Booking";
 import Index from "./pages/Index";
 import Contact from "./pages/Contact";
 import Education from "./pages/Education";
 import ITSolutions from "./pages/ITSolutions";
 import SmartApply from "./pages/SmartApply";
+import Recruiters from "./pages/Recruiters";
+import Jobs from "./pages/Jobs";
 import Universities from "./pages/Universities";
 import LearnerDashboard from "./pages/LearnerDashboard";
 import LearnerDashboardHome from "./pages/LearnerDashboardHome";
@@ -49,6 +53,9 @@ const App = () => (
                 <Route path="/education" element={<Education />} />
                 <Route path="/it-solutions" element={<ITSolutions />} />
                 <Route path="/smart-apply" element={<SmartApply />} />
+                <Route path="/smart-apply/apply" element={<SmartApply />} />
+                <Route path="/recruiters" element={<Recruiters />} />
+                <Route path="/jobs" element={<Jobs />} />
                 <Route path="/universities" element={<Universities />} />
                 <Route path="/learner/login" element={<LearnerLogin />} />
                 <Route path="/learner/register" element={<LearnerRegister />} />
@@ -65,6 +72,9 @@ const App = () => (
                 <Route path="/tutorials/available" element={<AvailableTutorials />} />
                 <Route path="/billing" element={<Billing />} />
                 <Route path="/checkout/:packageId" element={<Checkout />} />
+                <Route path="/send-me" element={<BookService />} />
+                <Route path="/book-service" element={<BookService />} />
+                <Route path="/booking" element={<Booking />} />
                 {/* All other routes show Coming Soon */}
                 <Route path="*" element={<ComingSoon />} />
               </Routes>

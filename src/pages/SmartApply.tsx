@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,7 @@ import {
   EyeOff,
   ChevronRight,
   User,
+  UserCheck,
   Building2,
   CheckCircle2,
   XCircle,
@@ -59,13 +61,14 @@ interface UserDetails {
 const inputClass =
   "h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg transition-all duration-300 bg-gray-50 focus:bg-white text-gray-900 text-sm";
 
-// Mock AI generation - uses CV text when provided to tailor the email (replace with real AI API when ready)
+// Generate email body using profile (overview, keySkills) or CV text when provided
 const generateEmailForRow = (
   companyEmail: string,
   topic: string,
   index: number,
   user?: UserDetails,
-  cvText?: string
+  cvText?: string,
+  cvExtract?: CvExtract | null
 ): Omit<GeneratedEmail, "isExpanded"> => {
   const baseSubjects = [
     `Application: ${topic} Position`,
@@ -80,15 +83,15 @@ const generateEmailForRow = (
 
   let body = baseBodies[index % baseBodies.length];
 
-  // If AI has CV text, add a tailored line before the sign-off (mock: use first meaningful snippet; real AI would weave this in)
-  if (cvText && cvText.trim()) {
-    const snippet = cvText.trim().replace(/\s+/g, " ").slice(0, 280);
-    if (snippet) {
-      body = body.replace(
-        /\n\n(Best regards|Sincerely|Kind regards)/,
-        `\n\nRelevant experience: ${snippet}${snippet.length === 280 ? "…" : ""}\n\n$1`
-      );
-    }
+  const snippetFromProfile = cvExtract?.overview?.trim() || cvExtract?.keySkills?.trim();
+  const snippetFromCv = cvText?.trim().replace(/\s+/g, " ").slice(0, 280);
+  const snippet = (snippetFromProfile || snippetFromCv || "").slice(0, 280);
+  if (snippet) {
+    const label = cvExtract?.overview ? "Summary" : cvExtract?.keySkills ? "Key skills" : "Relevant experience";
+    body = body.replace(
+      /\n\n(Best regards|Sincerely|Kind regards)/,
+      `\n\n${label}: ${snippet}${snippet.length === 280 ? "…" : ""}\n\n$1`
+    );
   }
 
   if (user && (user.name.trim() || user.surname.trim() || user.email.trim() || user.contactNumber.trim())) {
@@ -111,7 +114,78 @@ const generateEmailForRow = (
 const isValidEmail = (email: string) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
+/** Categorize candidate from CV text: Grade 12 / matric only → general; else → professional */
+function categorizeFromCvText(cvText: string): "general" | "professional" {
+  if (!cvText || !cvText.trim()) return "professional";
+  const text = cvText.toLowerCase();
+  const hasProfessional = /\b(bachelor|bsc|bcom|beng|btech|degree|diploma|certificate|postgraduate|masters|mba|phd|honours|nqf\s*[5678]|tertiary|university|college\s*(of|degree)|certified|qualification|graduated|b\.?tech|b\.?sc|b\.?com|ndip|national\s+diploma)\b/i.test(text);
+  if (hasProfessional) return "professional";
+  const hasGrade12 = /\b(grade\s*12|matric|nqf\s*4|high\s*school|secondary\s*school|national\s+senior\s+certificate)\b/i.test(text);
+  if (hasGrade12) return "general";
+  return "professional";
+}
+
+export interface CvExtract {
+  overview: string;
+  workExperience: string;
+  education: string;
+  certifications: string;
+  keySkills: string;
+}
+
+const SECTION_HEADINGS = [
+  { key: "overview" as const, patterns: [/^(summary|profile|about|objective|overview|career\s+summary)/im, /^[\d.]*\s*(summary|profile|about|objective)/im] },
+  { key: "workExperience" as const, patterns: [/^(work\s+experience|employment|experience|professional\s+experience|career)/im, /^[\d.]*\s*(work\s+experience|employment|experience)/im] },
+  { key: "education" as const, patterns: [/^(education|qualifications|academic|academics)/im, /^[\d.]*\s*(education|qualifications)/im] },
+  { key: "certifications" as const, patterns: [/^(certifications|certificates|licenses|licences|professional\s+certifications)/im, /^[\d.]*\s*(certifications|certificates)/im] },
+  { key: "keySkills" as const, patterns: [/^(key\s+skills|skills|competencies|core\s+skills|technical\s+skills)/im, /^[\d.]*\s*(skills|key\s+skills)/im] },
+];
+
+function extractCvSections(cvText: string): CvExtract {
+  const out: CvExtract = { overview: "", workExperience: "", education: "", certifications: "", keySkills: "" };
+  if (!cvText || !cvText.trim()) return out;
+  const lines = cvText.split(/\r?\n/);
+  let current: keyof CvExtract | null = null;
+  const buffers: Record<keyof CvExtract, string[]> = { overview: [], workExperience: [], education: [], certifications: [], keySkills: [] };
+  for (const line of lines) {
+    const trimmed = line.trim();
+    let matched = false;
+    for (const { key, patterns } of SECTION_HEADINGS) {
+      if (patterns.some((p) => p.test(trimmed))) {
+        current = key;
+        matched = true;
+        break;
+      }
+    }
+    if (matched) continue;
+    if (current && trimmed) buffers[current].push(trimmed);
+  }
+  const firstParagraph = lines.map((l) => l.trim()).filter(Boolean).slice(0, 8).join(" ");
+  if (!out.overview && firstParagraph.length > 20) out.overview = firstParagraph.slice(0, 500);
+  for (const k of Object.keys(out) as (keyof CvExtract)[]) {
+    const text = buffers[k].join("\n").trim();
+    if (text) out[k] = text;
+  }
+  return out;
+}
+
 const SmartApply = () => {
+  const location = useLocation();
+  const [hasToken, setHasToken] = useState(false);
+  const isApplyFlow = location.pathname === "/smart-apply/apply";
+  const [authView, setAuthView] = useState<"login" | "signup">("login");
+  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
+  const [signupForm, setSignupForm] = useState({
+    name: "",
+    surname: "",
+    contactNumber: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [authError, setAuthError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+
   const [userDetails, setUserDetails] = useState<UserDetails>({
     name: "",
     surname: "",
@@ -135,14 +209,178 @@ const SmartApply = () => {
     open: boolean;
     email: GeneratedEmail | null;
   }>({ open: false, email: null });
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [candidateCategory, setCandidateCategory] = useState<"general" | "professional" | null>(null);
+  const [cvExtract, setCvExtract] = useState<CvExtract>({ overview: "", workExperience: "", education: "", certifications: "", keySkills: "" });
+  const [activeProfileSection, setActiveProfileSection] = useState<keyof CvExtract>("overview");
+  const [savingProfile, setSavingProfile] = useState(false);
   const { toast } = useToast();
+
+  // Smart Apply uses its own token (smart_apply_token) – independent from learner auth
+  const SMART_APPLY_TOKEN_KEY = "smart_apply_token";
+  useEffect(() => {
+    setHasToken(!!localStorage.getItem(SMART_APPLY_TOKEN_KEY));
+  }, []);
+
+  // Pre-fill user details from Smart Apply profile when logged in (main flow)
+  useEffect(() => {
+    if (!hasToken || isApplyFlow) return;
+    smartApplyAPI.getProfile().then((res: { profile?: { fullName?: string; email?: string; phone?: string } }) => {
+      const p = res?.profile;
+      if (!p) return;
+      const parts = (p.fullName || "").trim().split(/\s+/);
+      setUserDetails({
+        name: parts[0] || "",
+        surname: parts.slice(1).join(" ") || "",
+        email: p.email || "",
+        contactNumber: p.phone || "",
+      });
+    }).catch(() => {});
+  }, [hasToken, isApplyFlow]);
+
+  // "Apply to multiple emails" flow: load profile and jump to step 3 (Companies)
+  useEffect(() => {
+    if (!hasToken || !isApplyFlow) return;
+    smartApplyAPI
+      .getProfile()
+      .then((res: { profile?: { fullName?: string; email?: string; phone?: string; category?: string; overview?: string; workExperience?: string; education?: string; certifications?: string; keySkills?: string } }) => {
+        const p = res?.profile;
+        if (!p) return;
+        const parts = (p.fullName || "").trim().split(/\s+/);
+        setUserDetails({
+          name: parts[0] || "",
+          surname: parts.slice(1).join(" ") || "",
+          email: p.email || "",
+          contactNumber: p.phone || "",
+        });
+        if (p.overview || p.workExperience || p.education || p.certifications || p.keySkills) {
+          setCvExtract({
+            overview: p.overview || "",
+            workExperience: p.workExperience || "",
+            education: p.education || "",
+            certifications: p.certifications || "",
+            keySkills: p.keySkills || "",
+          });
+        }
+        if (p.category === "general" || p.category === "professional") setCandidateCategory(p.category);
+        setStep(3);
+      })
+      .catch(() => {});
+  }, [hasToken, isApplyFlow]);
+
+  const handleAuthLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError("");
+    setAuthLoading(true);
+    try {
+      await smartApplyAPI.login(loginForm.email, loginForm.password);
+      setHasToken(true);
+      toast({ title: "Signed in", description: "Welcome back to Smart Apply." });
+    } catch (err: any) {
+      setAuthError(err?.message || "Invalid email or password.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleAuthSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError("");
+    if (signupForm.password.length < 6) {
+      setAuthError("Password must be at least 6 characters.");
+      return;
+    }
+    if (signupForm.password !== signupForm.confirmPassword) {
+      setAuthError("Passwords do not match.");
+      return;
+    }
+    setAuthLoading(true);
+    try {
+      const fullName = [signupForm.name, signupForm.surname].filter(Boolean).join(" ").trim() || signupForm.email;
+      await smartApplyAPI.register({
+        fullName,
+        email: signupForm.email.trim(),
+        password: signupForm.password,
+        phone: signupForm.contactNumber.trim() || undefined,
+      });
+      setHasToken(true);
+      setUserDetails({
+        name: signupForm.name,
+        surname: signupForm.surname,
+        contactNumber: signupForm.contactNumber,
+        email: signupForm.email,
+      });
+      toast({ title: "Account created", description: "You can log in next time with your email and password." });
+    } catch (err: any) {
+      const msg = err?.message || "";
+      if (msg.includes("already exists")) {
+        setAuthError("An account with this email already exists. Sign in instead.");
+      } else {
+        setAuthError(msg || "Could not create account. Please try again.");
+      }
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  // Pre-fill user details when logged in
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setProfileLoaded(true);
+      return;
+    }
+    authAPI.getCurrentUser()
+      .then((res: { user?: { fullName?: string; email?: string; phone?: string } }) => {
+        const user = res?.user;
+        if (!user) return;
+        const parts = (user.fullName || "").trim().split(/\s+/);
+        const name = parts[0] || "";
+        const surname = parts.slice(1).join(" ") || "";
+        setUserDetails({
+          name,
+          surname,
+          email: user.email || "",
+          contactNumber: user.phone || "",
+        });
+        setIsLoggedIn(true);
+      })
+      .catch(() => { /* invalid token or network */ })
+      .finally(() => setProfileLoaded(true));
+  }, []);
 
   const handleStep1Next = () => {
     if (!cvFile) {
       toast({ title: "CV required", description: "Please upload your CV.", variant: "destructive" });
       return;
     }
+    const category = categorizeFromCvText(cvText);
+    setCandidateCategory(category);
+    setCvExtract(extractCvSections(cvText));
+    setActiveProfileSection("overview");
     setStep(2);
+  };
+
+  const handleProfileContinue = async () => {
+    if (!candidateCategory) return;
+    setSavingProfile(true);
+    try {
+      await smartApplyAPI.saveProfile({
+        category: candidateCategory,
+        overview: cvExtract.overview || null,
+        workExperience: cvExtract.workExperience || null,
+        education: cvExtract.education || null,
+        certifications: cvExtract.certifications || null,
+        keySkills: cvExtract.keySkills || null,
+      });
+      toast({ title: "Profile saved", description: "Recruiters can now find you. Continue to apply to multiple emails." });
+      setStep(3);
+    } catch (err: any) {
+      toast({ title: "Could not save profile", description: err?.message || "Please try again.", variant: "destructive" });
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   const addRow = () => {
@@ -209,11 +447,11 @@ const SmartApply = () => {
     setTimeout(() => {
       const cvContent = cvText.trim() || undefined;
       const generated = validRows.map((r, i) =>
-        generateEmailForRow(r.email, r.topic.trim(), i, userDetails, cvContent)
+        generateEmailForRow(r.email, r.topic.trim(), i, userDetails, cvContent, cvExtract)
       );
       setEmails(generated.map((e, i) => ({ ...e, isExpanded: i === 0 })));
       setIsGenerating(false);
-      setStep(3);
+      setStep(4);
       toast({
         title: "Emails generated",
         description: `Created ${generated.length} email(s) for your review.`,
@@ -285,7 +523,7 @@ const SmartApply = () => {
       toast({ title: "CV required", description: "CV is attached to each email. Please upload it in Step 1.", variant: "destructive" });
       return;
     }
-    setStep(4);
+    setStep(5);
     setIsSending(true);
     setSendProgress(0);
     setSentEmails([]);
@@ -332,6 +570,148 @@ const SmartApply = () => {
     }
   };
 
+  // First screen: sign in / sign up (same layout as Learner Portal)
+  if (!hasToken) {
+    return (
+      <div className="min-h-screen flex overflow-hidden">
+        <SEO page="smartApply" />
+        {/* Left – Branding */}
+        <div className="hidden lg:flex lg:w-1/2 fixed left-0 top-0 h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 items-center justify-center p-12">
+          <div className="text-center space-y-8">
+            <div className="flex justify-center">
+              <div className="w-32 h-32 border-4 border-white rounded-full flex items-center justify-center">
+                <Sparkles className="w-16 h-16 text-white" />
+              </div>
+            </div>
+            <div className="space-y-4">
+              <p className="text-sm uppercase tracking-wider text-gray-400 font-semibold">Smart Apply</p>
+              <h1 className="text-5xl font-bold text-white">Welcome Back</h1>
+              <p className="text-xl text-gray-300">Apply to many companies at once</p>
+            </div>
+          </div>
+        </div>
+        {/* Right – Form */}
+        <div className="w-full lg:w-1/2 lg:ml-[50%] flex items-center justify-center bg-white p-8 overflow-y-auto h-screen">
+          <div className="w-full max-w-md space-y-8">
+            <div className="lg:hidden text-center mb-8">
+              <div className="flex justify-center mb-4">
+                <div className="w-16 h-16 border-4 border-blue-600 rounded-full flex items-center justify-center">
+                  <Sparkles className="w-8 h-8 text-blue-600" />
+                </div>
+              </div>
+              <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
+            </div>
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {authView === "login" ? "Sign in to your account" : "Create your account"}
+              </h2>
+
+              {authView === "login" ? (
+                <>
+                  <form className="space-y-4" onSubmit={handleAuthLogin}>
+                    <Input
+                      type="email"
+                      placeholder="Email"
+                      value={loginForm.email}
+                      onChange={(e) => setLoginForm((f) => ({ ...f, email: e.target.value }))}
+                      required
+                      className="h-12 text-gray-900 placeholder:text-gray-500 bg-white"
+                    />
+                    <Input
+                      type="password"
+                      placeholder="Password"
+                      value={loginForm.password}
+                      onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))}
+                      required
+                      className="h-12 text-gray-900 placeholder:text-gray-500 bg-white"
+                    />
+                    {authError && <p className="text-sm text-red-600">{authError}</p>}
+                    <Button type="submit" className="w-full h-12 bg-blue-600 hover:bg-blue-700" disabled={authLoading}>
+                      {authLoading ? "Signing in..." : "Sign in"}
+                    </Button>
+                  </form>
+                  <p className="text-sm text-center text-gray-600">
+                    Don&apos;t have an account?{" "}
+                    <button type="button" onClick={() => { setAuthView("signup"); setAuthError(""); }} className="text-blue-600 hover:underline font-medium">
+                      Sign up
+                    </button>
+                  </p>
+                </>
+              ) : (
+                <>
+                  <form className="space-y-4" onSubmit={handleAuthSignup}>
+                    <div className="grid grid-cols-2 gap-4">
+                      <Input
+                        placeholder="Name"
+                        value={signupForm.name}
+                        onChange={(e) => setSignupForm((f) => ({ ...f, name: e.target.value }))}
+                        className="h-12 text-gray-900 placeholder:text-gray-500 bg-white"
+                      />
+                      <Input
+                        placeholder="Surname"
+                        value={signupForm.surname}
+                        onChange={(e) => setSignupForm((f) => ({ ...f, surname: e.target.value }))}
+                        className="h-12 text-gray-900 placeholder:text-gray-500 bg-white"
+                      />
+                    </div>
+                    <Input
+                      type="tel"
+                      placeholder="Contact number"
+                      value={signupForm.contactNumber}
+                      onChange={(e) => setSignupForm((f) => ({ ...f, contactNumber: e.target.value }))}
+                      className="h-12 text-gray-900 placeholder:text-gray-500 bg-white"
+                    />
+                    <Input
+                      type="email"
+                      placeholder="Email"
+                      value={signupForm.email}
+                      onChange={(e) => setSignupForm((f) => ({ ...f, email: e.target.value }))}
+                      required
+                      className="h-12 text-gray-900 placeholder:text-gray-500 bg-white"
+                    />
+                    <Input
+                      type="password"
+                      placeholder="Password (min 6 characters)"
+                      value={signupForm.password}
+                      onChange={(e) => setSignupForm((f) => ({ ...f, password: e.target.value }))}
+                      required
+                      className="h-12 text-gray-900 placeholder:text-gray-500 bg-white"
+                    />
+                    <Input
+                      type="password"
+                      placeholder="Confirm password"
+                      value={signupForm.confirmPassword}
+                      onChange={(e) => setSignupForm((f) => ({ ...f, confirmPassword: e.target.value }))}
+                      required
+                      className="h-12 text-gray-900 placeholder:text-gray-500 bg-white"
+                    />
+                    {authError && <p className="text-sm text-red-600">{authError}</p>}
+                    <Button type="submit" className="w-full h-12 bg-blue-600 hover:bg-blue-700" disabled={authLoading}>
+                      {authLoading ? "Creating account..." : "Sign up"}
+                    </Button>
+                  </form>
+                  <p className="text-xs text-center text-gray-500">
+                    By signing up, you agree to the{" "}
+                    <a href="/terms" className="text-blue-600 hover:underline">Terms of Service</a>
+                    {" "}and{" "}
+                    <a href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</a>
+                    , including Cookie Use.
+                  </p>
+                  <p className="text-sm text-center text-gray-600">
+                    Already have an account?{" "}
+                    <button type="button" onClick={() => { setAuthView("login"); setAuthError(""); }} className="text-blue-600 hover:underline font-medium">
+                      Sign in
+                    </button>
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Layout>
       <SEO page="smartApply" />
@@ -371,136 +751,139 @@ const SmartApply = () => {
                   Setup your bulk application
                 </CardTitle>
                 <CardDescription className="text-gray-800 mt-1">
-                  {step === 1 && "Personal information"}
-                  {step === 2 && "Companies to apply to"}
-                  {step === 3 && "Review generated emails"}
-                  {step === 4 && "Sending results"}
+                  {step === 1 && "Upload your CV"}
+                  {step === 2 && "Your profile"}
+                  {step === 3 && "Companies to apply to"}
+                  {step === 4 && "Review generated emails"}
+                  {step === 5 && "Sending results"}
                 </CardDescription>
               </div>
               {/* Step indicator */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${step >= 1 ? "bg-indigo-100 text-indigo-700" : "bg-gray-200 text-gray-500"}`}>
                   <User className="h-4 w-4" /> 1
                 </span>
                 <ChevronRight className="h-4 w-4 text-gray-400" />
                 <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${step >= 2 ? "bg-indigo-100 text-indigo-700" : "bg-gray-200 text-gray-500"}`}>
-                  <Building2 className="h-4 w-4" /> 2
+                  <UserCheck className="h-4 w-4" /> 2
                 </span>
                 <ChevronRight className="h-4 w-4 text-gray-400" />
                 <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${step >= 3 ? "bg-indigo-100 text-indigo-700" : "bg-gray-200 text-gray-500"}`}>
-                  <Eye className="h-4 w-4" /> 3
+                  <Building2 className="h-4 w-4" /> 3
                 </span>
                 <ChevronRight className="h-4 w-4 text-gray-400" />
                 <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${step >= 4 ? "bg-indigo-100 text-indigo-700" : "bg-gray-200 text-gray-500"}`}>
-                  <Send className="h-4 w-4" /> 4
+                  <Eye className="h-4 w-4" /> 4
+                </span>
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+                <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${step >= 5 ? "bg-indigo-100 text-indigo-700" : "bg-gray-200 text-gray-500"}`}>
+                  <Send className="h-4 w-4" /> 5
                 </span>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Step 1: Personal information */}
+            {/* Step 1: Upload your CV (first screen after sign in / sign up) */}
             {step === 1 && (
             <div className="space-y-6">
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-900">Step 1: Personal information</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <p className="text-sm text-gray-600">
+                Applying as: <span className="font-medium text-gray-900">{[userDetails.name, userDetails.surname].filter(Boolean).join(" ") || "—"}</span>
+                {userDetails.email && <span className="text-gray-500"> ({userDetails.email})</span>}
+              </p>
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Upload your CV <span className="text-red-600">*</span>
+                </h3>
                 <div className="space-y-2">
-                  <Label htmlFor="user-name" className="text-gray-700 font-medium">Name</Label>
-                  <Input
-                    id="user-name"
-                    placeholder="e.g. John"
-                    value={userDetails.name}
-                    onChange={(e) => setUserDetails((u) => ({ ...u, name: e.target.value }))}
-                    className={inputClass}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="user-surname" className="text-gray-700 font-medium">Surname</Label>
-                  <Input
-                    id="user-surname"
-                    placeholder="e.g. Doe"
-                    value={userDetails.surname}
-                    onChange={(e) => setUserDetails((u) => ({ ...u, surname: e.target.value }))}
-                    className={inputClass}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="user-contact" className="text-gray-700 font-medium">Contact number</Label>
-                  <Input
-                    id="user-contact"
-                    type="tel"
-                    placeholder="e.g. 076 123 4567"
-                    value={userDetails.contactNumber}
-                    onChange={(e) => setUserDetails((u) => ({ ...u, contactNumber: e.target.value }))}
-                    className={inputClass}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="user-email" className="text-gray-700 font-medium">Email</Label>
-                  <Input
-                    id="user-email"
-                    type="email"
-                    placeholder="e.g. john@example.com"
-                    value={userDetails.email}
-                    onChange={(e) => setUserDetails((u) => ({ ...u, email: e.target.value }))}
-                    className={inputClass}
-                  />
+                  <Label className="text-gray-700 font-medium">Your CV will be attached to each application email.</Label>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Input
+                      type="file"
+                      accept=".pdf,.txt"
+                      onChange={handleCvFileChange}
+                      className={`${inputClass} max-w-xs file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-indigo-700 hover:file:bg-indigo-100`}
+                    />
+                    {cvFileName && (
+                      <span className="text-sm text-gray-600">
+                        {cvFileName}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="ml-1 h-6 px-1 text-red-600"
+                          onClick={() => {
+                            setCvFile(null);
+                            setCvFileName("");
+                            setCvText("");
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    PDF or .txt. .txt is used for AI tailoring; the file is attached to each email.
+                  </p>
                 </div>
               </div>
-            </div>
-
-            {/* CV upload + summary for AI */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                CV <span className="text-red-600">*</span> (required – attached to emails)
-              </h3>
-              <div className="space-y-2">
-                <Label className="text-gray-700 font-medium">Upload CV</Label>
-                <div className="flex flex-wrap items-center gap-3">
-                  <Input
-                    type="file"
-                    accept=".pdf,.txt"
-                    onChange={handleCvFileChange}
-                    className={`${inputClass} max-w-xs file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-indigo-700 hover:file:bg-indigo-100`}
-                  />
-                  {cvFileName && (
-                    <span className="text-sm text-gray-600">
-                      {cvFileName}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="ml-1 h-6 px-1 text-red-600"
-                        onClick={() => {
-                          setCvFile(null);
-                          setCvFileName("");
-                          setCvText("");
-                        }}
-                      >
-                        Remove
-                      </Button>
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500">
-                  Upload PDF or .txt. .txt is read for AI tailoring; CV file is attached to each email.
-                </p>
+              <div className="flex justify-end">
+                <Button onClick={handleStep1Next} disabled={!cvFile} className="bg-indigo-600 hover:bg-indigo-700">
+                  Next: Your profile <ChevronRight className="ml-2 h-4 w-4" />
+                </Button>
               </div>
-            </div>
-            <div className="flex justify-end">
-              <Button onClick={handleStep1Next} disabled={!cvFile} className="bg-indigo-600 hover:bg-indigo-700">
-                Next: Companies <ChevronRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
             </div>
             )}
 
-            {/* Step 2: Companies applying to */}
-            {step === 2 && (
+            {/* Step 2: Your profile (CV extract: Overview, Work Experience, Education, Certifications, Key Skills) */}
+            {step === 2 && candidateCategory && (
+            <div className="space-y-6">
+              <h3 className="text-sm font-semibold text-gray-900">Your profile (extracted from CV)</h3>
+              <p className="text-gray-600 text-sm">
+                You’re categorized as a <strong>{candidateCategory === "general" ? "General" : "Professional"}</strong> candidate. Review the sections below—recruiters can see this.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-6">
+                <nav className="space-y-1 shrink-0">
+                  {(["overview", "workExperience", "education", "certifications", "keySkills"] as const).map((key) => {
+                    const label = key === "workExperience" ? "Work Experience" : key === "keySkills" ? "Key Skills" : key.charAt(0).toUpperCase() + key.slice(1);
+                    const isActive = activeProfileSection === key;
+                    const hasContent = !!cvExtract[key]?.trim();
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setActiveProfileSection(key)}
+                        className={`flex items-center gap-2 w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          isActive ? "bg-[#F5F6FA] text-[#1A204C]" : "text-[#6D747F] hover:bg-gray-100"
+                        } ${hasContent ? "" : "opacity-70"}`}
+                      >
+                        <span className="w-1 h-4 rounded bg-current shrink-0" />
+                        {label}
+                      </button>
+                    );
+                  })}
+                </nav>
+                <div className="flex-1 min-w-0 rounded-xl border border-gray-200 bg-gray-50/50 p-4 min-h-[120px]">
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                    {cvExtract[activeProfileSection]?.trim() || "No content extracted for this section. You can add it later in your profile."}
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-between pt-2">
+                <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
+                <Button onClick={handleProfileContinue} disabled={savingProfile} className="bg-indigo-600 hover:bg-indigo-700">
+                  {savingProfile ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…</> : <>Continue to applications <ChevronRight className="ml-2 h-4 w-4" /></>}
+                </Button>
+              </div>
+            </div>
+            )}
+
+            {/* Step 3: Companies applying to */}
+            {step === 3 && (
             <div className="space-y-6">
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-900">Step 2: Companies applying to</h3>
+              <h3 className="text-sm font-semibold text-gray-900">Step 3: Companies applying to</h3>
               <div className="grid grid-cols-[1fr_1fr_auto] gap-4 items-end text-sm font-medium text-gray-600">
                 <Label>Company email</Label>
                 <Label>Topic / Job applying for</Label>
@@ -545,7 +928,7 @@ const SmartApply = () => {
               </Button>
             </div>
             <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
+              <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
               <Button onClick={handleGenerate} disabled={isGenerating} className="bg-indigo-600 hover:bg-indigo-700">
                 {isGenerating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</> : <><Sparkles className="mr-2 h-4 w-4" /> Generate emails</>}
               </Button>
@@ -553,14 +936,14 @@ const SmartApply = () => {
             </div>
             )}
 
-            {/* Step 3: View generated emails */}
-            {step === 3 && emails.length > 0 && (
+            {/* Step 4: View generated emails */}
+            {step === 4 && emails.length > 0 && (
             <div className="space-y-6">
-              <h3 className="text-sm font-semibold text-gray-900">Step 3: View generated emails</h3>
+              <h3 className="text-sm font-semibold text-gray-900">Step 4: View generated emails</h3>
             <div className="flex items-center justify-between">
               <p className="text-gray-600">Review and edit your {emails.length} generated email{emails.length !== 1 ? "s" : ""}.</p>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
+                <Button variant="outline" onClick={() => setStep(3)}>Back</Button>
                 <Button onClick={handleSendAll} className="bg-indigo-600 hover:bg-indigo-700">
                   <Send className="mr-2 h-4 w-4" />
                   Send all
@@ -664,7 +1047,7 @@ const SmartApply = () => {
               ))}
             </div>
             <div className="flex justify-between pt-4 border-t border-gray-200">
-              <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
+              <Button variant="outline" onClick={() => setStep(3)}>Back</Button>
               <Button onClick={handleSendAll} className="bg-indigo-600 hover:bg-indigo-700">
                 <Send className="mr-2 h-4 w-4" />
                 Send all
@@ -676,10 +1059,10 @@ const SmartApply = () => {
           </div>
             )}
 
-            {/* Step 4: Sending results */}
-            {step === 4 && (
+            {/* Step 5: Sending results */}
+            {step === 5 && (
             <div className="space-y-6">
-              <h3 className="text-sm font-semibold text-gray-900">Step 4: Sending results</h3>
+              <h3 className="text-sm font-semibold text-gray-900">Step 5: Sending results</h3>
               {isSending ? (
                 <div className="space-y-4">
                   <p className="text-gray-700">Sending emails from {userDetails.email}…</p>
@@ -689,7 +1072,7 @@ const SmartApply = () => {
               ) : (
                 <div className="space-y-6">
                   <div className="flex gap-4">
-                    <Button variant="outline" onClick={() => setStep(3)}>Back to emails</Button>
+                    <Button variant="outline" onClick={() => setStep(4)}>Back to emails</Button>
                     <Button onClick={() => { setStep(1); setEmails([]); setSentEmails([]); setFailedEmails([]); }} className="bg-indigo-600 hover:bg-indigo-700">
                       Start over
                     </Button>

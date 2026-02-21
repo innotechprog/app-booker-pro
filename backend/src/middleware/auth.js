@@ -54,6 +54,46 @@ export const checkPremium = (req, res, next) => {
   next();
 };
 
+/** Smart Apply only: verify token with type 'smart_apply' and load candidate from smart_apply_candidates */
+export const protectSmartApply = async (req, res, next) => {
+  let token;
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+  if (!token) {
+    return res.status(401).json({ success: false, message: 'Not authorized' });
+  }
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.type !== 'smart_apply') {
+      return res.status(401).json({ success: false, message: 'Invalid token for Smart Apply' });
+    }
+    const rows = await query(
+      'SELECT id, full_name, email, phone, candidate_category, cv_overview FROM smart_apply_candidates WHERE id = ?',
+      [decoded.id]
+    );
+    if (rows.length === 0) {
+      return res.status(401).json({ success: false, message: 'Candidate not found' });
+    }
+    const candidate = rows[0];
+    const cid = candidate.id;
+    const [we, edu, cert, skills] = await Promise.all([
+      query('SELECT content FROM smart_apply_work_experience WHERE candidate_id = ? ORDER BY sort_order', [cid]),
+      query('SELECT content FROM smart_apply_education WHERE candidate_id = ? ORDER BY sort_order', [cid]),
+      query('SELECT content FROM smart_apply_certifications WHERE candidate_id = ? ORDER BY sort_order', [cid]),
+      query('SELECT content FROM smart_apply_key_skills WHERE candidate_id = ? ORDER BY sort_order', [cid]),
+    ]);
+    candidate.cv_work_experience = we.length ? we.map((r) => r.content).join('\n\n') : null;
+    candidate.cv_education = edu.length ? edu.map((r) => r.content).join('\n\n') : null;
+    candidate.cv_certifications = cert.length ? cert.map((r) => r.content).join('\n\n') : null;
+    candidate.cv_key_skills = skills.length ? skills.map((r) => r.content).join('\n\n') : null;
+    req.candidate = candidate;
+    next();
+  } catch (error) {
+    return res.status(401).json({ success: false, message: 'Not authorized' });
+  }
+};
+
 
 
 

@@ -19,7 +19,7 @@ const generateToken = (id) => {
 // @access  Public
 router.post('/register', async (req, res) => {
   try {
-    const { fullName, email, password, grade } = req.body;
+    const { fullName, email, password, grade, phone } = req.body;
 
     // Validation
     if (!fullName || !email || !password) {
@@ -45,10 +45,10 @@ router.post('/register', async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user (let database auto-generate ID)
+    // Create user (let database auto-generate ID); phone optional (e.g. Smart Apply candidates)
     const result = await query(
-      'INSERT INTO users (full_name, email, password, grade, profile_completion) VALUES (?, ?, ?, ?, ?)',
-      [fullName, email, hashedPassword, grade || '', 40]
+      'INSERT INTO users (full_name, email, password, phone, grade, profile_completion) VALUES (?, ?, ?, ?, ?, ?)',
+      [fullName, email, hashedPassword, phone || null, grade || '', 40]
     );
     
     const userId = result.insertId;
@@ -82,6 +82,7 @@ router.post('/register', async (req, res) => {
         id: userId,
         fullName,
         email,
+        phone: phone || null,
         grade: grade || '',
         isPremium: false
       }
