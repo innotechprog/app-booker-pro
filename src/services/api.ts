@@ -1,7 +1,7 @@
 // API Service for Backend Communication
 
-// Normalize base URL so we don't end up with double slashes
-const RAW_API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// In dev, use relative /api so Vite proxies to backend (avoids CORS). Set VITE_API_URL to override (e.g. direct to backend).
+const RAW_API_BASE_URL = (import.meta.env.DEV && !import.meta.env.VITE_API_URL) ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:5000/api');
 const API_BASE_URL = RAW_API_BASE_URL.replace(/\/+$/, '');
 
 // Helper to get auth token
@@ -428,12 +428,37 @@ const fetchWithSmartApplyAuth = async (url: string, options: RequestInit = {}) =
     ...(options.headers as Record<string, string> || {})
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
-  const response = await fetch(`${API_BASE_URL}${url}`, { ...options, headers });
+  const path = url.startsWith('/') ? url : `/${url}`;
+  const fullUrl = `${API_BASE_URL}${path}`;
+  if (import.meta.env.DEV) {
+    console.log('[Smart Apply API]', options.method || 'GET', fullUrl);
+  }
+  let response: Response;
+  try {
+    response = await fetch(fullUrl, { ...options, headers });
+  } catch (networkErr: unknown) {
+    const isFailedFetch = networkErr instanceof Error && networkErr.message === 'Failed to fetch';
+    const msg = isFailedFetch
+      ? `Cannot reach server at ${fullUrl}. Start ib-backend (C:\\xampp\\htdocs\\ib-backend → npm run dev) and set VITE_API_URL in .env, then restart the frontend.`
+      : (networkErr instanceof Error ? networkErr.message : 'Network error');
+    throw new Error(msg);
+  }
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
     throw new Error(data.message || data.error || `Server error: ${response.status}`);
   }
   return response.json();
+};
+
+const fetchWithSmartApplyAuthBlob = async (url: string): Promise<Blob> => {
+  const token = getSmartApplyToken();
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const path = url.startsWith('/') ? url : `/${url}`;
+  const fullUrl = `${API_BASE_URL}${path}`;
+  const response = await fetch(fullUrl, { headers });
+  if (!response.ok) throw new Error(response.status === 404 ? 'CV not found' : `Server error: ${response.status}`);
+  return response.blob();
 };
 
 export const smartApplyAPI = {
@@ -444,9 +469,12 @@ export const smartApplyAPI = {
     cvBase64?: string;
     cvFileName?: string;
   }) => {
-    const res = await fetch(`${API_BASE_URL}smart-apply/send-emails`, {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const token = localStorage.getItem(SMART_APPLY_TOKEN_KEY);
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(`${API_BASE_URL}/smart-apply/send-emails`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(payload)
     });
     if (!res.ok) {
@@ -454,6 +482,10 @@ export const smartApplyAPI = {
       throw new Error(data.error || `Server error: ${res.status} ${res.statusText}`);
     }
     return res.json();
+  },
+
+  getDashboard: async () => {
+    return await fetchWithSmartApplyAuth('/smart-apply/dashboard');
   },
 
   register: async (payload: { fullName: string; email: string; password: string; phone?: string }) => {
@@ -469,15 +501,43 @@ export const smartApplyAPI = {
   },
 
   login: async (email: string, password: string) => {
-    const res = await fetch(`${API_BASE_URL}/smart-apply/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE_URL}/smart-apply/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Network error';
+      const hint = msg === 'Failed to fetch' || msg.includes('fetch')
+        ? ' Make sure ib-backend is running (C:\\xampp\\htdocs\\ib-backend → npm run dev) and VITE_API_URL in .env points to it (e.g. http://localhost:5000/api).'
+        : '';
+      throw new Error(msg + hint);
+    }
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.message || 'Invalid email or password');
+    if (!res.ok) throw new Error(data.message || data.error || 'Invalid email or password');
     if (data.token) localStorage.setItem(SMART_APPLY_TOKEN_KEY, data.token);
     return data;
+  },
+
+  googleLogin: async (idToken: string) => {
+    const res = await fetch(`${API_BASE_URL}/smart-apply/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || 'Google sign-in failed');
+    if (data.token) localStorage.setItem(SMART_APPLY_TOKEN_KEY, data.token);
+    return data;
+  },
+
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    return await fetchWithSmartApplyAuth('/smart-apply/auth/change-password', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPassword, newPassword })
+    });
   },
 
   getProfile: async () => {
@@ -487,11 +547,22 @@ export const smartApplyAPI = {
 
   saveProfile: async (payload: {
     category: 'general' | 'professional';
+    fullName?: string | null;
+    phone?: string | null;
+    dateOfBirth?: string | null;
+    gender?: string | null;
+    nationality?: string | null;
+    currentLocation?: string | null;
+    jobTitle?: string | null;
+    linkedinUrl?: string | null;
+    website?: string | null;
+    primaryCvId?: number | null;
     overview?: string | null;
-    workExperience?: string | null;
-    education?: string | null;
-    certifications?: string | null;
-    keySkills?: string | null;
+    workExperience?: Record<string, unknown>[] | null;
+    education?: Record<string, unknown>[] | null;
+    certifications?: Record<string, unknown>[] | null;
+    keySkills?: { name: string; level?: string }[] | null;
+    addresses?: { label?: string; addressLine1?: string; addressLine2?: string; city?: string; stateRegion?: string; postalCode?: string; country?: string; isPrimary?: boolean }[] | null;
   }) => {
     return await fetchWithSmartApplyAuth('/smart-apply/profile', {
       method: 'PUT',
@@ -507,6 +578,27 @@ export const smartApplyAPI = {
       throw new Error(data.error || `Server error: ${res.status}`);
     }
     return res.json();
+  },
+
+  listCVs: async () => {
+    const data = await fetchWithSmartApplyAuth('/smart-apply/cvs');
+    return data?.cvs != null ? data : { cvs: [] };
+  },
+
+  getCVBlob: async (id: number, download: boolean) => {
+    const q = download ? '?download=true' : '';
+    return fetchWithSmartApplyAuthBlob(`/smart-apply/cvs/${id}${q}`);
+  },
+
+  uploadCV: async (payload: { label: string; roleOrCategory?: string; fileName: string; fileBase64: string }) => {
+    return await fetchWithSmartApplyAuth('/smart-apply/cvs', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  deleteCV: async (id: number) => {
+    return await fetchWithSmartApplyAuth(`/smart-apply/cvs/${id}`, { method: 'DELETE' });
   }
 };
 

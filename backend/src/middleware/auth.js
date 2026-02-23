@@ -69,7 +69,7 @@ export const protectSmartApply = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid token for Smart Apply' });
     }
     const rows = await query(
-      'SELECT id, full_name, email, phone, candidate_category, cv_overview FROM smart_apply_candidates WHERE id = ?',
+      'SELECT id, full_name, email, phone, date_of_birth, primary_cv_id, gender, nationality, current_location, job_title, linkedin_url, website, candidate_category, cv_overview FROM smart_apply_candidates WHERE id = ?',
       [decoded.id]
     );
     if (rows.length === 0) {
@@ -77,16 +77,28 @@ export const protectSmartApply = async (req, res, next) => {
     }
     const candidate = rows[0];
     const cid = candidate.id;
-    const [we, edu, cert, skills] = await Promise.all([
+    const [we, edu, cert, skills, addrs] = await Promise.all([
       query('SELECT content FROM smart_apply_work_experience WHERE candidate_id = ? ORDER BY sort_order', [cid]),
       query('SELECT content FROM smart_apply_education WHERE candidate_id = ? ORDER BY sort_order', [cid]),
       query('SELECT content FROM smart_apply_certifications WHERE candidate_id = ? ORDER BY sort_order', [cid]),
       query('SELECT content FROM smart_apply_key_skills WHERE candidate_id = ? ORDER BY sort_order', [cid]),
+      query('SELECT id, label, address_line1, address_line2, city, state_region, postal_code, country, is_primary FROM smart_apply_addresses WHERE candidate_id = ? ORDER BY is_primary DESC, id', [cid]).catch(() => []),
     ]);
     candidate.cv_work_experience = we.length ? we.map((r) => r.content).join('\n\n') : null;
     candidate.cv_education = edu.length ? edu.map((r) => r.content).join('\n\n') : null;
     candidate.cv_certifications = cert.length ? cert.map((r) => r.content).join('\n\n') : null;
     candidate.cv_key_skills = skills.length ? skills.map((r) => r.content).join('\n\n') : null;
+    candidate.addresses = Array.isArray(addrs) ? addrs.map((a) => ({
+      id: a.id,
+      label: a.label,
+      addressLine1: a.address_line1,
+      addressLine2: a.address_line2 || null,
+      city: a.city,
+      stateRegion: a.state_region || null,
+      postalCode: a.postal_code || null,
+      country: a.country,
+      isPrimary: !!a.is_primary,
+    })) : [];
     req.candidate = candidate;
     next();
   } catch (error) {

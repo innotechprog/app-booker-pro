@@ -8,7 +8,10 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "db:setup": "node src/config/setup-database.js",
-    "db:seed": "node src/config/seed-database.js"
+    "db:seed": "node src/config/seed-database.js",
+    "db:migrate-smart-apply": "node src/config/run-smart-apply-migrations.js",
+    "db:migrate-recruiter": "node src/config/run-recruiter-migrations.js",
+    "db:migrate-jobs": "node src/config/run-jobs-migration.js"
   },
   "keywords": [
     "nodejs",

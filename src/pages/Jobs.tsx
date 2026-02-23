@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Layout from "@/components/Layout";
-import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import { Briefcase, MapPin, Building2, ExternalLink, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -69,34 +68,37 @@ const Jobs = () => {
   return (
     <Layout>
       <SEO page="smartApply" />
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50/30">
-        <div className="max-w-4xl mx-auto px-6 py-12">
-          <div className="text-center mb-10">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Available jobs</h1>
-            <p className="text-lg text-gray-600">
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 py-10">
+          <div className="mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Available jobs</h1>
+            <p className="text-gray-600 mt-1">
               Browse openings. Use <strong>Apply to multiple emails</strong> in the header to send applications from your profile.
             </p>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-2 mb-8">
+          <div className="flex flex-wrap gap-2 mb-8">
             <Button
               variant={filter === "all" ? "default" : "outline"}
               onClick={() => setFilter("all")}
-              className={filter === "all" ? "bg-indigo-600 hover:bg-indigo-700" : ""}
+              className={filter === "all" ? "text-white hover:opacity-90" : "border-gray-300 text-gray-800 hover:bg-gray-50"}
+              style={filter === "all" ? { backgroundColor: "#1e3a5f" } : undefined}
             >
               All
             </Button>
             <Button
               variant={filter === "general" ? "default" : "outline"}
               onClick={() => setFilter("general")}
-              className={filter === "general" ? "bg-indigo-600 hover:bg-indigo-700" : ""}
+              className={filter === "general" ? "text-white hover:opacity-90" : "border-gray-300 text-gray-800 hover:bg-gray-50"}
+              style={filter === "general" ? { backgroundColor: "#1e3a5f" } : undefined}
             >
               General
             </Button>
             <Button
               variant={filter === "professional" ? "default" : "outline"}
               onClick={() => setFilter("professional")}
-              className={filter === "professional" ? "bg-indigo-600 hover:bg-indigo-700" : ""}
+              className={filter === "professional" ? "text-white hover:opacity-90" : "border-gray-300 text-gray-800 hover:bg-gray-50"}
+              style={filter === "professional" ? { backgroundColor: "#1e3a5f" } : undefined}
             >
               Professional
             </Button>
@@ -104,10 +106,10 @@ const Jobs = () => {
 
           {loading ? (
             <div className="flex justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+              <Loader2 className="h-8 w-8 animate-spin text-gray-600" />
             </div>
           ) : jobs.length === 0 ? (
-            <Card>
+            <Card className="border border-gray-200 bg-white shadow-sm">
               <CardContent className="py-12 text-center text-gray-600">
                 No jobs found for this filter. Check back later or try another category.
               </CardContent>
@@ -115,12 +117,12 @@ const Jobs = () => {
           ) : (
             <div className="space-y-4">
               {jobs.map((job) => (
-                <Card key={job.id} className="hover:shadow-md transition-shadow">
+                <Card key={job.id} className="border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden">
                   <CardHeader className="pb-2">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
-                        <CardTitle className="text-lg">{job.title}</CardTitle>
-                        <CardDescription className="flex items-center gap-2 mt-1">
+                        <CardTitle className="text-lg text-gray-900">{job.title}</CardTitle>
+                        <CardDescription className="flex items-center gap-2 mt-1 text-gray-600">
                           <Building2 className="h-4 w-4" />
                           {job.company}
                         </CardDescription>
@@ -143,9 +145,9 @@ const Jobs = () => {
                     </div>
                     <p className="text-gray-700">{job.description}</p>
                     <div className="pt-2 flex gap-2">
-                      <Button asChild size="sm" className="bg-indigo-600 hover:bg-indigo-700">
-                        <Link to="/smart-apply/apply">
-                          <ExternalLink className="mr-1 h-4 w-4" />
+                      <Button asChild size="sm" className="text-white hover:opacity-90" style={{ backgroundColor: "#1e3a5f" }}>
+                        <Link to="/smart-apply/apply" className="inline-flex items-center gap-1.5">
+                          <ExternalLink className="h-4 w-4" />
                           Apply with Smart Apply
                         </Link>
                       </Button>
@@ -157,7 +159,6 @@ const Jobs = () => {
           )}
         </div>
       </div>
-      <Footer />
     </Layout>
   );
 };

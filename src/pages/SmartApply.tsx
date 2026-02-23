@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ import {
   Eye,
   EyeOff,
   ChevronRight,
+  ChevronLeft,
   User,
   UserCheck,
   Building2,
@@ -36,6 +37,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { smartApplyAPI } from "@/services/api";
+import { recruiterApi } from "@/services/recruiterApi";
+import { initializeGoogleAuth, triggerGoogleSignIn } from "@/utils/googleAuth";
 
 interface GeneratedEmail {
   id: string;
@@ -60,6 +63,8 @@ interface UserDetails {
 
 const inputClass =
   "h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg transition-all duration-300 bg-gray-50 focus:bg-white text-gray-900 text-sm";
+
+const PRIMARY_COLOR = "#1e3a5f";
 
 // Generate email body using profile (overview, keySkills) or CV text when provided
 const generateEmailForRow = (
@@ -171,9 +176,14 @@ function extractCvSections(cvText: string): CvExtract {
 
 const SmartApply = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [hasToken, setHasToken] = useState(false);
   const isApplyFlow = location.pathname === "/smart-apply/apply";
+  const [hasProfileCheckDone, setHasProfileCheckDone] = useState(false);
+  const [hasProfile, setHasProfile] = useState(false);
   const [authView, setAuthView] = useState<"login" | "signup">("login");
+  const isSignInRoute = location.pathname === "/smart-apply/sign-in";
+  const isSignUpRoute = location.pathname === "/smart-apply/sign-up";
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [signupForm, setSignupForm] = useState({
     name: "",
@@ -183,8 +193,12 @@ const SmartApply = () => {
     password: "",
     confirmPassword: "",
   });
+  const [recruiterCompany, setRecruiterCompany] = useState("");
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [isRecruiterMode, setIsRecruiterMode] = useState(() => searchParams.get("mode") === "recruiter");
 
   const [userDetails, setUserDetails] = useState<UserDetails>({
     name: "",
@@ -223,6 +237,17 @@ const SmartApply = () => {
     setHasToken(!!localStorage.getItem(SMART_APPLY_TOKEN_KEY));
   }, []);
 
+  // Sync auth view with sign-in / sign-up route
+  useEffect(() => {
+    if (isSignInRoute) setAuthView("login");
+    else if (isSignUpRoute) setAuthView("signup");
+  }, [isSignInRoute, isSignUpRoute]);
+
+  // Sync recruiter mode from URL
+  useEffect(() => {
+    setIsRecruiterMode(searchParams.get("mode") === "recruiter");
+  }, [searchParams]);
+
   // Pre-fill user details from Smart Apply profile when logged in (main flow)
   useEffect(() => {
     if (!hasToken || isApplyFlow) return;
@@ -237,6 +262,20 @@ const SmartApply = () => {
         contactNumber: p.phone || "",
       });
     }).catch(() => {});
+  }, [hasToken, isApplyFlow]);
+
+  // On /smart-apply (not apply): check if user has profile; if yes redirect to profile page
+  useEffect(() => {
+    if (!hasToken || isApplyFlow) return;
+    smartApplyAPI
+      .getProfile()
+      .then((res: { profile?: { category?: string; overview?: string; workExperience?: string; education?: string; certifications?: string; keySkills?: string } }) => {
+        const p = res?.profile;
+        const hasAny = !!(p?.category || (p?.overview ?? "").trim() || (p?.workExperience ?? "").trim() || (p?.education ?? "").trim() || (p?.certifications ?? "").trim() || (p?.keySkills ?? "").trim());
+        setHasProfile(hasAny);
+      })
+      .catch(() => setHasProfile(false))
+      .finally(() => setHasProfileCheckDone(true));
   }, [hasToken, isApplyFlow]);
 
   // "Apply to multiple emails" flow: load profile and jump to step 3 (Companies)
@@ -269,14 +308,56 @@ const SmartApply = () => {
       .catch(() => {});
   }, [hasToken, isApplyFlow]);
 
+  useEffect(() => {
+    initializeGoogleAuth(
+      async (credential) => {
+        setIsGoogleLoading(true);
+        setAuthError("");
+        try {
+          const data = await smartApplyAPI.googleLogin(credential);
+          setHasToken(true);
+          const c = data?.candidate;
+          if (c) {
+            const parts = (c.fullName || "").trim().split(/\s+/);
+            setUserDetails({
+              name: parts[0] || "",
+              surname: parts.slice(1).join(" ") || "",
+              email: c.email || "",
+              contactNumber: c.phone || "",
+            });
+            if (c.fullName) localStorage.setItem("smart_apply_full_name", c.fullName);
+          }
+          toast({ title: "Signed in with Google", description: "Welcome to Smart Apply." });
+        } catch (err: any) {
+          setAuthError(err?.message || "Google sign-in failed.");
+          toast({ title: "Google sign-in failed", description: err?.message, variant: "destructive" });
+        } finally {
+          setIsGoogleLoading(false);
+        }
+      },
+      (error) => {
+        setAuthError(error || "Google sign-in failed.");
+        setIsGoogleLoading(false);
+      }
+    );
+  }, [toast]);
+
   const handleAuthLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError("");
     setAuthLoading(true);
     try {
-      await smartApplyAPI.login(loginForm.email, loginForm.password);
+      if (isRecruiterMode) {
+        await recruiterApi.login(loginForm.email.trim(), loginForm.password);
+        toast({ title: "Signed in", description: "Welcome to Recruiter." });
+        navigate("/recruiter", { replace: true });
+        return;
+      }
+      const data = await smartApplyAPI.login(loginForm.email, loginForm.password);
       setHasToken(true);
+      if (data?.candidate?.fullName) localStorage.setItem("smart_apply_full_name", data.candidate.fullName);
       toast({ title: "Signed in", description: "Welcome back to Smart Apply." });
+      navigate("/smart-apply/profile", { replace: true });
     } catch (err: any) {
       setAuthError(err?.message || "Invalid email or password.");
     } finally {
@@ -298,6 +379,18 @@ const SmartApply = () => {
     setAuthLoading(true);
     try {
       const fullName = [signupForm.name, signupForm.surname].filter(Boolean).join(" ").trim() || signupForm.email;
+      if (isRecruiterMode) {
+        await recruiterApi.register({
+          fullName,
+          email: signupForm.email.trim(),
+          password: signupForm.password,
+          phone: signupForm.contactNumber.trim() || undefined,
+          company: recruiterCompany.trim() || undefined,
+        });
+        toast({ title: "Recruiter account created", description: "You can sign in now." });
+        navigate("/recruiter", { replace: true });
+        return;
+      }
       await smartApplyAPI.register({
         fullName,
         email: signupForm.email.trim(),
@@ -305,6 +398,7 @@ const SmartApply = () => {
         phone: signupForm.contactNumber.trim() || undefined,
       });
       setHasToken(true);
+      localStorage.setItem("smart_apply_full_name", fullName);
       setUserDetails({
         name: signupForm.name,
         surname: signupForm.surname,
@@ -350,34 +444,33 @@ const SmartApply = () => {
       .finally(() => setProfileLoaded(true));
   }, []);
 
-  const handleStep1Next = () => {
+  const handleStep1Next = async () => {
     if (!cvFile) {
       toast({ title: "CV required", description: "Please upload your CV.", variant: "destructive" });
       return;
     }
     const category = categorizeFromCvText(cvText);
     setCandidateCategory(category);
-    setCvExtract(extractCvSections(cvText));
-    setActiveProfileSection("overview");
-    setStep(2);
-  };
-
-  const handleProfileContinue = async () => {
-    if (!candidateCategory) return;
+    const extract = extractCvSections(cvText);
+    setCvExtract(extract);
     setSavingProfile(true);
     try {
       await smartApplyAPI.saveProfile({
-        category: candidateCategory,
-        overview: cvExtract.overview || null,
-        workExperience: cvExtract.workExperience || null,
-        education: cvExtract.education || null,
-        certifications: cvExtract.certifications || null,
-        keySkills: cvExtract.keySkills || null,
+        category,
+        overview: extract.overview || null,
+        workExperience: extract.workExperience || null,
+        education: extract.education || null,
+        certifications: extract.certifications || null,
+        keySkills: extract.keySkills || null,
       });
-      toast({ title: "Profile saved", description: "Recruiters can now find you. Continue to apply to multiple emails." });
-      setStep(3);
+      toast({ title: "Profile saved", description: "You can edit your profile and apply to companies next." });
+      navigate("/smart-apply/profile");
     } catch (err: any) {
-      toast({ title: "Could not save profile", description: err?.message || "Please try again.", variant: "destructive" });
+      const msg = err?.message || "Please try again.";
+      const hint = msg === "Failed to fetch" || msg.includes("Cannot reach server")
+        ? " Start ib-backend (npm run dev in C:\\xampp\\htdocs\\ib-backend) and ensure VITE_API_URL in .env points to it."
+        : "";
+      toast({ title: "Could not save profile", description: msg + hint, variant: "destructive" });
     } finally {
       setSavingProfile(false);
     }
@@ -585,29 +678,99 @@ const SmartApply = () => {
             </div>
             <div className="space-y-4">
               <p className="text-sm uppercase tracking-wider text-gray-400 font-semibold">Smart Apply</p>
-              <h1 className="text-5xl font-bold text-white">Welcome Back</h1>
-              <p className="text-xl text-gray-300">Apply to many companies at once</p>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-sm font-medium text-white">
+                {isRecruiterMode ? (
+                  <><Building2 className="h-4 w-4" /> Recruiter login</>
+                ) : (
+                  <><User className="h-4 w-4" /> Candidate login</>
+                )}
+              </span>
+              <h1 className="text-5xl font-bold text-white">
+                {authView === "login"
+                  ? (isRecruiterMode ? "Sign in to recruiter account" : "Sign in to your account")
+                  : (isRecruiterMode ? "Create recruiter account" : "Create your account")}
+              </h1>
+              <p className="text-xl text-gray-300">
+                {isRecruiterMode ? "Post jobs and manage candidates" : "Apply to many companies at once"}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-4 border-white/60 text-white hover:bg-white/10 hover:text-white"
+                onClick={() => {
+                  const next = !isRecruiterMode;
+                  setIsRecruiterMode(next);
+                  setAuthError("");
+                  setSearchParams(next ? { mode: "recruiter" } : {});
+                }}
+              >
+                {isRecruiterMode ? "I'm a candidate" : "I'm a recruiter"}
+              </Button>
             </div>
           </div>
         </div>
         {/* Right – Form */}
         <div className="w-full lg:w-1/2 lg:ml-[50%] flex items-center justify-center bg-white p-8 overflow-y-auto h-screen">
           <div className="w-full max-w-md space-y-8">
+            <Link to="/">
+              <Button type="button" variant="outline" className="gap-2">
+                <ChevronLeft className="h-4 w-4" />
+                Back
+              </Button>
+            </Link>
             <div className="lg:hidden text-center mb-8">
               <div className="flex justify-center mb-4">
                 <div className="w-16 h-16 border-4 border-blue-600 rounded-full flex items-center justify-center">
                   <Sparkles className="w-8 h-8 text-blue-600" />
                 </div>
               </div>
-              <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-700 mb-2">
+                {isRecruiterMode ? <><Building2 className="h-3.5 w-3.5" /> Recruiter</> : <><User className="h-3.5 w-3.5" /> Candidate</>}
+              </span>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {authView === "login"
+                  ? (isRecruiterMode ? "Sign in to recruiter account" : "Sign in to your account")
+                  : (isRecruiterMode ? "Create recruiter account" : "Create your account")}
+              </h1>
             </div>
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-gray-900">
-                {authView === "login" ? "Sign in to your account" : "Create your account"}
+                {authView === "login"
+                  ? (isRecruiterMode ? "Sign in to recruiter account" : "Sign in to your account")
+                  : (isRecruiterMode ? "Create recruiter account" : "Create your account")}
               </h2>
 
               {authView === "login" ? (
                 <>
+                  {!isRecruiterMode && (
+                  <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-12 border-gray-300"
+                    onClick={() => triggerGoogleSignIn()}
+                    disabled={isGoogleLoading}
+                  >
+                    {isGoogleLoading ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Signing in...</>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                        </svg>
+                        Sign in with Google
+                      </>
+                    )}
+                  </Button>
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-300" /></div>
+                    <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-500">OR</span></div>
+                  </div>
+                  </>
+                  )}
                   <form className="space-y-4" onSubmit={handleAuthLogin}>
                     <Input
                       type="email"
@@ -630,15 +793,57 @@ const SmartApply = () => {
                       {authLoading ? "Signing in..." : "Sign in"}
                     </Button>
                   </form>
+                  {!isRecruiterMode && (
+                  <p className="text-xs text-center text-gray-500 mt-2">
+                    Use the email and password you used when you signed up. If you created your account with Google, use &quot;Sign in with Google&quot; above.
+                  </p>
+                  )}
                   <p className="text-sm text-center text-gray-600">
                     Don&apos;t have an account?{" "}
-                    <button type="button" onClick={() => { setAuthView("signup"); setAuthError(""); }} className="text-blue-600 hover:underline font-medium">
+                    <Link to={isRecruiterMode ? "/smart-apply/sign-up?mode=recruiter" : "/smart-apply/sign-up"} onClick={() => setAuthError("")} className="text-blue-600 hover:underline font-medium">
                       Sign up
-                    </button>
+                    </Link>
                   </p>
+                  {!isRecruiterMode && (
+                  <p className="text-sm text-center text-gray-500 mt-4">
+                    Are you a recruiter?{" "}
+                    <Link to="/smart-apply/sign-in?mode=recruiter" className="text-blue-600 hover:underline font-medium">
+                      Sign in or create recruiter account
+                    </Link>
+                  </p>
+                  )}
                 </>
               ) : (
                 <>
+                  {!isRecruiterMode && (
+                  <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-12 border-gray-300"
+                    onClick={() => triggerGoogleSignIn()}
+                    disabled={isGoogleLoading}
+                  >
+                    {isGoogleLoading ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Signing up...</>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                        </svg>
+                        Sign up with Google
+                      </>
+                    )}
+                  </Button>
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-300" /></div>
+                    <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-500">OR</span></div>
+                  </div>
+                  </>
+                  )}
                   <form className="space-y-4" onSubmit={handleAuthSignup}>
                     <div className="grid grid-cols-2 gap-4">
                       <Input
@@ -656,11 +861,21 @@ const SmartApply = () => {
                     </div>
                     <Input
                       type="tel"
-                      placeholder="Contact number"
+                      inputMode="numeric"
+                      placeholder="Contact number (numbers only)"
                       value={signupForm.contactNumber}
-                      onChange={(e) => setSignupForm((f) => ({ ...f, contactNumber: e.target.value }))}
+                      onChange={(e) => setSignupForm((f) => ({ ...f, contactNumber: e.target.value.replace(/\D/g, "") }))}
+                      maxLength={15}
                       className="h-12 text-gray-900 placeholder:text-gray-500 bg-white"
                     />
+                    {isRecruiterMode && (
+                    <Input
+                      placeholder="Company (optional)"
+                      value={recruiterCompany}
+                      onChange={(e) => setRecruiterCompany(e.target.value)}
+                      className="h-12 text-gray-900 placeholder:text-gray-500 bg-white"
+                    />
+                    )}
                     <Input
                       type="email"
                       placeholder="Email"
@@ -699,10 +914,18 @@ const SmartApply = () => {
                   </p>
                   <p className="text-sm text-center text-gray-600">
                     Already have an account?{" "}
-                    <button type="button" onClick={() => { setAuthView("login"); setAuthError(""); }} className="text-blue-600 hover:underline font-medium">
+                    <Link to={isRecruiterMode ? "/smart-apply/sign-in?mode=recruiter" : "/smart-apply/sign-in"} onClick={() => setAuthError("")} className="text-blue-600 hover:underline font-medium">
                       Sign in
-                    </button>
+                    </Link>
                   </p>
+                  {!isRecruiterMode && (
+                  <p className="text-sm text-center text-gray-500 mt-4">
+                    Are you a recruiter?{" "}
+                    <Link to="/smart-apply/sign-in?mode=recruiter" className="text-blue-600 hover:underline font-medium">
+                      Sign in or create recruiter account
+                    </Link>
+                  </p>
+                  )}
                 </>
               )}
             </div>
@@ -711,6 +934,24 @@ const SmartApply = () => {
       </div>
     );
   }
+
+  // Logged in on /smart-apply: redirect to profile if already has profile
+  if (hasToken && !isApplyFlow && hasProfileCheckDone && hasProfile) {
+    navigate("/smart-apply/profile", { replace: true });
+    return null;
+  }
+  if (hasToken && !isApplyFlow && !hasProfileCheckDone) {
+    return (
+      <Layout>
+        <SEO page="smartApply" />
+        <div className="min-h-[40vh] flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        </div>
+      </Layout>
+    );
+  }
+
+  const showCvUploadOnly = hasToken && !isApplyFlow && hasProfileCheckDone && !hasProfile;
 
   return (
     <Layout>
@@ -751,40 +992,44 @@ const SmartApply = () => {
                   Setup your bulk application
                 </CardTitle>
                 <CardDescription className="text-gray-800 mt-1">
-                  {step === 1 && "Upload your CV"}
-                  {step === 2 && "Your profile"}
-                  {step === 3 && "Companies to apply to"}
-                  {step === 4 && "Review generated emails"}
-                  {step === 5 && "Sending results"}
+                  {showCvUploadOnly && "Upload your CV"}
+                  {isApplyFlow && step === 3 && "Companies to apply to"}
+                  {isApplyFlow && step === 4 && "Review generated emails"}
+                  {isApplyFlow && step === 5 && "Sending results"}
                 </CardDescription>
               </div>
-              {/* Step indicator */}
+              <div className="flex items-center gap-4 flex-wrap">
+                {!showCvUploadOnly && (
+                <Link
+                  to="/smart-apply/apply"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+                >
+                  <Mail className="h-4 w-4" />
+                  APPLY TO MULTIPLE EMAILS
+                </Link>
+                )}
+              {/* Step indicator: only in apply flow (3 steps) */}
+              {isApplyFlow && (
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${step >= 1 ? "bg-indigo-100 text-indigo-700" : "bg-gray-200 text-gray-500"}`}>
-                  <User className="h-4 w-4" /> 1
-                </span>
-                <ChevronRight className="h-4 w-4 text-gray-400" />
-                <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${step >= 2 ? "bg-indigo-100 text-indigo-700" : "bg-gray-200 text-gray-500"}`}>
-                  <UserCheck className="h-4 w-4" /> 2
-                </span>
-                <ChevronRight className="h-4 w-4 text-gray-400" />
                 <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${step >= 3 ? "bg-indigo-100 text-indigo-700" : "bg-gray-200 text-gray-500"}`}>
-                  <Building2 className="h-4 w-4" /> 3
+                  <Building2 className="h-4 w-4" /> 1
                 </span>
                 <ChevronRight className="h-4 w-4 text-gray-400" />
                 <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${step >= 4 ? "bg-indigo-100 text-indigo-700" : "bg-gray-200 text-gray-500"}`}>
-                  <Eye className="h-4 w-4" /> 4
+                  <Eye className="h-4 w-4" /> 2
                 </span>
                 <ChevronRight className="h-4 w-4 text-gray-400" />
                 <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${step >= 5 ? "bg-indigo-100 text-indigo-700" : "bg-gray-200 text-gray-500"}`}>
-                  <Send className="h-4 w-4" /> 5
+                  <Send className="h-4 w-4" /> 3
                 </span>
+              </div>
+              )}
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Step 1: Upload your CV (first screen after sign in / sign up) */}
-            {step === 1 && (
+            {/* CV upload screen: only when logged in on /smart-apply and no profile yet */}
+            {showCvUploadOnly && (
             <div className="space-y-6">
               <p className="text-sm text-gray-600">
                 Applying as: <span className="font-medium text-gray-900">{[userDetails.name, userDetails.surname].filter(Boolean).join(" ") || "—"}</span>
@@ -829,16 +1074,16 @@ const SmartApply = () => {
                 </div>
               </div>
               <div className="flex justify-end">
-                <Button onClick={handleStep1Next} disabled={!cvFile} className="bg-indigo-600 hover:bg-indigo-700">
-                  Next: Your profile <ChevronRight className="ml-2 h-4 w-4" />
+                <Button onClick={handleStep1Next} disabled={!cvFile || savingProfile} className="bg-indigo-600 hover:bg-indigo-700">
+                  {savingProfile ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…</> : <>Continue to profile <ChevronRight className="ml-2 h-4 w-4" /></>}
                 </Button>
               </div>
             </div>
             )}
 
             {/* Step 2: Your profile (CV extract: Overview, Work Experience, Education, Certifications, Key Skills) */}
-            {step === 2 && candidateCategory && (
-            <div className="space-y-6">
+            {false && step === 2 && candidateCategory && (
+            <div className="space-y-6 hidden">
               <h3 className="text-sm font-semibold text-gray-900">Your profile (extracted from CV)</h3>
               <p className="text-gray-600 text-sm">
                 You’re categorized as a <strong>{candidateCategory === "general" ? "General" : "Professional"}</strong> candidate. Review the sections below—recruiters can see this.
@@ -883,7 +1128,7 @@ const SmartApply = () => {
             {step === 3 && (
             <div className="space-y-6">
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-900">Step 3: Companies applying to</h3>
+              <h3 className="text-sm font-semibold text-gray-900">{isApplyFlow ? "Step 1: " : "Step 3: "}Companies applying to</h3>
               <div className="grid grid-cols-[1fr_1fr_auto] gap-4 items-end text-sm font-medium text-gray-600">
                 <Label>Company email</Label>
                 <Label>Topic / Job applying for</Label>
@@ -919,17 +1164,26 @@ const SmartApply = () => {
                 </div>
               ))}
               <Button
-                variant="outline"
+                type="button"
                 onClick={addRow}
-                className="w-full sm:w-auto border-dashed"
+                className="w-full sm:w-auto text-white hover:opacity-90 border-0"
+                style={{ backgroundColor: PRIMARY_COLOR }}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Add row
               </Button>
             </div>
             <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
-              <Button onClick={handleGenerate} disabled={isGenerating} className="bg-indigo-600 hover:bg-indigo-700">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => isApplyFlow ? navigate("/smart-apply/profile") : setStep(2)}
+                className="border-gray-300 text-gray-800 hover:bg-gray-50 bg-white inline-flex items-center gap-2"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Back
+              </Button>
+              <Button onClick={handleGenerate} disabled={isGenerating} className="text-white hover:opacity-90" style={{ backgroundColor: PRIMARY_COLOR }}>
                 {isGenerating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</> : <><Sparkles className="mr-2 h-4 w-4" /> Generate emails</>}
               </Button>
             </div>
@@ -939,11 +1193,13 @@ const SmartApply = () => {
             {/* Step 4: View generated emails */}
             {step === 4 && emails.length > 0 && (
             <div className="space-y-6">
-              <h3 className="text-sm font-semibold text-gray-900">Step 4: View generated emails</h3>
+              <h3 className="text-sm font-semibold text-gray-900">{isApplyFlow ? "Step 2: " : "Step 4: "}View generated emails</h3>
             <div className="flex items-center justify-between">
               <p className="text-gray-600">Review and edit your {emails.length} generated email{emails.length !== 1 ? "s" : ""}.</p>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep(3)}>Back</Button>
+                <Button variant="outline" onClick={() => setStep(3)} className="border-gray-300 text-gray-800 hover:bg-gray-50 bg-white inline-flex items-center gap-2">
+                  <ChevronLeft className="h-4 w-4" /> Back
+                </Button>
                 <Button onClick={handleSendAll} className="bg-indigo-600 hover:bg-indigo-700">
                   <Send className="mr-2 h-4 w-4" />
                   Send all
@@ -1047,7 +1303,9 @@ const SmartApply = () => {
               ))}
             </div>
             <div className="flex justify-between pt-4 border-t border-gray-200">
-              <Button variant="outline" onClick={() => setStep(3)}>Back</Button>
+              <Button variant="outline" onClick={() => setStep(3)} className="border-gray-300 text-gray-800 hover:bg-gray-50 bg-white inline-flex items-center gap-2">
+                <ChevronLeft className="h-4 w-4" /> Back
+              </Button>
               <Button onClick={handleSendAll} className="bg-indigo-600 hover:bg-indigo-700">
                 <Send className="mr-2 h-4 w-4" />
                 Send all
@@ -1062,7 +1320,7 @@ const SmartApply = () => {
             {/* Step 5: Sending results */}
             {step === 5 && (
             <div className="space-y-6">
-              <h3 className="text-sm font-semibold text-gray-900">Step 5: Sending results</h3>
+              <h3 className="text-sm font-semibold text-gray-900">{isApplyFlow ? "Step 3: " : "Step 5: "}Sending results</h3>
               {isSending ? (
                 <div className="space-y-4">
                   <p className="text-gray-700">Sending emails from {userDetails.email}…</p>
@@ -1072,7 +1330,9 @@ const SmartApply = () => {
               ) : (
                 <div className="space-y-6">
                   <div className="flex gap-4">
-                    <Button variant="outline" onClick={() => setStep(4)}>Back to emails</Button>
+                    <Button variant="outline" onClick={() => setStep(4)} className="border-gray-300 text-gray-800 hover:bg-gray-50 bg-white inline-flex items-center gap-2">
+                      <ChevronLeft className="h-4 w-4" /> Back to emails
+                    </Button>
                     <Button onClick={() => { setStep(1); setEmails([]); setSentEmails([]); setFailedEmails([]); }} className="bg-indigo-600 hover:bg-indigo-700">
                       Start over
                     </Button>
@@ -1219,7 +1479,7 @@ const SmartApply = () => {
         </DialogContent>
       </Dialog>
 
-      <Footer />
+      {!hasToken && <Footer />}
     </Layout>
   );
 };

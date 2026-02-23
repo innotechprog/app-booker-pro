@@ -61,6 +61,10 @@ npm run dev
 
 The application will be available at `http://localhost:8080`.
 
+### Backend (ib-backend)
+
+All API requests (auth, Smart Apply, contact, bookings, etc.) go to **ib-backend**, not a backend inside this repo. Run the backend from `C:\xampp\htdocs\ib-backend` (or your ib-backend path) and set `VITE_API_URL` in `.env` to its base URL (e.g. `http://localhost:5000/api`).
+
 ## Available Scripts
 
 - `npm run dev` - Start development server

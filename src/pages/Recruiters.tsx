@@ -55,7 +55,7 @@ const Recruiters = () => {
             <Button
               variant={filter === "all" ? "default" : "outline"}
               onClick={() => setFilter("all")}
-              className={filter === "all" ? "bg-indigo-600 hover:bg-indigo-700" : ""}
+              className={filter === "all" ? "bg-indigo-600 hover:bg-indigo-700 text-white" : "bg-white border-gray-300 text-gray-800 hover:bg-gray-50"}
             >
               <Users className="mr-2 h-4 w-4" />
               All
@@ -63,7 +63,7 @@ const Recruiters = () => {
             <Button
               variant={filter === "general" ? "default" : "outline"}
               onClick={() => setFilter("general")}
-              className={filter === "general" ? "bg-indigo-600 hover:bg-indigo-700" : ""}
+              className={filter === "general" ? "bg-indigo-600 hover:bg-indigo-700 text-white" : "bg-white border-gray-300 text-gray-800 hover:bg-gray-50"}
             >
               <GraduationCap className="mr-2 h-4 w-4" />
               General
@@ -71,7 +71,7 @@ const Recruiters = () => {
             <Button
               variant={filter === "professional" ? "default" : "outline"}
               onClick={() => setFilter("professional")}
-              className={filter === "professional" ? "bg-indigo-600 hover:bg-indigo-700" : ""}
+              className={filter === "professional" ? "bg-indigo-600 hover:bg-indigo-700 text-white" : "bg-white border-gray-300 text-gray-800 hover:bg-gray-50"}
             >
               <Briefcase className="mr-2 h-4 w-4" />
               Professional

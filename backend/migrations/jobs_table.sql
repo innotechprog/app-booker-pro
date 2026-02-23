@@ -1,0 +1,37 @@
+-- Main jobs table (company job listings)
+-- Run via your migration process or: npm run db:migrate-jobs (if added)
+
+CREATE TABLE IF NOT EXISTS jobs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  job_id VARCHAR(100) DEFAULT NULL COMMENT 'External or legacy job reference',
+  comp_id INT DEFAULT NULL COMMENT 'Company identifier',
+  company_id INT DEFAULT NULL COMMENT 'Company reference',
+  job_intro TEXT DEFAULT NULL,
+  job_title VARCHAR(255) DEFAULT NULL,
+  job_desc TEXT DEFAULT NULL,
+  reporting_to VARCHAR(255) DEFAULT NULL,
+  min_salary DECIMAL(14,2) DEFAULT NULL,
+  max_salary DECIMAL(14,2) DEFAULT NULL,
+  job_salary VARCHAR(255) DEFAULT NULL COMMENT 'Display salary string if not min/max',
+  currency VARCHAR(10) DEFAULT NULL,
+  sal_interval VARCHAR(50) DEFAULT NULL COMMENT 'e.g. yearly, monthly, hourly',
+  post_type VARCHAR(50) DEFAULT NULL,
+  work_method VARCHAR(50) DEFAULT NULL COMMENT 'e.g. remote, hybrid, onsite',
+  start_date DATE DEFAULT NULL,
+  application_link VARCHAR(500) DEFAULT NULL,
+  qualification TEXT DEFAULT NULL,
+  experience VARCHAR(255) DEFAULT NULL,
+  position_level VARCHAR(100) DEFAULT NULL,
+  num_pos INT DEFAULT NULL COMMENT 'Number of positions',
+  status VARCHAR(50) DEFAULT NULL,
+  unsuccessful_period INT DEFAULT NULL COMMENT 'e.g. days before marking unsuccessful',
+  date_posted DATE DEFAULT NULL,
+  closing_date DATE DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_comp_id (comp_id),
+  INDEX idx_company_id (company_id),
+  INDEX idx_status (status),
+  INDEX idx_date_posted (date_posted),
+  INDEX idx_closing_date (closing_date)
+);

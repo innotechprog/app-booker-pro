@@ -56,7 +56,7 @@ const Header = () => {
             Smart Apply
           </Link>
           <Link to="/smart-apply/apply" className={getLinkClasses("/smart-apply/apply")}>
-            Apply to multiple emails
+            APPLY TO MULTIPLE EMAILS
           </Link>
           <Link to="/jobs" className={getLinkClasses("/jobs")}>
             Jobs
@@ -107,7 +107,7 @@ const Header = () => {
               Smart Apply
             </Link>
             <Link to="/smart-apply/apply" className={`${getLinkClasses("/smart-apply/apply")} py-2`} onClick={() => setIsMobileMenuOpen(false)}>
-              Apply to multiple emails
+              APPLY TO MULTIPLE EMAILS
             </Link>
             <Link to="/jobs" className={`${getLinkClasses("/jobs")} py-2`} onClick={() => setIsMobileMenuOpen(false)}>
               Jobs

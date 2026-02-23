@@ -18,6 +18,7 @@ import packagesRoutes from './routes/packages.js';
 import applicationHelpRoutes from './routes/applicationHelp.js';
 import contactRoutes from './routes/contact.js';
 import smartApplyRoutes from './routes/smartApply.js';
+import recruiterRoutes from './routes/recruiter.js';
 
 // Load environment variables
 dotenv.config();
@@ -112,6 +113,7 @@ app.use('/api/packages', packagesRoutes);
 app.use('/api/application-help', applicationHelpRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/smart-apply', smartApplyRoutes);
+app.use('/api/recruiter', recruiterRoutes);
 
 // Welcome route
 app.get('/', (req, res) => {

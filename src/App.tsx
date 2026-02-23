@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ComingSoon from "./pages/ComingSoon";
 import BookService from "./pages/BookService";
 import Booking from "./pages/Booking";
@@ -16,8 +16,20 @@ import Contact from "./pages/Contact";
 import Education from "./pages/Education";
 import ITSolutions from "./pages/ITSolutions";
 import SmartApply from "./pages/SmartApply";
+import SmartApplyProfile from "./pages/SmartApplyProfile";
+import SmartApplyDashboard from "./pages/SmartApplyDashboard";
+import SmartApplySettings from "./pages/SmartApplySettings";
 import Recruiters from "./pages/Recruiters";
 import Jobs from "./pages/Jobs";
+import RecruiterTalentSearch from "./pages/recruiter/RecruiterTalentSearch";
+import RecruiterCandidateProfile from "./pages/recruiter/RecruiterCandidateProfile";
+import RecruiterProfilePage from "./pages/recruiter/RecruiterProfilePage";
+import RecruiterRecruitments from "./pages/recruiter/RecruiterRecruitments";
+import RecruiterRecruitmentDetail from "./pages/recruiter/RecruiterRecruitmentDetail";
+import RecruiterSettings from "./pages/recruiter/RecruiterSettings";
+import RecruiterJobs from "./pages/recruiter/RecruiterJobs";
+import RecruiterJobDetail from "./pages/recruiter/RecruiterJobDetail";
+import Layout from "./components/Layout";
 import Universities from "./pages/Universities";
 import LearnerDashboard from "./pages/LearnerDashboard";
 import LearnerDashboardHome from "./pages/LearnerDashboardHome";
@@ -53,8 +65,23 @@ const App = () => (
                 <Route path="/education" element={<Education />} />
                 <Route path="/it-solutions" element={<ITSolutions />} />
                 <Route path="/smart-apply" element={<SmartApply />} />
+                <Route path="/smart-apply/sign-in" element={<SmartApply />} />
+                <Route path="/smart-apply/sign-up" element={<SmartApply />} />
                 <Route path="/smart-apply/apply" element={<SmartApply />} />
+                <Route path="/smart-apply/profile" element={<SmartApplyProfile />} />
+                <Route path="/smart-apply/settings" element={<SmartApplySettings />} />
+                <Route path="/smart-apply/dashboard" element={<SmartApplyDashboard />} />
+                <Route path="/smart-apply/jobs" element={<Jobs />} />
                 <Route path="/recruiters" element={<Recruiters />} />
+                <Route path="/recruiter" element={<Layout><RecruiterTalentSearch /></Layout>} />
+                <Route path="/recruiter/sign-in" element={<Navigate to="/smart-apply/sign-in?mode=recruiter" replace />} />
+                <Route path="/recruiter/profile" element={<Layout><RecruiterProfilePage /></Layout>} />
+                <Route path="/recruiter/recruitments" element={<Layout><RecruiterRecruitments /></Layout>} />
+                <Route path="/recruiter/recruitments/:id" element={<Layout><RecruiterRecruitmentDetail /></Layout>} />
+                <Route path="/recruiter/jobs" element={<Layout><RecruiterJobs /></Layout>} />
+                <Route path="/recruiter/jobs/:id" element={<Layout><RecruiterJobDetail /></Layout>} />
+                <Route path="/recruiter/settings" element={<Layout><RecruiterSettings /></Layout>} />
+                <Route path="/recruiter/candidates/:id" element={<Layout><RecruiterCandidateProfile /></Layout>} />
                 <Route path="/jobs" element={<Jobs />} />
                 <Route path="/universities" element={<Universities />} />
                 <Route path="/learner/login" element={<LearnerLogin />} />
