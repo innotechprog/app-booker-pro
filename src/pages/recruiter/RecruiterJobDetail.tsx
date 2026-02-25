@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -127,11 +126,11 @@ const RecruiterJobDetail = () => {
 
   if (loading || !job) {
     return (
-      <Layout>
+      <>
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <Loader2 className="h-10 w-10 animate-spin text-gray-500" />
         </div>
-      </Layout>
+      </>
     );
   }
 
@@ -139,7 +138,7 @@ const RecruiterJobDetail = () => {
   const availableToAdd = candidatesList.filter((c) => !appliedIds.has(c.id));
 
   return (
-    <Layout>
+    <>
       <SEO title={`${job.title} – Recruiter`} />
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 py-8">
@@ -157,7 +156,7 @@ const RecruiterJobDetail = () => {
                   <CardDescription className="capitalize mt-1">{job.status}</CardDescription>
                   {job.description && <p className="text-gray-700 mt-2 whitespace-pre-wrap">{job.description}</p>}
                 </div>
-                <Button variant="outline" size="sm" className="border-gray-300" onClick={() => setEditOpen(true)}>Edit job</Button>
+                <Button variant="outlineLight" size="sm" className="border-gray-300" onClick={() => setEditOpen(true)}>Edit job</Button>
               </div>
             </CardHeader>
           </Card>
@@ -270,7 +269,7 @@ const RecruiterJobDetail = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </Layout>
+    </>
   );
 };
 

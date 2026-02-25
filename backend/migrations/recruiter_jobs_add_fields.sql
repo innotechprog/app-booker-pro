@@ -1,7 +1,8 @@
--- Add job listing fields to recruiter_jobs (same as main jobs table)
+-- Add job listing fields to recruiter_jobs (no id column; job_id is already the PK)
 -- Run after recruiter_jobs_tables.sql. Safe to run multiple times (duplicate column errors are ignored).
+-- external_job_id = external/legacy job reference (not the table PK).
 
-ALTER TABLE recruiter_jobs ADD COLUMN job_id VARCHAR(100) DEFAULT NULL COMMENT 'External or legacy job reference';
+ALTER TABLE recruiter_jobs ADD COLUMN external_job_id VARCHAR(100) DEFAULT NULL COMMENT 'External or legacy job reference';
 ALTER TABLE recruiter_jobs ADD COLUMN comp_id INT DEFAULT NULL COMMENT 'Company identifier';
 ALTER TABLE recruiter_jobs ADD COLUMN company_id INT DEFAULT NULL COMMENT 'Company reference';
 ALTER TABLE recruiter_jobs ADD COLUMN job_intro TEXT DEFAULT NULL;

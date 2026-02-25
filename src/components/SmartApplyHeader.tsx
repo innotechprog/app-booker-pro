@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, X, User, Sparkles, LogOut, LayoutDashboard, Settings } from "lucide-react";
+import { Menu, X, User, Sparkles, LogOut, LayoutDashboard, Settings, Crown, Bell } from "lucide-react";
 import ibLogoBlack from "@/images/ib-logo-black.png";
 
 const DEEP_BLUE = "#1e3a5f";
@@ -114,18 +114,40 @@ const SmartApplyHeader = () => {
             >
               FIND A JOB
             </Link>
+            <Link
+              to="/smart-apply/cv-builder"
+              className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors uppercase tracking-wide"
+            >
+              CV Builder
+            </Link>
+            <Link
+              to="/smart-apply/premium"
+              className="text-sm font-medium text-amber-600 hover:text-amber-700 transition-colors flex items-center gap-1 uppercase tracking-wide"
+            >
+              <Crown className="h-4 w-4" />
+              Upgrade
+            </Link>
             {hasToken ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="flex items-center justify-center w-9 h-9 rounded-full text-white p-0 text-sm font-semibold"
-                    style={{ backgroundColor: DEEP_BLUE }}
-                    title="Profile menu"
-                  >
-                    {initials ? initials : <User className="h-5 w-5" />}
-                  </Button>
-                </DropdownMenuTrigger>
+              <>
+                <Link
+                  to="/smart-apply/notifications"
+                  className="flex items-center justify-center w-9 h-9 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                  title="Notifications"
+                  aria-label="Notifications"
+                >
+                  <Bell className="h-5 w-5" />
+                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="flex items-center justify-center w-9 h-9 rounded-full text-white p-0 text-sm font-semibold"
+                      style={{ backgroundColor: DEEP_BLUE }}
+                      title="Profile menu"
+                    >
+                      {initials ? initials : <User className="h-5 w-5" />}
+                    </Button>
+                  </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem asChild>
                     <Link to="/smart-apply/dashboard" className="flex items-center gap-2 cursor-pointer">
@@ -147,6 +169,7 @@ const SmartApplyHeader = () => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              </>
             ) : null}
           </div>
 
@@ -213,8 +236,36 @@ const SmartApplyHeader = () => {
             >
               FIND A JOB
             </Link>
+            <Link
+              to="/smart-apply/cv-builder"
+              className="py-2 text-sm font-medium text-gray-600 hover:text-gray-900 uppercase tracking-wide"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              CV Builder
+            </Link>
+            <Link
+              to="/smart-apply/cv-builder"
+              className="py-2 text-sm font-medium text-gray-600 hover:text-gray-900 uppercase tracking-wide"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              CV Builder
+            </Link>
+            <Link
+              to="/smart-apply/premium"
+              className="py-2 text-sm font-medium text-amber-600 hover:text-amber-700 flex items-center gap-2 uppercase tracking-wide"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <Crown className="h-4 w-4" /> Upgrade
+            </Link>
             {hasToken && (
               <>
+                <Link
+                  to="/smart-apply/notifications"
+                  className="py-2 text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Bell className="h-4 w-4" /> Notifications
+                </Link>
                 <Link
                   to="/smart-apply/profile"
                   className="py-2 text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-2"

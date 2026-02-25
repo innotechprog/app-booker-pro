@@ -1,17 +1,22 @@
 /**
  * Recruiter auth (register / login) for Smart Apply recruiter portal.
- * Uses recruiters table; run db:migrate-recruiter to create it.
+ * Supports both legacy (id INT) and normalized (recruiter_id CHAR(36) UUID) schema.
  */
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { query } from '../config/database.js';
 
 const router = express.Router();
 const JWT_OPTIONS = { expiresIn: process.env.JWT_EXPIRE || '7d' };
 
-function signRecruiterToken(id) {
-  return jwt.sign({ id, type: 'recruiter' }, process.env.JWT_SECRET, JWT_OPTIONS);
+function signRecruiterToken(pk) {
+  return jwt.sign({ id: pk, type: 'recruiter' }, process.env.JWT_SECRET, JWT_OPTIONS);
+}
+
+function recruiterPk(row) {
+  return row.recruiter_id ?? row.id;
 }
 
 async function protectRecruiter(req, res, next) {
@@ -27,7 +32,17 @@ async function protectRecruiter(req, res, next) {
     if (decoded.type !== 'recruiter') {
       return res.status(401).json({ success: false, message: 'Invalid token' });
     }
-    const rows = await query('SELECT id, email, full_name, company, phone FROM recruiters WHERE id = ?', [decoded.id]);
+    const pk = decoded.id;
+    let rows = await query(
+      'SELECT recruiter_id, email, full_name, company, phone FROM recruiters WHERE recruiter_id = ?',
+      [pk]
+    ).catch(() => null);
+    if (!rows || rows.length === 0) {
+      rows = await query(
+        'SELECT id, email, full_name, company, phone FROM recruiters WHERE id = ?',
+        [pk]
+      ).catch(() => []);
+    }
     if (!rows || rows.length === 0) {
       return res.status(401).json({ success: false, message: 'Recruiter not found' });
     }
@@ -45,25 +60,64 @@ router.post('/auth/register', async (req, res) => {
     if (!fullName || !email || !password) {
       return res.status(400).json({ success: false, message: 'Full name, email and password required' });
     }
-    const existing = await query('SELECT id FROM recruiters WHERE email = ?', [String(email).trim()]);
+    let existing;
+    try {
+      existing = await query('SELECT recruiter_id FROM recruiters WHERE email = ?', [String(email).trim()]);
+    } catch {
+      existing = await query('SELECT id FROM recruiters WHERE email = ?', [String(email).trim()]);
+    }
     if (existing && existing.length > 0) {
       return res.status(400).json({ success: false, message: 'An account with this email already exists' });
     }
     const password_hash = await bcrypt.hash(String(password), 10);
-    const result = await query(
-      'INSERT INTO recruiters (email, password_hash, full_name, company, phone) VALUES (?, ?, ?, ?, ?)',
-      [
-        String(email).trim(),
-        password_hash,
-        String(fullName).trim(),
-        (company && String(company).trim()) || null,
-        (phone && String(phone).trim()) || null,
-      ]
-    );
-    const id = result.insertId;
-    const token = signRecruiterToken(id);
-    const recruiterRows = await query('SELECT id, email, full_name, company, phone FROM recruiters WHERE id = ?', [id]);
-    const recruiter = recruiterRows && recruiterRows[0] ? recruiterRows[0] : { id, email: String(email).trim(), full_name: String(fullName).trim(), company: null, phone: null };
+    let pk = crypto.randomUUID();
+    try {
+      await query(
+        'INSERT INTO recruiters (recruiter_id, email, password_hash, full_name, company, phone) VALUES (?, ?, ?, ?, ?, ?)',
+        [
+          pk,
+          String(email).trim(),
+          password_hash,
+          String(fullName).trim(),
+          (company && String(company).trim()) || null,
+          (phone && String(phone).trim()) || null,
+        ]
+      );
+    } catch (err) {
+      if (err.code === 'ER_BAD_FIELD_ERROR' && err.message?.includes('recruiter_id')) {
+        const res = await query(
+          'INSERT INTO recruiters (email, password_hash, full_name, company, phone) VALUES (?, ?, ?, ?, ?)',
+          [
+            String(email).trim(),
+            password_hash,
+            String(fullName).trim(),
+            (company && String(company).trim()) || null,
+            (phone && String(phone).trim()) || null,
+          ]
+        );
+        pk = res.insertId;
+      } else {
+        throw err;
+      }
+    }
+    let recruiterRows;
+    try {
+      recruiterRows = await query(
+        'SELECT recruiter_id, email, full_name, company, phone FROM recruiters WHERE recruiter_id = ?',
+        [pk]
+      );
+    } catch {
+      recruiterRows = await query(
+        'SELECT id, email, full_name, company, phone FROM recruiters WHERE id = ?',
+        [pk]
+      );
+    }
+    const row = recruiterRows && recruiterRows[0];
+    const pkFinal = row ? recruiterPk(row) : pk;
+    const token = signRecruiterToken(pkFinal);
+    const recruiter = row
+      ? { id: pkFinal, email: row.email, full_name: row.full_name, company: row.company, phone: row.phone }
+      : { id: pkFinal, email: String(email).trim(), full_name: String(fullName).trim(), company: null, phone: null };
     return res.status(201).json({
       success: true,
       message: 'Account created',
@@ -89,10 +143,16 @@ router.post('/auth/login', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email and password required' });
     }
     const emailTrimmed = String(email).trim();
-    const rows = await query(
-      'SELECT id, email, full_name, company, phone, password_hash FROM recruiters WHERE email = ?',
+    let rows = await query(
+      'SELECT recruiter_id, email, full_name, company, phone, password_hash FROM recruiters WHERE email = ?',
       [emailTrimmed]
-    );
+    ).catch(() => null);
+    if (!rows?.length) {
+      rows = await query(
+        'SELECT id, email, full_name, company, phone, password_hash FROM recruiters WHERE email = ?',
+        [emailTrimmed]
+      );
+    }
     if (!rows || rows.length === 0) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
@@ -105,13 +165,14 @@ router.post('/auth/login', async (req, res) => {
     if (!valid) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
-    const token = signRecruiterToken(recruiter.id);
+    const pk = recruiterPk(recruiter);
+    const token = signRecruiterToken(pk);
     return res.status(200).json({
       success: true,
       message: 'Logged in',
       token,
       recruiter: {
-        id: recruiter.id,
+        id: pk,
         email: recruiter.email,
         full_name: recruiter.full_name,
         company: recruiter.company,
@@ -140,8 +201,11 @@ router.put('/auth/change-password', protectRecruiter, async (req, res) => {
     if (String(newPassword).trim().length < 6) {
       return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
     }
-    const rid = req.recruiter.id;
-    const rows = await query('SELECT password_hash FROM recruiters WHERE id = ?', [rid]);
+    const rid = recruiterPk(req.recruiter);
+    let rows = await query('SELECT password_hash FROM recruiters WHERE recruiter_id = ?', [rid]).catch(() => []);
+    if (!rows?.length) {
+      rows = await query('SELECT password_hash FROM recruiters WHERE id = ?', [rid]);
+    }
     if (!rows || rows.length === 0) {
       return res.status(401).json({ success: false, message: 'Recruiter not found' });
     }
@@ -154,7 +218,11 @@ router.put('/auth/change-password', protectRecruiter, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Current password is incorrect' });
     }
     const newHash = await bcrypt.hash(String(newPassword).trim(), 10);
-    await query('UPDATE recruiters SET password_hash = ? WHERE id = ?', [newHash, rid]);
+    try {
+      await query('UPDATE recruiters SET password_hash = ? WHERE recruiter_id = ?', [newHash, rid]);
+    } catch {
+      await query('UPDATE recruiters SET password_hash = ? WHERE id = ?', [newHash, rid]);
+    }
     return res.status(200).json({ success: true, message: 'Password updated' });
   } catch (err) {
     console.error('Recruiter change-password error:', err);

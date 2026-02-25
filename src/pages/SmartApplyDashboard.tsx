@@ -4,7 +4,7 @@ import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Briefcase, Target, UserCheck, UserX, ArrowRight, Mail } from "lucide-react";
+import { Loader2, Briefcase, Target, UserCheck, UserX, ArrowRight, Mail, FileText } from "lucide-react";
 import { smartApplyAPI } from "@/services/api";
 
 interface DashboardData {
@@ -105,9 +105,14 @@ const SmartApplyDashboard = () => {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-gray-900">{d.jobsApplied}</p>
-              <Link to="/smart-apply/apply" className="inline-flex items-center gap-1.5 mt-3 text-sm font-medium text-indigo-600 hover:text-indigo-700">
-                Apply to more <ArrowRight className="h-4 w-4" />
-              </Link>
+              <div className="flex flex-wrap gap-3 mt-3">
+                <Link to="/smart-apply/my-applications" className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700">
+                  View my applications <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link to="/smart-apply/apply" className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700">
+                  Apply to more <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
             </CardContent>
           </Card>
 
@@ -168,6 +173,11 @@ const SmartApplyDashboard = () => {
           <Button asChild className="text-white hover:opacity-90" style={{ backgroundColor: "#1e3a5f" }}>
             <Link to="/smart-apply/apply" className="inline-flex items-center gap-2">
               <Mail className="h-4 w-4" /> APPLY TO MULTIPLE EMAILS
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="border-gray-300 text-gray-800 hover:bg-gray-50 bg-white shrink-0">
+            <Link to="/smart-apply/cv-builder" className="inline-flex items-center gap-2">
+              <FileText className="h-4 w-4" /> Professional CV
             </Link>
           </Button>
           <Button asChild variant="outline" className="border-gray-300 text-gray-800 hover:bg-gray-50 bg-white shrink-0">

@@ -66,14 +66,14 @@ const inputClass =
 
 const PRIMARY_COLOR = "#1e3a5f";
 
-// Generate email body using profile (overview, keySkills) or CV text when provided
+// Generate email body using profile info only (name, email, phone). No overview/summary in body.
 const generateEmailForRow = (
   companyEmail: string,
   topic: string,
   index: number,
   user?: UserDetails,
-  cvText?: string,
-  cvExtract?: CvExtract | null
+  _cvText?: string,
+  _cvExtract?: CvExtract | null
 ): Omit<GeneratedEmail, "isExpanded"> => {
   const baseSubjects = [
     `Application: ${topic} Position`,
@@ -87,17 +87,6 @@ const generateEmailForRow = (
   ];
 
   let body = baseBodies[index % baseBodies.length];
-
-  const snippetFromProfile = cvExtract?.overview?.trim() || cvExtract?.keySkills?.trim();
-  const snippetFromCv = cvText?.trim().replace(/\s+/g, " ").slice(0, 280);
-  const snippet = (snippetFromProfile || snippetFromCv || "").slice(0, 280);
-  if (snippet) {
-    const label = cvExtract?.overview ? "Summary" : cvExtract?.keySkills ? "Key skills" : "Relevant experience";
-    body = body.replace(
-      /\n\n(Best regards|Sincerely|Kind regards)/,
-      `\n\n${label}: ${snippet}${snippet.length === 280 ? "…" : ""}\n\n$1`
-    );
-  }
 
   if (user && (user.name.trim() || user.surname.trim() || user.email.trim() || user.contactNumber.trim())) {
     const parts = [user.name.trim(), user.surname.trim()].filter(Boolean);
@@ -229,6 +218,8 @@ const SmartApply = () => {
   const [cvExtract, setCvExtract] = useState<CvExtract>({ overview: "", workExperience: "", education: "", certifications: "", keySkills: "" });
   const [activeProfileSection, setActiveProfileSection] = useState<keyof CvExtract>("overview");
   const [savingProfile, setSavingProfile] = useState(false);
+  const [userCvs, setUserCvs] = useState<{ id: number; label: string; roleOrCategory?: string; fileName: string; createdAt?: string }[]>([]);
+  const [selectedCvId, setSelectedCvId] = useState<number | null>(null);
   const { toast } = useToast();
 
   // Smart Apply uses its own token (smart_apply_token) – independent from learner auth
@@ -278,31 +269,41 @@ const SmartApply = () => {
       .finally(() => setHasProfileCheckDone(true));
   }, [hasToken, isApplyFlow]);
 
-  // "Apply to multiple emails" flow: load profile and jump to step 3 (Companies)
+  // "Apply to multiple emails" flow: load profile + CVs and jump to step 3 (Companies)
   useEffect(() => {
     if (!hasToken || !isApplyFlow) return;
-    smartApplyAPI
-      .getProfile()
-      .then((res: { profile?: { fullName?: string; email?: string; phone?: string; category?: string; overview?: string; workExperience?: string; education?: string; certifications?: string; keySkills?: string } }) => {
-        const p = res?.profile;
-        if (!p) return;
-        const parts = (p.fullName || "").trim().split(/\s+/);
-        setUserDetails({
-          name: parts[0] || "",
-          surname: parts.slice(1).join(" ") || "",
-          email: p.email || "",
-          contactNumber: p.phone || "",
-        });
-        if (p.overview || p.workExperience || p.education || p.certifications || p.keySkills) {
-          setCvExtract({
-            overview: p.overview || "",
-            workExperience: p.workExperience || "",
-            education: p.education || "",
-            certifications: p.certifications || "",
-            keySkills: p.keySkills || "",
+    Promise.all([smartApplyAPI.getProfile(), smartApplyAPI.listCVs()])
+      .then(([profileRes, cvsRes]) => {
+        const p = (profileRes as { profile?: { fullName?: string; email?: string; phone?: string; category?: string; overview?: string; workExperience?: string; education?: string; certifications?: string; keySkills?: string | { name?: string }[] } })?.profile;
+        const cvs = (cvsRes as { cvs?: { id: number; label: string; roleOrCategory?: string; fileName: string; createdAt?: string }[] })?.cvs ?? [];
+        setUserCvs(cvs);
+        if (p) {
+          const parts = (p.fullName || "").trim().split(/\s+/);
+          setUserDetails({
+            name: parts[0] || "",
+            surname: parts.slice(1).join(" ") || "",
+            email: p.email || "",
+            contactNumber: p.phone || "",
           });
+          const overview = p.overview || "";
+          const workExperience = typeof p.workExperience === "string" ? p.workExperience : "";
+          const education = typeof p.education === "string" ? p.education : "";
+          const certifications = typeof p.certifications === "string" ? p.certifications : "";
+          const keySkills = Array.isArray(p.keySkills)
+            ? p.keySkills.map((s) => (typeof s === "string" ? s : (s as { name?: string })?.name)).filter(Boolean).join(", ")
+            : (p.keySkills || "");
+          if (overview || workExperience || education || certifications || keySkills) {
+            setCvExtract({ overview, workExperience, education, certifications, keySkills });
+          }
+          if (p.category === "general" || p.category === "professional") setCandidateCategory(p.category);
         }
-        if (p.category === "general" || p.category === "professional") setCandidateCategory(p.category);
+        if (cvs.length === 1) setSelectedCvId(cvs[0].id);
+        else if (cvs.length > 1) {
+          smartApplyAPI.getProfile().then((r: { profile?: { primaryCvId?: number | null } }) => {
+            const primaryId = r?.profile?.primaryCvId != null ? Number(r.profile.primaryCvId) : null;
+            setSelectedCvId(primaryId && cvs.some((c) => c.id === primaryId) ? primaryId : null);
+          }).catch(() => setSelectedCvId(null));
+        } else setSelectedCvId(null);
         setStep(3);
       })
       .catch(() => {});
@@ -513,10 +514,12 @@ const SmartApply = () => {
   };
 
   const handleGenerate = () => {
-    if (!cvFile) {
+    const hasProfileForEmail = !!(cvExtract?.overview?.trim() || cvExtract?.keySkills?.trim());
+    const hasCvForEmail = !!(cvFile || cvText?.trim());
+    if (!hasProfileForEmail && !hasCvForEmail) {
       toast({
-        title: "CV required",
-        description: "Please upload your CV. It will be attached to each email sent.",
+        title: "Profile or CV needed",
+        description: "Use your profile (overview/skills) to tailor emails, or add a CV in Step 1. You can also attach a CV from your profile when sending.",
         variant: "destructive",
       });
       return;
@@ -603,17 +606,25 @@ const SmartApply = () => {
       reader.readAsDataURL(file);
     });
 
+  const blobToBase64 = (blob: Blob): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64 = result.includes(",") ? result.split(",")[1] : result;
+        resolve(base64 ?? "");
+      };
+      reader.onerror = () => reject(new Error("Failed to read blob"));
+      reader.readAsDataURL(blob);
+    });
+
   const handleSendAll = async () => {
     if (emails.length === 0) {
       toast({ title: "No emails to send", description: "Generate emails first.", variant: "destructive" });
       return;
     }
     if (!userDetails.email?.trim()) {
-      toast({ title: "Email required", description: "Add your email in Step 1 so companies can reply to you.", variant: "destructive" });
-      return;
-    }
-    if (!cvFile) {
-      toast({ title: "CV required", description: "CV is attached to each email. Please upload it in Step 1.", variant: "destructive" });
+      toast({ title: "Email required", description: "Add your email in your profile so companies can reply to you.", variant: "destructive" });
       return;
     }
     setStep(5);
@@ -623,15 +634,27 @@ const SmartApply = () => {
     setFailedEmails([]);
 
     try {
-      const cvBase64 = await fileToBase64(cvFile);
+      let cvBase64: string | undefined;
+      let cvFileName: string | undefined;
+      if (cvFile) {
+        cvBase64 = await fileToBase64(cvFile);
+        cvFileName = cvFileName || cvFile.name;
+      } else if (selectedCvId != null) {
+        const cv = userCvs.find((c) => c.id === selectedCvId);
+        if (cv) {
+          const blob = await smartApplyAPI.getCVBlob(selectedCvId, false);
+          cvBase64 = await blobToBase64(blob);
+          cvFileName = cv.fileName || cv.label || "CV.pdf";
+        }
+      }
+
       const userName = [userDetails.name, userDetails.surname].filter(Boolean).join(" ").trim() || undefined;
 
       const payload = {
         emails: emails.map((e) => ({ to: e.companyEmail, subject: e.subject, body: e.body })),
         userEmail: userDetails.email.trim(),
         userName,
-        cvBase64,
-        cvFileName: cvFileName || cvFile.name,
+        ...(cvBase64 && cvFileName ? { cvBase64, cvFileName } : {}),
       };
 
       setSendProgress(50);
@@ -1173,6 +1196,41 @@ const SmartApply = () => {
                 Add row
               </Button>
             </div>
+
+            {isApplyFlow && (
+              <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 space-y-2">
+                <Label className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  CV to attach to emails
+                </Label>
+                {userCvs.length === 0 && (
+                  <p className="text-sm text-gray-600">
+                    You have no CVs in your profile. <Link to="/smart-apply/profile" className="text-indigo-600 hover:underline">Add a CV in your profile</Link> to attach to applications, or emails will be sent without an attachment.
+                  </p>
+                )}
+                {userCvs.length === 1 && (
+                  <p className="text-sm text-gray-700">
+                    Your CV <strong>{userCvs[0].label || userCvs[0].fileName}</strong> will be attached to each email.
+                  </p>
+                )}
+                {userCvs.length > 1 && (
+                  <div className="flex flex-col gap-1">
+                    <select
+                      value={selectedCvId ?? ""}
+                      onChange={(e) => setSelectedCvId(e.target.value === "" ? null : Number(e.target.value))}
+                      className="w-full max-w-sm rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+                    >
+                      <option value="">Choose a CV to attach…</option>
+                      {userCvs.map((cv) => (
+                        <option key={cv.id} value={cv.id}>{cv.label || cv.fileName}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500">This CV will be attached to each email sent.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="flex justify-between">
               <Button
                 type="button"
@@ -1261,11 +1319,12 @@ const SmartApply = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-8 w-8 text-gray-700 hover:text-gray-900 hover:bg-gray-100"
                         onClick={(e) => {
                           e.stopPropagation();
                           openEditDialog(email);
                         }}
+                        title="Edit email"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -1292,7 +1351,7 @@ const SmartApply = () => {
                             {email.body}
                           </p>
                         </div>
-                        <Button variant="outline" size="sm" onClick={() => openEditDialog(email)}>
+                        <Button variant="outlineLight" size="sm" className="border-gray-300" onClick={() => openEditDialog(email)}>
                           <Pencil className="mr-2 h-4 w-4" />
                           Edit email
                         </Button>
@@ -1312,7 +1371,12 @@ const SmartApply = () => {
               </Button>
             </div>
             <p className="text-xs text-gray-500">
-              Emails will be sent from your email ({userDetails.email || "add in Step 1"}) so companies can reply directly to you.
+              Emails are tailored from your profile (overview & skills). They will be sent from {userDetails.email || "your profile email"} so companies can reply to you.
+              {selectedCvId != null || userCvs.length === 1 || cvFile
+                ? " Your selected CV will be attached to each email."
+                : userCvs.length > 1
+                  ? " Go back to choose a CV to attach, or send without attachment."
+                  : " Add a CV in your profile to attach to future applications."}
             </p>
           </div>
             )}

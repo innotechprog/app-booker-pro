@@ -64,14 +64,66 @@ export interface RecruiterJobApplication {
 }
 
 export interface RecruiterJob {
-  id: number;
+  id?: number;
+  jobId?: string;
   title: string;
-  description: string | null;
+  description?: string | null;
   status: "draft" | "posted";
   applicationCount?: number;
   createdAt?: string;
   updatedAt?: string;
+  jobIntro?: string | null;
+  jobTitle?: string | null;
+  jobDesc?: string | null;
+  reportingTo?: string | null;
+  minSalary?: number | null;
+  maxSalary?: number | null;
+  jobSalary?: string | null;
+  currency?: string | null;
+  salInterval?: string | null;
+  postType?: string | null;
+  workMethod?: string | null;
+  startDate?: string | null;
+  applicationLink?: string | null;
+  qualification?: string | null;
+  experience?: string | null;
+  positionLevel?: string | null;
+  numPos?: number | null;
+  unsuccessfulPeriod?: number | null;
+  datePosted?: string | null;
+  closingDate?: string | null;
+  externalJobId?: string | null;
+  compId?: number | null;
+  companyId?: number | null;
 }
+
+export type CreateJobPayload = {
+  title: string;
+  description?: string;
+  status?: "draft" | "posted";
+  jobIntro?: string;
+  jobTitle?: string;
+  jobDesc?: string;
+  reportingTo?: string;
+  minSalary?: number;
+  maxSalary?: number;
+  jobSalary?: string;
+  currency?: string;
+  salInterval?: string;
+  postType?: string;
+  workMethod?: string;
+  startDate?: string;
+  applicationLink?: string;
+  qualification?: string;
+  experience?: string;
+  positionLevel?: string;
+  numPos?: number;
+  datePosted?: string;
+  closingDate?: string;
+  externalJobId?: string;
+  compId?: number;
+  companyId?: number;
+};
 
 export interface RecruiterJobWithApplications extends RecruiterJob {
   applications: RecruiterJobApplication[];
@@ -275,7 +327,7 @@ export const recruiterApi = {
     return data;
   },
 
-  async createJob(payload: { title: string; description?: string; status?: "draft" | "posted" }) {
+  async createJob(payload: CreateJobPayload) {
     const res = await authFetch("/recruiter/jobs", {
       method: "POST",
       body: JSON.stringify(payload),

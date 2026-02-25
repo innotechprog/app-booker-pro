@@ -599,6 +599,47 @@ export const smartApplyAPI = {
 
   deleteCV: async (id: number) => {
     return await fetchWithSmartApplyAuth(`/smart-apply/cvs/${id}`, { method: 'DELETE' });
-  }
+  },
+
+  // Premium / Auto-apply credits
+  getCredits: async () => {
+    const data = await fetchWithSmartApplyAuth('/smart-apply/premium/credits').catch(() => ({}));
+    return { credits: Number(data?.credits) || 0, ...data };
+  },
+
+  getPremiumPackages: async () => {
+    const data = await fetchWithSmartApplyAuth('/smart-apply/premium/packages').catch(() => ({}));
+    const packages = data?.packages ?? [];
+    return { packages };
+  },
+
+  purchaseCredits: async (packageId: string) => {
+    return await fetchWithSmartApplyAuth('/smart-apply/premium/purchase', {
+      method: 'POST',
+      body: JSON.stringify({ packageId }),
+    });
+  },
+
+  getAutoApplyMatches: async () => {
+    const data = await fetchWithSmartApplyAuth('/smart-apply/premium/matches').catch(() => ({}));
+    return { matches: data?.matches ?? [] };
+  },
+
+  acceptAutoApplyMatch: async (matchId: string) => {
+    return await fetchWithSmartApplyAuth(`/smart-apply/premium/matches/${matchId}/accept`, {
+      method: 'POST',
+    });
+  },
+
+  declineAutoApplyMatch: async (matchId: string) => {
+    return await fetchWithSmartApplyAuth(`/smart-apply/premium/matches/${matchId}/decline`, {
+      method: 'POST',
+    });
+  },
+
+  getMyApplications: async () => {
+    const data = await fetchWithSmartApplyAuth('/smart-apply/applications').catch(() => ({}));
+    return { applications: data?.applications ?? [] };
+  },
 };
 

@@ -19,6 +19,13 @@ import SmartApply from "./pages/SmartApply";
 import SmartApplyProfile from "./pages/SmartApplyProfile";
 import SmartApplyDashboard from "./pages/SmartApplyDashboard";
 import SmartApplySettings from "./pages/SmartApplySettings";
+import SmartApplyPremium from "./pages/SmartApplyPremium";
+import SmartApplyNotifications from "./pages/SmartApplyNotifications";
+import SmartApplyMyApplications from "./pages/SmartApplyMyApplications";
+import SmartApplyCvBuilder from "./pages/SmartApplyCvBuilder";
+import SmartApplyCvEditor from "./pages/SmartApplyCvEditor";
+import SmartApplyBilling from "./pages/SmartApplyBilling";
+import SmartApplyCheckout from "./pages/SmartApplyCheckout";
 import Recruiters from "./pages/Recruiters";
 import Jobs from "./pages/Jobs";
 import RecruiterTalentSearch from "./pages/recruiter/RecruiterTalentSearch";
@@ -71,6 +78,13 @@ const App = () => (
                 <Route path="/smart-apply/profile" element={<SmartApplyProfile />} />
                 <Route path="/smart-apply/settings" element={<SmartApplySettings />} />
                 <Route path="/smart-apply/dashboard" element={<SmartApplyDashboard />} />
+                <Route path="/smart-apply/premium" element={<SmartApplyPremium />} />
+                <Route path="/smart-apply/billing" element={<SmartApplyBilling />} />
+                <Route path="/smart-apply/checkout" element={<SmartApplyCheckout />} />
+                <Route path="/smart-apply/notifications" element={<SmartApplyNotifications />} />
+                <Route path="/smart-apply/my-applications" element={<SmartApplyMyApplications />} />
+                <Route path="/smart-apply/cv-builder/edit/:templateId" element={<SmartApplyCvEditor />} />
+                <Route path="/smart-apply/cv-builder" element={<SmartApplyCvBuilder />} />
                 <Route path="/smart-apply/jobs" element={<Jobs />} />
                 <Route path="/recruiters" element={<Recruiters />} />
                 <Route path="/recruiter" element={<Layout><RecruiterTalentSearch /></Layout>} />
