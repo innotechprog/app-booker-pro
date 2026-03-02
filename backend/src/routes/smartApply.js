@@ -8,7 +8,54 @@ import { protectSmartApply } from "../middleware/auth.js";
 const router = express.Router();
 
 const CV_TABLE = "smart_apply_cvs";
+const PUBLIC_CV_TABLE = "smart_apply_public_cvs";
+const CV_ANALYTICS_TABLE = "smart_apply_cv_analytics";
 const MAX_CV_SIZE_BASE64 = 6 * 1024 * 1024; // ~6MB base64
+
+function generateSlug() {
+  const chars = "abcdefghijkmnopqrstuvwxyz23456789";
+  let s = "";
+  for (let i = 0; i < 12; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s;
+}
+
+async function ensurePublicCvsTable() {
+  await query(
+    `CREATE TABLE IF NOT EXISTS ${PUBLIC_CV_TABLE} (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      slug VARCHAR(24) UNIQUE NOT NULL,
+      candidate_id INT NOT NULL,
+      template_id INT NOT NULL,
+      cv_data LONGTEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_public_cv_slug (slug)
+    )`
+  );
+}
+
+async function ensureCvAnalyticsTable() {
+  await query(
+    `CREATE TABLE IF NOT EXISTS ${CV_ANALYTICS_TABLE} (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      slug VARCHAR(24) NOT NULL,
+      event_type VARCHAR(20) NOT NULL,
+      link_url VARCHAR(500) DEFAULT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_cv_analytics_slug (slug),
+      INDEX idx_cv_analytics_slug_type (slug, event_type)
+    )`
+  );
+}
+
+async function recordCvAnalyticsEvent(slug, eventType, linkUrl = null) {
+  const validTypes = ["view", "download", "link_click"];
+  if (!slug || !validTypes.includes(eventType)) return;
+  await ensureCvAnalyticsTable();
+  await query(
+    `INSERT INTO ${CV_ANALYTICS_TABLE} (slug, event_type, link_url) VALUES (?, ?, ?)`,
+    [slug, eventType, eventType === "link_click" ? (linkUrl || null) : null]
+  );
+}
 
 async function ensureCvsTable() {
   await query(
@@ -194,6 +241,8 @@ router.get("/profile", protectSmartApply, async (req, res) => {
         certifications: u.cv_certifications || null,
         keySkills: u.cv_key_skills || null,
         primaryCvId: u.primary_cv_id != null ? u.primary_cv_id : null,
+        profilePicture: u.profile_picture || null,
+        showProfilePictureOnCv: u.show_profile_picture_on_cv != null ? !!u.show_profile_picture_on_cv : true,
         addresses: u.addresses || [],
       },
     });
@@ -208,22 +257,24 @@ router.get("/profile", protectSmartApply, async (req, res) => {
 // @access  Private (Smart Apply token)
 router.put("/profile", protectSmartApply, async (req, res) => {
   try {
-    const { category, fullName, phone, dateOfBirth, gender, nationality, currentLocation, jobTitle, linkedinUrl, website, overview, workExperience, education, certifications, keySkills, primaryCvId, addresses } = req.body;
+    const { category, fullName, phone, dateOfBirth, gender, nationality, currentLocation, jobTitle, linkedinUrl, website, overview, workExperience, education, certifications, keySkills, primaryCvId, addresses, profilePicture, showProfilePictureOnCv } = req.body;
     if (!category || !["general", "professional"].includes(category)) {
       return res.status(400).json({ error: "category must be 'general' or 'professional'" });
     }
     const cid = req.candidate.id;
     const dob = dateOfBirth && String(dateOfBirth).trim() ? String(dateOfBirth).trim() : null;
     const primaryCvIdVal = primaryCvId != null && primaryCvId !== '' ? parseInt(primaryCvId, 10) : null;
+    const profilePicVal = profilePicture && String(profilePicture).trim() ? String(profilePicture).trim() : null;
+    const showPicOnCv = showProfilePictureOnCv === true || showProfilePictureOnCv === "true" || showProfilePictureOnCv === 1 ? 1 : 0;
     await query(
-      `UPDATE smart_apply_candidates SET candidate_category = ?, cv_overview = ?, full_name = COALESCE(?, full_name), phone = ?, date_of_birth = ?, primary_cv_id = ?, gender = ?, nationality = ?, current_location = ?, job_title = ?, linkedin_url = ?, website = ? WHERE id = ?`,
+      `UPDATE smart_apply_candidates SET candidate_category = ?, cv_overview = ?, full_name = COALESCE(?, full_name), phone = ?, date_of_birth = ?, primary_cv_id = ?, gender = ?, nationality = ?, current_location = ?, job_title = ?, linkedin_url = ?, website = ?, profile_picture = ?, show_profile_picture_on_cv = ? WHERE id = ?`,
       [
         category, overview || null, (fullName && fullName.trim()) || null, (phone && phone.trim()) || null, dob || null,
         isNaN(primaryCvIdVal) ? null : primaryCvIdVal,
         (gender && String(gender).trim()) || null, (nationality && String(nationality).trim()) || null,
         (currentLocation && String(currentLocation).trim()) || null, (jobTitle && String(jobTitle).trim()) || null,
         (linkedinUrl && String(linkedinUrl).trim()) || null, (website && String(website).trim()) || null,
-        cid
+        profilePicVal, showPicOnCv, cid
       ]
     );
     const insertSection = async (table, value) => {
@@ -301,6 +352,67 @@ router.get("/candidates", async (req, res) => {
     console.error("Smart Apply candidates list error:", err);
     return res.status(500).json({ error: err.message || "Failed to list candidates" });
   }
+});
+
+// ---------- Premium credits and vouchers ----------
+
+const PREMIUM_PACKAGES = [
+  { id: "starter", name: "Starter", credits: 5, price: 199, currency: "ZAR", description: "5 auto-apply credits" },
+  { id: "growth", name: "Growth", credits: 15, price: 499, currency: "ZAR", description: "15 credits (save 17%)" },
+  { id: "pro", name: "Pro", credits: 30, price: 899, currency: "ZAR", description: "30 credits (save 25%)" },
+];
+
+// @route   GET /api/smart-apply/premium/credits
+router.get("/premium/credits", protectSmartApply, async (req, res) => {
+  try {
+    const cid = req.candidate.id;
+    const rows = await query("SELECT premium_credits FROM smart_apply_candidates WHERE id = ?", [cid]).catch(() => []);
+    const credits = rows[0]?.premium_credits ?? 0;
+    return res.status(200).json({ credits });
+  } catch (err) {
+    return res.status(500).json({ error: err.message || "Failed to get credits" });
+  }
+});
+
+// @route   GET /api/smart-apply/premium/packages
+router.get("/premium/packages", protectSmartApply, async (req, res) => {
+  return res.status(200).json({ packages: PREMIUM_PACKAGES });
+});
+
+// @route   POST /api/smart-apply/premium/purchase
+router.post("/premium/purchase", protectSmartApply, async (req, res) => {
+  try {
+    const { packageId } = req.body;
+    const pkg = PREMIUM_PACKAGES.find((p) => p.id === packageId);
+    if (!pkg) {
+      return res.status(400).json({ error: "Invalid package" });
+    }
+    // In production: integrate PayFast, charge card, then add credits. For now, return payment URL or success.
+    return res.status(200).json({
+      success: true,
+      message: "Redirect to PayFast or complete payment",
+      packageId: pkg.id,
+      credits: pkg.credits,
+      price: pkg.price,
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message || "Purchase failed" });
+  }
+});
+
+// @route   GET /api/smart-apply/premium/matches (placeholder – returns empty for now)
+router.get("/premium/matches", protectSmartApply, async (req, res) => {
+  return res.status(200).json({ matches: [] });
+});
+
+// @route   POST /api/smart-apply/premium/matches/:matchId/accept
+router.post("/premium/matches/:matchId/accept", protectSmartApply, async (req, res) => {
+  return res.status(400).json({ error: "No match found or not enough credits" });
+});
+
+// @route   POST /api/smart-apply/premium/matches/:matchId/decline
+router.post("/premium/matches/:matchId/decline", protectSmartApply, async (req, res) => {
+  return res.status(200).json({ success: true });
 });
 
 // ---------- CVs (list, upload, download, delete) ----------
@@ -435,6 +547,129 @@ router.post("/cvs", protectSmartApply, async (req, res) => {
   } catch (err) {
     console.error("Smart Apply upload CV error:", err);
     return res.status(500).json({ error: err.message || "Failed to save CV" });
+  }
+});
+
+// ---------- Public CV (shareable link, no auth for GET) ----------
+
+// @route   POST /api/smart-apply/public-cv
+// @desc    Create public CV link; returns slug and url
+// @access  Private (Smart Apply token)
+router.post("/public-cv", protectSmartApply, async (req, res) => {
+  try {
+    await ensurePublicCvsTable();
+    const cid = req.candidate.id;
+    const { cvData, templateId, baseUrl: clientBaseUrl } = req.body;
+    if (!cvData || typeof cvData !== "object") {
+      return res.status(400).json({ error: "cvData is required" });
+    }
+    const tid = Math.max(1, Math.min(20, parseInt(templateId, 10) || 1));
+    let slug = generateSlug();
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const existing = await query(`SELECT id FROM ${PUBLIC_CV_TABLE} WHERE slug = ?`, [slug]);
+      if (existing.length === 0) break;
+      slug = generateSlug();
+    }
+    await query(
+      `INSERT INTO ${PUBLIC_CV_TABLE} (slug, candidate_id, template_id, cv_data) VALUES (?, ?, ?, ?)`,
+      [slug, cid, tid, JSON.stringify(cvData)]
+    );
+    const baseUrl = (clientBaseUrl && String(clientBaseUrl).trim()) || process.env.FRONTEND_URL || process.env.SITE_URL || "https://ib-innovativesolutions.com";
+    const url = `${String(baseUrl).replace(/\/$/, "")}/cv/${slug}`;
+    return res.status(200).json({ slug, url });
+  } catch (err) {
+    console.error("Smart Apply create public CV error:", err);
+    return res.status(500).json({ error: err.message || "Failed to create public CV" });
+  }
+});
+
+// @route   GET /api/smart-apply/public-cv/:slug
+// @desc    Get public CV by slug (no auth)
+// @access  Public
+router.get("/public-cv/:slug", async (req, res) => {
+  try {
+    await ensurePublicCvsTable();
+    const slug = (req.params.slug || "").trim();
+    if (!slug) return res.status(400).json({ error: "Slug required" });
+    const rows = await query(
+      `SELECT template_id, cv_data FROM ${PUBLIC_CV_TABLE} WHERE slug = ?`,
+      [slug]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: "CV not found" });
+    const cvData = typeof rows[0].cv_data === "string" ? JSON.parse(rows[0].cv_data) : rows[0].cv_data;
+    recordCvAnalyticsEvent(slug, "view").catch(() => {});
+    return res.status(200).json({ templateId: rows[0].template_id, cvData });
+  } catch (err) {
+    console.error("Smart Apply get public CV error:", err);
+    return res.status(500).json({ error: err.message || "Failed to get CV" });
+  }
+});
+
+// @route   POST /api/smart-apply/public-cv/:slug/analytics
+// @desc    Record download or link_click (no auth – called from public CV page)
+// @access  Public
+router.post("/public-cv/:slug/analytics", async (req, res) => {
+  try {
+    const slug = (req.params.slug || "").trim();
+    const { eventType, linkUrl } = req.body || {};
+    if (!slug) return res.status(400).json({ error: "Slug required" });
+    const valid = ["download", "link_click"];
+    if (!valid.includes(eventType)) return res.status(400).json({ error: "eventType must be download or link_click" });
+    const rows = await query(`SELECT id FROM ${PUBLIC_CV_TABLE} WHERE slug = ?`, [slug]);
+    if (rows.length === 0) return res.status(404).json({ error: "CV not found" });
+    await recordCvAnalyticsEvent(slug, eventType, eventType === "link_click" ? linkUrl : null);
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error("Smart Apply record analytics error:", err);
+    return res.status(500).json({ error: err.message || "Failed to record" });
+  }
+});
+
+// @route   GET /api/smart-apply/resume-analytics
+// @desc    Get analytics for candidate's public CVs
+// @access  Private (Smart Apply token)
+router.get("/resume-analytics", protectSmartApply, async (req, res) => {
+  try {
+    const cid = req.candidate.id;
+    await ensurePublicCvsTable();
+    await ensureCvAnalyticsTable();
+    const baseUrl = process.env.FRONTEND_URL || process.env.SITE_URL || "https://ib-innovativesolutions.com";
+    const publicRows = await query(
+      `SELECT slug, created_at FROM ${PUBLIC_CV_TABLE} WHERE candidate_id = ? ORDER BY created_at DESC`,
+      [cid]
+    );
+    const slugs = publicRows.map((r) => r.slug);
+    let viewCount = 0; let downloadCount = 0; let linkClickCount = 0;
+    const bySlug = {};
+    if (slugs.length > 0) {
+      const placeholders = slugs.map(() => "?").join(",");
+      const analytics = await query(
+        `SELECT slug, event_type, COUNT(*) as cnt FROM ${CV_ANALYTICS_TABLE} WHERE slug IN (${placeholders}) GROUP BY slug, event_type`,
+        slugs
+      );
+      for (const row of analytics) {
+        const cnt = Number(row.cnt) || 0;
+        if (!bySlug[row.slug]) bySlug[row.slug] = { viewCount: 0, downloadCount: 0, linkClickCount: 0 };
+        if (row.event_type === "view") { bySlug[row.slug].viewCount = cnt; viewCount += cnt; }
+        else if (row.event_type === "download") { bySlug[row.slug].downloadCount = cnt; downloadCount += cnt; }
+        else if (row.event_type === "link_click") { bySlug[row.slug].linkClickCount = cnt; linkClickCount += cnt; }
+      }
+    }
+    const publicCvs = publicRows.map((r) => ({
+      slug: r.slug,
+      url: `${String(baseUrl).replace(/\/$/, "")}/cv/${r.slug}`,
+      createdAt: r.created_at,
+      viewCount: (bySlug[r.slug] || {}).viewCount || 0,
+      downloadCount: (bySlug[r.slug] || {}).downloadCount || 0,
+      linkClickCount: (bySlug[r.slug] || {}).linkClickCount || 0,
+    }));
+    return res.status(200).json({
+      totals: { viewCount, downloadCount, linkClickCount },
+      publicCvs,
+    });
+  } catch (err) {
+    console.error("Smart Apply resume analytics error:", err);
+    return res.status(500).json({ error: err.message || "Failed to fetch analytics" });
   }
 });
 

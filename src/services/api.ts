@@ -558,6 +558,8 @@ export const smartApplyAPI = {
     website?: string | null;
     primaryCvId?: number | null;
     overview?: string | null;
+    profilePicture?: string | null;
+    showProfilePictureOnCv?: boolean;
     workExperience?: Record<string, unknown>[] | null;
     education?: Record<string, unknown>[] | null;
     certifications?: Record<string, unknown>[] | null;
@@ -599,6 +601,41 @@ export const smartApplyAPI = {
 
   deleteCV: async (id: number) => {
     return await fetchWithSmartApplyAuth(`/smart-apply/cvs/${id}`, { method: 'DELETE' });
+  },
+
+  createPublicCV: async (cvData: Record<string, unknown>, templateId: number) => {
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    return await fetchWithSmartApplyAuth('/smart-apply/public-cv', {
+      method: 'POST',
+      body: JSON.stringify({ cvData, templateId, baseUrl }),
+    });
+  },
+
+  getPublicCV: async (slug: string) => {
+    const path = `/smart-apply/public-cv/${encodeURIComponent(slug)}`;
+    const res = await fetch(`${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Failed to load CV: ${res.status}`);
+    }
+    return res.json();
+  },
+
+  recordPublicCvAnalytics: async (slug: string, eventType: 'download' | 'link_click', linkUrl?: string) => {
+    const res = await fetch(`${API_BASE_URL}/smart-apply/public-cv/${encodeURIComponent(slug)}/analytics`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventType, linkUrl }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to record');
+    }
+    return res.json();
+  },
+
+  getResumeAnalytics: async () => {
+    return await fetchWithSmartApplyAuth('/smart-apply/resume-analytics');
   },
 
   // Premium / Auto-apply credits

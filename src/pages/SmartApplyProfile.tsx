@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -14,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus, Trash2, User, FileText, Download, Eye, MapPin } from "lucide-react";
+import { Loader2, Plus, Trash2, User, FileText, Download, Eye, MapPin, Camera, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { smartApplyAPI } from "@/services/api";
 
@@ -62,6 +63,8 @@ export interface AddressItem {
 
 const SKILL_LEVELS = ["Beginner", "Intermediate", "Advanced", "Expert"];
 const GENDER_OPTIONS = ["", "Male", "Female", "Non-binary", "Prefer not to say", "Other"];
+const PROFILE_PIC_KEY = "smart_apply_profile_picture";
+const SHOW_PP_ON_CV_KEY = "smart_apply_show_pp_on_cv";
 
 /** Website primary color (Smart Apply / header) */
 const PRIMARY_COLOR = "#1e3a5f";
@@ -122,6 +125,8 @@ const SmartApplyProfile = () => {
     jobTitle: "",
     linkedinUrl: "",
     website: "",
+    profilePictureBase64: null as string | null,
+    showProfilePictureOnCv: false,
   });
   const [addresses, setAddresses] = useState<AddressItem[]>([]);
   const [workExperience, setWorkExperience] = useState<WorkExperienceItem[]>([]);
@@ -136,6 +141,7 @@ const SmartApplyProfile = () => {
   const [uploadingCV, setUploadingCV] = useState(false);
   const [showLoaderOverlay, setShowLoaderOverlay] = useState(false);
   const loadingDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const profilePicInputRef = useRef<HTMLInputElement>(null);
 
   const loadCVs = () => {
     smartApplyAPI.listCVs().then((res: { cvs?: typeof cvs }) => setCvs(res?.cvs ?? [])).catch(() => setCvs([]));
@@ -166,6 +172,20 @@ const SmartApplyProfile = () => {
             jobTitle: p.jobTitle ?? "",
             linkedinUrl: p.linkedinUrl ?? "",
             website: p.website ?? "",
+            profilePictureBase64: (() => {
+              const raw = p.profilePicture;
+              if (typeof raw === "string" && raw) {
+                const b64 = raw.startsWith("data:") ? raw.split(",")[1] : raw;
+                if (b64) {
+                  localStorage.setItem(PROFILE_PIC_KEY, b64);
+                  window.dispatchEvent(new CustomEvent("smart-apply-profile-picture-updated"));
+                }
+                return raw.startsWith("data:") ? raw : `data:image/jpeg;base64,${raw}`;
+              }
+              const stored = localStorage.getItem(PROFILE_PIC_KEY);
+              return stored ? `data:image/jpeg;base64,${stored}` : null;
+            })(),
+            showProfilePictureOnCv: p.showProfilePictureOnCv ?? (localStorage.getItem(SHOW_PP_ON_CV_KEY) === "true"),
           });
           setCategory((p.category === "general" || p.category === "professional" ? p.category : "professional") as "general" | "professional");
           setOverview(p.overview ?? "");
@@ -212,6 +232,38 @@ const SmartApplyProfile = () => {
     }
   }, [loading]);
 
+  const persistProfile = async (profilePictureOverride?: string | null) => {
+    const pic = profilePictureOverride !== undefined ? profilePictureOverride : personal.profilePictureBase64;
+    const profilePicB64 = pic ? (pic.includes(",") ? pic.split(",")[1] : pic) : null;
+    const payload = {
+      category,
+      fullName: personal.fullName?.trim() || null,
+      phone: personal.phone?.trim() || null,
+      dateOfBirth: personal.dateOfBirth?.trim() || null,
+      gender: personal.gender?.trim() || null,
+      nationality: personal.nationality?.trim() || null,
+      currentLocation: personal.currentLocation?.trim() || null,
+      jobTitle: personal.jobTitle?.trim() || null,
+      linkedinUrl: personal.linkedinUrl?.trim() || null,
+      website: personal.website?.trim() || null,
+      primaryCvId: primaryCvId ?? undefined,
+      overview: overview.trim() || null,
+      profilePicture: profilePicB64,
+      showProfilePictureOnCv: personal.showProfilePictureOnCv,
+      workExperience: workExperience.length ? workExperience : null,
+      education: education.length ? education : null,
+      certifications: certifications.length ? certifications : null,
+      keySkills: keySkills.length ? keySkills : null,
+      addresses: addresses.length ? addresses : null,
+    };
+    await smartApplyAPI.saveProfile(payload);
+    if (personal.fullName) localStorage.setItem("smart_apply_full_name", personal.fullName);
+    if (profilePicB64) localStorage.setItem(PROFILE_PIC_KEY, profilePicB64);
+    else localStorage.removeItem(PROFILE_PIC_KEY);
+    localStorage.setItem(SHOW_PP_ON_CV_KEY, String(personal.showProfilePictureOnCv));
+    window.dispatchEvent(new CustomEvent("smart-apply-profile-picture-updated"));
+  };
+
   const handleSave = async () => {
     if (!category || !["general", "professional"].includes(category)) {
       toast({ title: "Invalid category", variant: "destructive" });
@@ -223,26 +275,7 @@ const SmartApplyProfile = () => {
     }
     setSaving(true);
     try {
-      await smartApplyAPI.saveProfile({
-        category,
-        fullName: personal.fullName?.trim() || null,
-        phone: personal.phone?.trim() || null,
-        dateOfBirth: personal.dateOfBirth?.trim() || null,
-        gender: personal.gender?.trim() || null,
-        nationality: personal.nationality?.trim() || null,
-        currentLocation: personal.currentLocation?.trim() || null,
-        jobTitle: personal.jobTitle?.trim() || null,
-        linkedinUrl: personal.linkedinUrl?.trim() || null,
-        website: personal.website?.trim() || null,
-        primaryCvId: primaryCvId ?? undefined,
-        overview: overview.trim() || null,
-        workExperience: workExperience.length ? workExperience : null,
-        education: education.length ? education : null,
-        certifications: certifications.length ? certifications : null,
-        keySkills: keySkills.length ? keySkills : null,
-        addresses: addresses.length ? addresses : null,
-      });
-      if (personal.fullName) localStorage.setItem("smart_apply_full_name", personal.fullName);
+      await persistProfile();
       toast({ title: "Profile saved", description: "Your profile has been updated." });
     } catch (err: any) {
       toast({ title: "Could not save profile", description: err?.message ?? "Please try again.", variant: "destructive" });
@@ -279,6 +312,72 @@ const SmartApplyProfile = () => {
   const removeSkill = (i: number) => setKeySkills((prev) => prev.filter((_, idx) => idx !== i));
   const updateSkill = (i: number, field: "name" | "level", value: string) => {
     setKeySkills((prev) => prev.map((item, idx) => (idx === i ? { ...item, [field]: value } : item)));
+  };
+
+  const resizeAndEncodeImage = (file: File, maxSize = 400, quality = 0.85): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width;
+        let h = img.height;
+        if (w > maxSize || h > maxSize) {
+          if (w > h) {
+            h = Math.round((h * maxSize) / w);
+            w = maxSize;
+          } else {
+            w = Math.round((w * maxSize) / h);
+            h = maxSize;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("Could not get canvas context"));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+        resolve(dataUrl);
+      };
+      img.onerror = () => reject(new Error("Failed to load image"));
+      img.src = URL.createObjectURL(file);
+    });
+
+  const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Invalid file", description: "Please select an image (JPG, PNG, etc.).", variant: "destructive" });
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Profile picture must be under 8 MB. It will be rescaled.", variant: "destructive" });
+      return;
+    }
+    resizeAndEncodeImage(file)
+      .then(async (dataUrl) => {
+        setPersonal((p) => ({ ...p, profilePictureBase64: dataUrl }));
+        try {
+          await persistProfile(dataUrl);
+          toast({ title: "Profile picture saved", description: "Image was rescaled and saved automatically." });
+        } catch {
+          toast({ title: "Profile picture updated locally", description: "Click Save profile to persist.", variant: "destructive" });
+        }
+      })
+      .catch(() => toast({ title: "Failed to process image", variant: "destructive" }));
+    e.target.value = "";
+  };
+
+  const handleRemoveProfilePicture = async () => {
+    setPersonal((p) => ({ ...p, profilePictureBase64: null }));
+    try {
+      await persistProfile(null);
+      toast({ title: "Profile picture removed and saved" });
+    } catch {
+      toast({ title: "Profile picture removed locally", description: "Click Save profile to persist.", variant: "destructive" });
+    }
   };
 
   const fileToBase64 = (file: File): Promise<string> =>
@@ -376,17 +475,64 @@ const SmartApplyProfile = () => {
           </div>
         )}
         <div className="max-w-3xl mx-auto px-4 py-10">
-          {/* Avatar with initials (no profile picture) */}
+          {/* Profile picture / Avatar */}
           <div className="flex items-center gap-6 mb-8">
-            <div
-              className="w-20 h-20 rounded-full bg-gray-200 border-2 border-gray-300 flex items-center justify-center text-2xl font-semibold text-gray-600 shrink-0"
-              aria-hidden
-            >
-              {initials}
+            <div className="relative group">
+              {personal.profilePictureBase64 ? (
+                <img
+                  src={personal.profilePictureBase64}
+                  alt=""
+                  className="w-20 h-20 rounded-full object-cover border-2 border-gray-300 shrink-0"
+                />
+              ) : (
+                <div
+                  className="w-20 h-20 rounded-full bg-gray-200 border-2 border-gray-300 flex items-center justify-center text-2xl font-semibold text-gray-600 shrink-0"
+                  aria-hidden
+                >
+                  {initials}
+                </div>
+              )}
+              <input
+                ref={profilePicInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleProfilePictureChange}
+              />
+              <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="h-8 w-8 rounded-full"
+                  onClick={() => profilePicInputRef.current?.click()}
+                >
+                  <Camera className="h-4 w-4" />
+                </Button>
+                {personal.profilePictureBase64 && (
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="secondary"
+                    className="h-8 w-8 rounded-full"
+                    onClick={handleRemoveProfilePicture}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
-            <div>
+            <div className="flex-1">
               <h1 className="text-xl font-bold text-gray-900">{personal.fullName || "Your profile"}</h1>
               <p className="text-sm text-gray-500">{personal.email || "Add your email"}</p>
+              <Button
+                type="button"
+                variant="link"
+                className="h-auto p-0 mt-1 text-sm text-indigo-600 hover:text-indigo-700"
+                onClick={() => profilePicInputRef.current?.click()}
+              >
+                {personal.profilePictureBase64 ? "Change profile picture" : "Upload profile picture"}
+              </Button>
             </div>
           </div>
 
@@ -499,6 +645,21 @@ const SmartApplyProfile = () => {
                     onChange={(e) => setPersonal((p) => ({ ...p, website: e.target.value }))}
                     placeholder="https://..."
                     className="mt-1 bg-white border-gray-300"
+                  />
+                </div>
+                <div className="sm:col-span-2 flex items-center justify-between rounded-lg border border-gray-200 p-4">
+                  <div>
+                    <Label className="text-base">Show profile picture on CV</Label>
+                    <p className="text-sm text-gray-500 mt-0.5">
+                      {personal.profilePictureBase64
+                        ? "Your uploaded photo will appear on your CV when enabled."
+                        : "Upload a profile picture above, then enable to show it on your CV."}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={personal.showProfilePictureOnCv}
+                    onCheckedChange={(checked) => setPersonal((p) => ({ ...p, showProfilePictureOnCv: checked }))}
+                    disabled={!personal.profilePictureBase64}
                   />
                 </div>
               </div>

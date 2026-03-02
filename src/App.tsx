@@ -24,6 +24,7 @@ import SmartApplyNotifications from "./pages/SmartApplyNotifications";
 import SmartApplyMyApplications from "./pages/SmartApplyMyApplications";
 import SmartApplyCvBuilder from "./pages/SmartApplyCvBuilder";
 import SmartApplyCvEditor from "./pages/SmartApplyCvEditor";
+import PublicCvView from "./pages/PublicCvView";
 import SmartApplyBilling from "./pages/SmartApplyBilling";
 import SmartApplyCheckout from "./pages/SmartApplyCheckout";
 import Recruiters from "./pages/Recruiters";
@@ -86,6 +87,7 @@ const App = () => (
                 <Route path="/smart-apply/cv-builder/edit/:templateId" element={<SmartApplyCvEditor />} />
                 <Route path="/smart-apply/cv-builder" element={<SmartApplyCvBuilder />} />
                 <Route path="/smart-apply/jobs" element={<Jobs />} />
+                <Route path="/cv/:slug" element={<PublicCvView />} />
                 <Route path="/recruiters" element={<Recruiters />} />
                 <Route path="/recruiter" element={<Layout><RecruiterTalentSearch /></Layout>} />
                 <Route path="/recruiter/sign-in" element={<Navigate to="/smart-apply/sign-in?mode=recruiter" replace />} />

@@ -24,6 +24,8 @@ const SMART_APPLY_MIGRATIONS = [
   'smart_apply_add_personal_fields.sql',
   'smart_apply_addresses_table.sql',
   'smart_apply_add_cvs_table.sql',
+  'smart_apply_add_profile_picture.sql',
+  'smart_apply_premium.sql',
 ];
 
 // Errors we can ignore when re-running (already applied)

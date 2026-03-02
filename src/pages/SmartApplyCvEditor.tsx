@@ -14,23 +14,52 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, ArrowLeft, FileText, Plus, Trash2, UserPlus, Save } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Loader2, ArrowLeft, FileText, Plus, Trash2, UserPlus, Save, CreditCard, Eye, Download, Link2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { smartApplyAPI } from "@/services/api";
 import type { WorkExperienceItem, EducationItem, CertificationItem, SkillItem, AddressItem } from "@/pages/SmartApplyProfile";
-import { CvPreviewByTemplate, type CvPreviewData } from "@/components/cv-templates/CvTemplatePreviews";
+import { CvPreviewByTemplate, type CvPreviewData, type CustomSection } from "@/components/cv-templates/CvTemplatePreviews";
 
 const DEEP_BLUE = "#1e3a5f";
+const PROFILE_PIC_KEY = "smart_apply_profile_picture";
+const SHOW_PP_ON_CV_KEY = "smart_apply_show_pp_on_cv";
 const CV_UNLOCK_PREFIX = "cv_unlock_";
+const CV_UNLOCK_DAY_MS = 24 * 60 * 60 * 1000;
 
 function isUnlocked(templateId: number): boolean {
-  // Template 1 and 2–5 are always accessible.
-  if (templateId === 1) return true;
-  if (templateId >= 2 && templateId <= 5) return true;
   const key = `${CV_UNLOCK_PREFIX}${templateId}`;
   const until = localStorage.getItem(key);
   if (!until) return false;
   return Date.now() < Number(until);
+}
+
+function setUnlockedUntil(templateId: number): void {
+  const key = `${CV_UNLOCK_PREFIX}${templateId}`;
+  const until = Date.now() + CV_UNLOCK_DAY_MS;
+  localStorage.setItem(key, String(until));
+}
+
+function estimatePages(overview: string, skills: string): number {
+  const total = (overview || "").length + (skills || "").length;
+  if (total < 800) return 1;
+  return 2;
+}
+
+/** True if user can download (free template, has paid, or is premium with credits) */
+function canDownload(templateId: number, overview: string, keySkills: SkillItem[], premiumCredits = 0): boolean {
+  if (premiumCredits > 0) return true;
+  if (templateId === 1) return true;
+  const skillsStr = keySkills.map((s) => s.name).filter(Boolean).join(" ");
+  const pages = estimatePages(overview, skillsStr);
+  if (templateId >= 2 && templateId <= 5) return pages < 2 || isUnlocked(templateId);
+  return isUnlocked(templateId);
 }
 
 function ensureArray<T>(val: T[] | T | null | undefined): T[] {
@@ -77,6 +106,8 @@ const SmartApplyCvEditor = () => {
     jobTitle: "",
     linkedinUrl: "",
     website: "",
+    profilePictureBase64: null as string | null,
+    showProfilePictureOnCv: false,
   });
   const [overview, setOverview] = useState("");
   const [category, setCategory] = useState<"general" | "professional">("professional");
@@ -85,45 +116,75 @@ const SmartApplyCvEditor = () => {
   const [certifications, setCertifications] = useState<CertificationItem[]>([]);
   const [keySkills, setKeySkills] = useState<SkillItem[]>([]);
   const [addresses, setAddresses] = useState<AddressItem[]>([]);
+  const [payModalOpen, setPayModalOpen] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [accentColor, setAccentColor] = useState(DEEP_BLUE);
+  const [customSections, setCustomSections] = useState<CustomSection[]>([]);
+  const [cvOnlineUrl, setCvOnlineUrl] = useState<string | null>(null);
+  const [creatingPublicLink, setCreatingPublicLink] = useState(false);
+  const [premiumCredits, setPremiumCredits] = useState(0);
+  const [resumeAnalytics, setResumeAnalytics] = useState<{ viewCount: number; downloadCount: number; linkClickCount: number } | null>(null);
   const initialDataRef = useRef<string>("");
 
   useEffect(() => {
     const token = localStorage.getItem("smart_apply_token");
     if (!token) {
-      navigate("/smart-apply");
+      navigate("/smart-apply/sign-in", { replace: true });
       return;
     }
-    if (templateId !== 1 && !isUnlocked(templateId)) {
-      navigate("/smart-apply/cv-builder");
-      return;
-    }
-    smartApplyAPI
-      .getProfile()
-      .then((res: { profile?: any }) => {
-        const p = res?.profile;
-        if (p) {
-          setPersonal({
-            fullName: p.fullName ?? "",
-            email: p.email ?? "",
-            phone: p.phone ?? "",
-            dateOfBirth: p.dateOfBirth ?? "",
-            gender: p.gender ?? "",
-            nationality: p.nationality ?? "",
-            currentLocation: p.currentLocation ?? "",
-            jobTitle: p.jobTitle ?? "",
-            linkedinUrl: p.linkedinUrl ?? "",
-            website: p.website ?? "",
-          });
-          setCategory((p.category === "general" || p.category === "professional" ? p.category : "professional") as "general" | "professional");
-          setOverview(p.overview ?? "");
-          setWorkExperience(ensureArray(p.workExperience).map(normalizeWorkExp));
-          setEducation(ensureArray(p.education).map(normalizeEducation));
-          setCertifications(ensureArray(p.certifications).map(normalizeCert));
-          setKeySkills(ensureArray(p.keySkills).map(normalizeSkill));
-          setAddresses(Array.isArray(p.addresses) ? p.addresses : []);
+    Promise.all([
+      smartApplyAPI.getProfile(),
+      smartApplyAPI.getCredits().catch(() => ({ credits: 0 })),
+      smartApplyAPI.getResumeAnalytics().catch(() => ({ totals: { viewCount: 0, downloadCount: 0, linkClickCount: 0 } })),
+    ])
+      .then(([profileRes, creditsRes, analyticsRes]) => {
+        const credits = (creditsRes as { credits?: number })?.credits ?? 0;
+        setPremiumCredits(credits);
+        const totals = (analyticsRes as { totals?: { viewCount?: number; downloadCount?: number; linkClickCount?: number } })?.totals;
+        if (totals) setResumeAnalytics({ viewCount: totals.viewCount ?? 0, downloadCount: totals.downloadCount ?? 0, linkClickCount: totals.linkClickCount ?? 0 });
+        const res = profileRes as { profile?: any };
+        try {
+          const p = res?.profile;
+          if (p) {
+            const rawPic = p.profilePicture;
+            const profilePictureBase64 =
+              typeof rawPic === "string" && rawPic
+                ? rawPic.startsWith("data:")
+                  ? rawPic
+                  : `data:image/jpeg;base64,${rawPic}`
+                : (() => {
+                    const stored = localStorage.getItem(PROFILE_PIC_KEY);
+                    return stored ? `data:image/jpeg;base64,${stored}` : null;
+                  })();
+            setPersonal({
+              fullName: p.fullName ?? "",
+              email: p.email ?? "",
+              phone: p.phone ?? "",
+              dateOfBirth: p.dateOfBirth ?? "",
+              gender: p.gender ?? "",
+              nationality: p.nationality ?? "",
+              currentLocation: p.currentLocation ?? "",
+              jobTitle: p.jobTitle ?? "",
+              linkedinUrl: p.linkedinUrl ?? "",
+              website: p.website ?? "",
+              profilePictureBase64,
+              showProfilePictureOnCv: p.showProfilePictureOnCv ?? (localStorage.getItem(SHOW_PP_ON_CV_KEY) === "true"),
+            });
+            setCategory((p.category === "general" || p.category === "professional" ? p.category : "professional") as "general" | "professional");
+            setOverview(p.overview ?? "");
+            setWorkExperience(ensureArray(p.workExperience).map(normalizeWorkExp));
+            setEducation(ensureArray(p.education).map(normalizeEducation));
+            setCertifications(ensureArray(p.certifications).map(normalizeCert));
+            setKeySkills(ensureArray(p.keySkills).map(normalizeSkill));
+            setAddresses(Array.isArray(p.addresses) ? p.addresses : []);
+          }
+        } catch (err) {
+          console.error("Profile parse error:", err);
         }
       })
-      .catch(() => navigate("/smart-apply"))
+      .catch((err) => {
+        console.error("Profile load error:", err);
+      })
       .finally(() => setLoading(false));
   }, [navigate, templateId]);
 
@@ -182,6 +243,65 @@ const SmartApplyCvEditor = () => {
     setKeySkills((prev) => prev.map((item, idx) => (idx === i ? { ...item, [field]: value } : item)));
   };
 
+  const addCustomSection = () => setCustomSections((prev) => [...prev, { id: `section-${Date.now()}-${Math.random().toString(36).slice(2)}`, title: "", content: "" }]);
+
+  const handleCreatePublicLink = async () => {
+    setCreatingPublicLink(true);
+    try {
+      const cvData = {
+        personal: {
+          ...personal,
+          profilePictureUrl: personal.profilePictureBase64 ?? undefined,
+          showProfilePictureOnCv: personal.showProfilePictureOnCv,
+        },
+        overview,
+        workExperience,
+        education,
+        certifications,
+        keySkills,
+        accentColor,
+        customSections: templateId >= 6 ? customSections : undefined,
+      };
+      const res = await smartApplyAPI.createPublicCV(cvData, templateId);
+      if (res?.url) {
+        setCvOnlineUrl(res.url);
+        smartApplyAPI.getResumeAnalytics().then((a: { totals?: { viewCount?: number; downloadCount?: number; linkClickCount?: number } }) => {
+          const t = a?.totals;
+          if (t) setResumeAnalytics({ viewCount: t.viewCount ?? 0, downloadCount: t.downloadCount ?? 0, linkClickCount: t.linkClickCount ?? 0 });
+        }).catch(() => {});
+        toast({ title: "Online CV link created", description: "QR code will appear on your CV. Share the link or print your CV for others to scan." });
+      } else {
+        toast({ title: "Could not create link", variant: "destructive" });
+      }
+    } catch (err: any) {
+      toast({ title: "Could not create link", description: err?.message, variant: "destructive" });
+    } finally {
+      setCreatingPublicLink(false);
+    }
+  };
+  const removeCustomSection = (i: number) => setCustomSections((prev) => prev.filter((_, idx) => idx !== i));
+  const updateCustomSection = (i: number, field: "title" | "content", value: string) => {
+    setCustomSections((prev) => prev.map((item, idx) => (idx === i ? { ...item, [field]: value } : item)));
+  };
+
+  const handleDownload = () => {
+    if (canDownload(templateId, overview, keySkills, premiumCredits)) {
+      toast({ title: "Download", description: "PDF download will be available when the backend is connected." });
+      return;
+    }
+    setPayModalOpen(true);
+  };
+
+  const handlePayZAR10 = () => {
+    setPaying(true);
+    setTimeout(() => {
+      setUnlockedUntil(templateId);
+      setPayModalOpen(false);
+      setPaying(false);
+      toast({ title: "Access granted", description: "You can now download your CV. Click the Download CV button." });
+    }, 800);
+  };
+
   const handleUpdateProfile = async () => {
     setSavingProfile(true);
     try {
@@ -197,6 +317,8 @@ const SmartApplyCvEditor = () => {
         linkedinUrl: personal.linkedinUrl?.trim() || null,
         website: personal.website?.trim() || null,
         overview: overview.trim() || null,
+        profilePicture: personal.profilePictureBase64 ? (personal.profilePictureBase64.includes(",") ? personal.profilePictureBase64.split(",")[1] : personal.profilePictureBase64) : null,
+        showProfilePictureOnCv: personal.showProfilePictureOnCv,
         workExperience: workExperience.length ? workExperience : null,
         education: education.length ? education : null,
         certifications: certifications.length ? certifications : null,
@@ -238,31 +360,31 @@ const SmartApplyCvEditor = () => {
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <Button asChild variant="ghost" size="sm" className="text-gray-700 hover:text-gray-900">
+            <Button asChild variant="outline" size="sm" className="rounded-lg border-gray-300 bg-white text-gray-900 shadow-sm hover:bg-gray-50 hover:border-gray-400 transition-colors">
               <Link to="/smart-apply/cv-builder" className="inline-flex items-center gap-2">
                 <ArrowLeft className="h-4 w-4" /> Back to templates
               </Link>
             </Button>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Template {templateId}</span>
+              <span className="text-sm text-gray-600 font-medium">Template {templateId}</span>
               {hasChanges() && (
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="border-amber-500 text-amber-700 hover:bg-amber-50"
+                  className="rounded-lg text-white font-medium shadow-sm hover:opacity-90 transition-opacity"
+                  style={{ backgroundColor: DEEP_BLUE }}
                   onClick={handleUpdateProfile}
                   disabled={savingProfile}
                 >
-                  {savingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
+                  {savingProfile ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Save className="h-4 w-4 mr-1.5" />}
                   Update my profile
                 </Button>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr,minmax(320px,1fr)] gap-8">
             {/* Left: Edit form – instant updates reflected in preview */}
-            <div className="space-y-6">
+            <div className="space-y-6 min-w-0">
               <Card className="border border-gray-200 bg-white">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
@@ -382,15 +504,15 @@ const SmartApplyCvEditor = () => {
               <Card className="border border-gray-200 bg-white">
                 <CardHeader className="pb-2 flex flex-row items-center justify-between">
                   <CardTitle className="text-base">Work experience</CardTitle>
-                  <Button type="button" variant="outline" size="sm" onClick={addWork} className="border-gray-300">
-                    <Plus className="h-4 w-4 mr-1" /> Add
+                  <Button type="button" size="sm" onClick={addWork} className="rounded-lg text-white font-medium shadow-sm hover:opacity-90 transition-opacity" style={{ backgroundColor: DEEP_BLUE }}>
+                    <Plus className="h-4 w-4 mr-1.5" /> Add
                   </Button>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {workExperience.map((w, i) => (
                     <div key={i} className="p-3 border border-gray-200 rounded-lg space-y-2">
                       <div className="flex justify-end">
-                        <Button type="button" variant="ghost" size="sm" className="text-red-600 hover:text-red-700" onClick={() => removeWork(i)}>
+                        <Button type="button" variant="ghost" size="sm" className="rounded-md text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors p-2" onClick={() => removeWork(i)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -429,15 +551,15 @@ const SmartApplyCvEditor = () => {
               <Card className="border border-gray-200 bg-white">
                 <CardHeader className="pb-2 flex flex-row items-center justify-between">
                   <CardTitle className="text-base">Education</CardTitle>
-                  <Button type="button" variant="outline" size="sm" onClick={addEdu} className="border-gray-300">
-                    <Plus className="h-4 w-4 mr-1" /> Add
+                  <Button type="button" size="sm" onClick={addEdu} className="rounded-lg text-white font-medium shadow-sm hover:opacity-90 transition-opacity" style={{ backgroundColor: DEEP_BLUE }}>
+                    <Plus className="h-4 w-4 mr-1.5" /> Add
                   </Button>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {education.map((e, i) => (
                     <div key={i} className="p-3 border border-gray-200 rounded-lg space-y-2">
                       <div className="flex justify-end">
-                        <Button type="button" variant="ghost" size="sm" className="text-red-600 hover:text-red-700" onClick={() => removeEdu(i)}>
+                        <Button type="button" variant="ghost" size="sm" className="rounded-md text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors p-2" onClick={() => removeEdu(i)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -470,8 +592,8 @@ const SmartApplyCvEditor = () => {
               <Card className="border border-gray-200 bg-white">
                 <CardHeader className="pb-2 flex flex-row items-center justify-between">
                   <CardTitle className="text-base">Certifications</CardTitle>
-                  <Button type="button" variant="outline" size="sm" onClick={addCert} className="border-gray-300">
-                    <Plus className="h-4 w-4 mr-1" /> Add
+                  <Button type="button" size="sm" onClick={addCert} className="rounded-lg text-white font-medium shadow-sm hover:opacity-90 transition-opacity" style={{ backgroundColor: DEEP_BLUE }}>
+                    <Plus className="h-4 w-4 mr-1.5" /> Add
                   </Button>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -480,7 +602,7 @@ const SmartApplyCvEditor = () => {
                       <Input value={c.name ?? ""} onChange={(e) => updateCert(i, "name", e.target.value)} placeholder="Certification name" className="flex-1 min-w-[120px] bg-white border-gray-300" />
                       <Input value={c.issuer ?? ""} onChange={(e) => updateCert(i, "issuer", e.target.value)} placeholder="Issuer" className="w-32 bg-white border-gray-300" />
                       <Input value={c.date ?? ""} onChange={(e) => updateCert(i, "date", e.target.value)} placeholder="Date" className="w-24 bg-white border-gray-300" />
-                      <Button type="button" variant="ghost" size="sm" className="text-red-600" onClick={() => removeCert(i)}><Trash2 className="h-4 w-4" /></Button>
+                      <Button type="button" variant="ghost" size="sm" className="rounded-md text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors p-2 shrink-0" onClick={() => removeCert(i)}><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   ))}
                   {certifications.length === 0 && (
@@ -492,8 +614,8 @@ const SmartApplyCvEditor = () => {
               <Card className="border border-gray-200 bg-white">
                 <CardHeader className="pb-2 flex flex-row items-center justify-between">
                   <CardTitle className="text-base">Key skills</CardTitle>
-                  <Button type="button" variant="outline" size="sm" onClick={addSkill} className="border-gray-300">
-                    <Plus className="h-4 w-4 mr-1" /> Add
+                  <Button type="button" size="sm" onClick={addSkill} className="rounded-lg text-white font-medium shadow-sm hover:opacity-90 transition-opacity" style={{ backgroundColor: DEEP_BLUE }}>
+                    <Plus className="h-4 w-4 mr-1.5" /> Add
                   </Button>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -509,7 +631,7 @@ const SmartApplyCvEditor = () => {
                           <SelectItem value="Expert">Expert</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Button type="button" variant="ghost" size="sm" className="text-red-600" onClick={() => removeSkill(i)}><Trash2 className="h-4 w-4" /></Button>
+                      <Button type="button" variant="ghost" size="sm" className="rounded-md text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors p-2 shrink-0" onClick={() => removeSkill(i)}><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   ))}
                   {keySkills.length === 0 && (
@@ -517,39 +639,141 @@ const SmartApplyCvEditor = () => {
                   )}
                 </CardContent>
               </Card>
+
+              {templateId >= 6 && (
+                <Card className="border border-gray-200 bg-white">
+                  <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle className="text-base">Custom sections</CardTitle>
+                      <CardDescription className="text-sm">Add Projects, Languages, References, or any custom section (paid templates only)</CardDescription>
+                    </div>
+                    <Button type="button" size="sm" onClick={addCustomSection} className="rounded-lg text-white font-medium shadow-sm hover:opacity-90 transition-opacity shrink-0" style={{ backgroundColor: DEEP_BLUE }}>
+                      <Plus className="h-4 w-4 mr-1.5" /> Add section
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {customSections.map((s, i) => (
+                      <div key={s.id} className="p-3 border border-gray-200 rounded-lg space-y-2">
+                        <div className="flex justify-end">
+                          <Button type="button" variant="ghost" size="sm" className="rounded-md text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors p-2" onClick={() => removeCustomSection(i)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Section title</Label>
+                          <Input value={s.title} onChange={(e) => updateCustomSection(i, "title", e.target.value)} placeholder="e.g. Projects, Languages, References" className="mt-1 bg-white border-gray-300" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Content</Label>
+                          <Textarea value={s.content} onChange={(e) => updateCustomSection(i, "content", e.target.value)} className="mt-1 min-h-[80px] bg-white border-gray-300 resize-y" placeholder="Enter your content. Use new lines for list items." />
+                        </div>
+                      </div>
+                    ))}
+                    {customSections.length === 0 && (
+                      <p className="text-sm text-gray-500">No custom sections. Click Add section to add Projects, Languages, References, or any other section.</p>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
-            {/* Right: Live preview – updates instantly */}
-            <div className="lg:sticky lg:top-6 lg:self-start">
-              <Card className="border border-gray-200 bg-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base text-gray-900">Live preview</CardTitle>
-                  <CardDescription className="text-sm">Changes appear here as you type.</CardDescription>
+            {/* Right: Live preview – fills available space */}
+            <div className="lg:sticky lg:top-6 lg:self-start flex flex-col min-h-[600px]">
+              <Card className="border border-gray-200 bg-white flex-1 flex flex-col min-h-0">
+                <CardHeader className="pb-3 shrink-0 space-y-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <CardTitle className="text-base text-gray-900">Live preview</CardTitle>
+                      <CardDescription className="text-sm">Changes appear here as you type.</CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Label className="text-xs text-gray-600 whitespace-nowrap">CV color</Label>
+                      <input
+                        type="color"
+                        value={accentColor}
+                        onChange={(e) => setAccentColor(e.target.value)}
+                        className="w-9 h-9 rounded cursor-pointer border border-gray-300 bg-white p-0.5"
+                        title="Choose accent color"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant={cvOnlineUrl ? "secondary" : "default"}
+                    size="sm"
+                    onClick={handleCreatePublicLink}
+                    disabled={creatingPublicLink}
+                    className="w-full sm:w-auto font-medium"
+                    style={!cvOnlineUrl ? { backgroundColor: DEEP_BLUE, color: "white" } : undefined}
+                  >
+                    {creatingPublicLink ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : cvOnlineUrl ? (
+                      "✓ QR code added – scan for online CV"
+                    ) : (
+                      "Add QR code to CV"
+                    )}
+                  </Button>
+                  {resumeAnalytics && (
+                    <div className="rounded-lg border border-gray-200 bg-gray-50/80 p-3">
+                      <p className="text-xs font-semibold text-gray-700 mb-2">Resume analytics</p>
+                      <div className="flex flex-wrap gap-4 text-sm">
+                        <span className="flex items-center gap-1.5 text-gray-600" title="CV views">
+                          <Eye className="h-4 w-4 text-gray-500" />
+                          <strong className="text-gray-900">{resumeAnalytics.viewCount}</strong> views
+                        </span>
+                        <span className="flex items-center gap-1.5 text-gray-600" title="Downloads">
+                          <Download className="h-4 w-4 text-gray-500" />
+                          <strong className="text-gray-900">{resumeAnalytics.downloadCount}</strong> downloads
+                        </span>
+                        <span className="flex items-center gap-1.5 text-gray-600" title="Link clicks">
+                          <Link2 className="h-4 w-4 text-gray-500" />
+                          <strong className="text-gray-900">{resumeAnalytics.linkClickCount}</strong> link clicks
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </CardHeader>
-                <CardContent>
-                  <CvPreviewByTemplate
-                    templateId={templateId}
-                    data={{
-                      personal,
-                      overview,
-                      workExperience,
-                      education,
-                      certifications,
-                      keySkills,
-                    } as CvPreviewData}
-                  />
+                <CardContent className="flex-1 min-h-0 overflow-auto p-4 flex items-start justify-center">
+                  <div className="w-full max-w-full min-w-0" style={{ maxWidth: "min(100%, 340px)" }}>
+                    <CvPreviewByTemplate
+                      templateId={templateId}
+                      data={{
+                        personal: {
+                          ...personal,
+                          profilePictureUrl: personal.profilePictureBase64 ?? undefined,
+                          showProfilePictureOnCv: personal.showProfilePictureOnCv,
+                        },
+                        overview,
+                        workExperience,
+                        education,
+                        certifications,
+                        keySkills,
+                        accentColor,
+                        customSections: templateId >= 6 ? customSections : undefined,
+                        cvOnlineUrl: cvOnlineUrl ?? undefined,
+                      } as CvPreviewData}
+                    />
+                  </div>
                 </CardContent>
               </Card>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-wrap gap-3">
                 <Button
-                  className="text-white hover:opacity-90"
+                  size="default"
+                  className="rounded-lg text-white font-semibold shadow-md hover:opacity-90 hover:shadow-lg transition-all px-6"
                   style={{ backgroundColor: DEEP_BLUE }}
-                  onClick={() => toast({ title: "Download", description: "PDF download will be available when the backend is connected." })}
+                  onClick={handleDownload}
                 >
                   <FileText className="h-4 w-4 mr-2" /> Download CV
                 </Button>
                 {hasChanges() && (
-                  <Button variant="outline" className="border-gray-300" onClick={handleUpdateProfile} disabled={savingProfile}>
+                  <Button
+                    variant="outline"
+                    size="default"
+                    className="rounded-lg border-2 border-gray-200 font-medium hover:bg-gray-50 hover:border-gray-300 transition-colors px-6"
+                    onClick={handleUpdateProfile}
+                    disabled={savingProfile}
+                  >
                     {savingProfile ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <UserPlus className="h-4 w-4 mr-2" />}
                     Save to profile
                   </Button>
@@ -559,6 +783,32 @@ const SmartApplyCvEditor = () => {
           </div>
         </div>
       </div>
+
+      <Dialog open={payModalOpen} onOpenChange={setPayModalOpen}>
+        <DialogContent className="max-w-md bg-white border-2 border-gray-200">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900">Pay ZAR 10 to download</DialogTitle>
+            <DialogDescription className="text-gray-700">
+              {templateId >= 6
+                ? "This is a paid template. Pay ZAR 10 for 1 day access to download your CV as PDF."
+                : "Your CV is more than one page. Pay ZAR 10 for 1 day access to download it."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 pt-4">
+            <Button
+              className="text-white flex-1"
+              style={{ backgroundColor: DEEP_BLUE }}
+              disabled={paying}
+              onClick={handlePayZAR10}
+            >
+              {paying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CreditCard className="h-4 w-4 mr-2" />}
+              Pay ZAR 10
+            </Button>
+            <Button variant="outline" onClick={() => setPayModalOpen(false)}>Cancel</Button>
+          </div>
+          <p className="text-xs text-gray-500 pt-2">Payment will be processed securely. Backend integration can be added later.</p>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };

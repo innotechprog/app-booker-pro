@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, CreditCard, Banknote } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { smartApplyAPI } from "@/services/api";
 
 const DEEP_BLUE = "#1e3a5f";
 
@@ -109,12 +110,12 @@ const SmartApplyCheckout = () => {
                         : "border-gray-300 bg-white hover:bg-gray-50"
                     }`}
                   >
-                    <span className="flex h-9 w-9 items-center justify-center rounded-md bg-emerald-100">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-md bg-emerald-100 shrink-0">
                       <CreditCard className="h-5 w-5 text-emerald-700" />
                     </span>
                     <span>
                       <span className="block text-sm font-semibold text-gray-900">PayFast</span>
-                      <span className="block text-xs text-gray-600">Secure online card / instant EFT</span>
+                      <span className="block text-xs text-gray-600">Secure card / voucher / EFT</span>
                     </span>
                   </button>
 
@@ -127,12 +128,12 @@ const SmartApplyCheckout = () => {
                         : "border-gray-300 bg-white hover:bg-gray-50"
                     }`}
                   >
-                    <span className="flex h-9 w-9 items-center justify-center rounded-md bg-amber-100">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-md bg-amber-100 shrink-0">
                       <Banknote className="h-5 w-5 text-amber-700" />
                     </span>
                     <span>
-                      <span className="block text-sm font-semibold text-gray-900">EFT / Bank transfer</span>
-                      <span className="block text-xs text-gray-600">Pay from your bank account</span>
+                      <span className="block text-sm font-semibold text-gray-900">EFT / Bank</span>
+                      <span className="block text-xs text-gray-600">Bank transfer</span>
                     </span>
                   </button>
                 </div>

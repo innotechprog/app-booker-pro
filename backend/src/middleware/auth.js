@@ -69,7 +69,7 @@ export const protectSmartApply = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid token for Smart Apply' });
     }
     const rows = await query(
-      'SELECT id, full_name, email, phone, date_of_birth, primary_cv_id, gender, nationality, current_location, job_title, linkedin_url, website, candidate_category, cv_overview FROM smart_apply_candidates WHERE id = ?',
+      'SELECT id, full_name, email, phone, date_of_birth, primary_cv_id, gender, nationality, current_location, job_title, linkedin_url, website, candidate_category, cv_overview, profile_picture, show_profile_picture_on_cv FROM smart_apply_candidates WHERE id = ?',
       [decoded.id]
     );
     if (rows.length === 0) {

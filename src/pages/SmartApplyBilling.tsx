@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, CreditCard, User, Mail, Phone, MapPin } from "lucide-react";
+import { smartApplyAPI } from "@/services/api";
 
 const DEEP_BLUE = "#1e3a5f";
 
@@ -21,6 +22,16 @@ interface LocationState {
   pkg?: CreditPackage;
 }
 
+interface ProfileAddress {
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  stateRegion?: string;
+  postalCode?: string;
+  country?: string;
+  isPrimary?: boolean;
+}
+
 const SmartApplyBilling = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,6 +45,35 @@ const SmartApplyBilling = () => {
   const [country, setCountry] = useState("South Africa");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+
+  // Pre-fill from Smart Apply profile
+  useEffect(() => {
+    const token = localStorage.getItem("smart_apply_token");
+    if (!token) return;
+    smartApplyAPI
+      .getProfile()
+      .then((res: { profile?: { fullName?: string; email?: string; phone?: string; currentLocation?: string; addresses?: ProfileAddress[] } }) => {
+        const p = res?.profile;
+        if (!p) return;
+        if (p.fullName) setFullName(p.fullName);
+        if (p.email) setEmail(p.email);
+        if (p.phone) setPhone(p.phone);
+        const addrs = Array.isArray(p.addresses) ? p.addresses : [];
+        const primary = addrs.find((a) => a.isPrimary) ?? addrs[0];
+        if (primary) {
+          const line1 = [primary.addressLine1, primary.addressLine2].filter(Boolean).join(", ");
+          if (line1) setStreet(line1);
+          if (primary.city) setCity(primary.city);
+          if (primary.postalCode) setPostalCode(primary.postalCode);
+          if (primary.country) setCountry(primary.country);
+        } else if (p.currentLocation) {
+          const parts = String(p.currentLocation).split(",").map((s) => s.trim()).filter(Boolean);
+          if (parts.length >= 1) setCity(parts[0]);
+          if (parts.length >= 2) setCountry(parts[parts.length - 1]);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   if (!selected) {
     // No package selected – send user back to Premium credits page

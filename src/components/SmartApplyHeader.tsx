@@ -9,8 +9,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Menu, X, User, Sparkles, LogOut, LayoutDashboard, Settings, Crown, Bell } from "lucide-react";
 import ibLogoBlack from "@/images/ib-logo-black.png";
+import { smartApplyAPI } from "@/services/api";
 
 const DEEP_BLUE = "#1e3a5f";
+const PROFILE_PIC_KEY = "smart_apply_profile_picture";
 
 function getInitials(fullName: string | null): string {
   if (!fullName || !fullName.trim()) return "";
@@ -22,6 +24,7 @@ function getInitials(fullName: string | null): string {
 const SmartApplyHeader = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [initials, setInitials] = useState("");
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -31,13 +34,43 @@ const SmartApplyHeader = () => {
   const handleLogout = () => {
     localStorage.removeItem("smart_apply_token");
     localStorage.removeItem("smart_apply_full_name");
+    localStorage.removeItem(PROFILE_PIC_KEY);
     setInitials("");
+    setProfilePictureUrl(null);
     navigate("/smart-apply");
   };
 
+  const loadProfilePicture = () => {
+    const stored = localStorage.getItem(PROFILE_PIC_KEY);
+    setProfilePictureUrl(stored ? `data:image/jpeg;base64,${stored}` : null);
+  };
+
   useEffect(() => {
+    if (!hasToken) {
+      setProfilePictureUrl(null);
+      setInitials("");
+      return;
+    }
     setInitials(getInitials(localStorage.getItem("smart_apply_full_name")));
+    loadProfilePicture();
+    // Fetch profile from API when no picture in localStorage (e.g. returning user)
+    if (!localStorage.getItem(PROFILE_PIC_KEY)) {
+      smartApplyAPI.getProfile().then((res: { profile?: { profilePicture?: string } }) => {
+        const raw = res?.profile?.profilePicture;
+        if (typeof raw === "string" && raw) {
+          const b64 = raw.startsWith("data:") ? raw.split(",")[1] : raw;
+          localStorage.setItem(PROFILE_PIC_KEY, b64);
+          setProfilePictureUrl(`data:image/jpeg;base64,${b64}`);
+        }
+      }).catch(() => {});
+    }
   }, [location.pathname, hasToken]);
+
+  useEffect(() => {
+    const handler = () => loadProfilePicture();
+    window.addEventListener("smart-apply-profile-picture-updated", handler);
+    return () => window.removeEventListener("smart-apply-profile-picture-updated", handler);
+  }, []);
 
   return (
     <header className="w-full bg-white">
@@ -141,11 +174,17 @@ const SmartApplyHeader = () => {
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="flex items-center justify-center w-9 h-9 rounded-full text-white p-0 text-sm font-semibold"
-                      style={{ backgroundColor: DEEP_BLUE }}
+                      className="flex items-center justify-center w-9 h-9 rounded-full overflow-hidden text-white p-0 text-sm font-semibold shrink-0"
+                      style={{ backgroundColor: profilePictureUrl ? undefined : DEEP_BLUE }}
                       title="Profile menu"
                     >
-                      {initials ? initials : <User className="h-5 w-5" />}
+                      {profilePictureUrl ? (
+                        <img src={profilePictureUrl} alt="" className="w-full h-full object-cover" />
+                      ) : initials ? (
+                        initials
+                      ) : (
+                        <User className="h-5 w-5" />
+                      )}
                     </Button>
                   </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
