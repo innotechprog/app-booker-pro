@@ -136,6 +136,8 @@ export interface RecruiterCandidateListItem {
   phone: string | null;
   category: string | null;
   createdAt: string | null;
+  profilePicture?: string | null;
+  publicCvUrl?: string | null;
 }
 
 export interface RecruiterCandidateProfile {
@@ -157,6 +159,9 @@ export interface RecruiterCandidateProfile {
   certifications: Array<Record<string, unknown>>;
   keySkills: Array<Record<string, unknown>>;
   primaryCvId: number | null;
+  profilePicture: string | null;
+  publicCvSlug: string | null;
+  publicCvUrl: string | null;
   addresses: Array<{
     id: number;
     label: string;
@@ -171,11 +176,20 @@ export interface RecruiterCandidateProfile {
 }
 
 export const recruiterApi = {
-  async getCandidates(category?: "general" | "professional"): Promise<{
-    success: boolean;
-    candidates: RecruiterCandidateListItem[];
-  }> {
-    const q = category ? `?category=${category}` : "";
+  async getCandidates(params?: {
+    category?: "general" | "professional";
+    search?: string;
+    skills?: string;
+    location?: string;
+    experience?: string;
+  }): Promise<{ success: boolean; candidates: RecruiterCandidateListItem[] }> {
+    const sp = new URLSearchParams();
+    if (params?.category) sp.set("category", params.category);
+    if (params?.search?.trim()) sp.set("search", params.search.trim());
+    if (params?.skills?.trim()) sp.set("skills", params.skills.trim());
+    if (params?.location?.trim()) sp.set("location", params.location.trim());
+    if (params?.experience?.trim()) sp.set("experience", params.experience.trim());
+    const q = sp.toString() ? `?${sp.toString()}` : "";
     const res = await fetch(`${API_BASE_URL}/smart-apply/candidates${q}`);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
@@ -192,6 +206,19 @@ export const recruiterApi = {
       throw new Error(data.error || `Server error: ${res.status}`);
     }
     return res.json();
+  },
+
+  async getCandidateCvBlob(id: number): Promise<Blob> {
+    const token = getRecruiterToken();
+    const res = await fetch(`${API_BASE_URL}/recruiter/candidates/${id}/cv`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) {
+      if (res.status === 404) throw new Error("CV not found");
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message || data.error || `Server error: ${res.status}`);
+    }
+    return res.blob();
   },
 
   // ---------- Auth ----------

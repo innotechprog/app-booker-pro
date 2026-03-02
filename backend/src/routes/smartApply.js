@@ -324,33 +324,179 @@ router.put("/profile", protectSmartApply, async (req, res) => {
 });
 
 // @route   GET /api/smart-apply/candidates
-// @desc    List candidates for recruiters (smart_apply_candidates only); ?category=general|professional
+// @desc    List candidates for recruiters; ?category=&search=&skills=&location=&experience=
 // @access  Public
 router.get("/candidates", async (req, res) => {
   try {
-    const { category } = req.query;
-    let sql = "SELECT id, full_name, email, phone, candidate_category, created_at FROM smart_apply_candidates WHERE candidate_category IS NOT NULL";
+    const { category, search, skills, location, experience } = req.query;
+    let sql = "SELECT c.id, c.full_name, c.email, c.phone, c.candidate_category, c.current_location, c.job_title, c.cv_overview, c.created_at, c.profile_picture FROM smart_apply_candidates c WHERE c.candidate_category IS NOT NULL";
     const params = [];
     if (category === "general" || category === "professional") {
-      sql += " AND candidate_category = ?";
+      sql += " AND c.candidate_category = ?";
       params.push(category);
     }
-    sql += " ORDER BY created_at DESC";
+    if (search && String(search).trim()) {
+      const term = `%${String(search).trim().replace(/%/g, "\\%")}%`;
+      sql += " AND (c.full_name LIKE ? OR c.email LIKE ? OR c.job_title LIKE ? OR c.cv_overview LIKE ?)";
+      params.push(term, term, term, term);
+    }
+    if (location && String(location).trim()) {
+      const loc = `%${String(location).trim().replace(/%/g, "\\%")}%`;
+      sql += " AND c.current_location LIKE ?";
+      params.push(loc);
+    }
+    if (skills && String(skills).trim()) {
+      const skillTerms = String(skills).trim().split(/[,\s]+/).filter(Boolean);
+      if (skillTerms.length > 0) {
+        const subConditions = skillTerms.map(() => "content LIKE ?").join(" OR ");
+        sql += ` AND c.id IN (SELECT candidate_id FROM smart_apply_key_skills WHERE ${subConditions})`;
+        skillTerms.forEach((t) => params.push(`%${t.replace(/%/g, "\\%")}%`));
+      }
+    }
+    if (experience && String(experience).trim()) {
+      const expTerm = `%${String(experience).trim().replace(/%/g, "\\%")}%`;
+      sql += " AND c.id IN (SELECT candidate_id FROM smart_apply_work_experience WHERE content LIKE ?)";
+      params.push(expTerm);
+    }
+    sql += " ORDER BY c.created_at DESC";
     const rows = await query(sql, params);
+    let candidates = rows.map((r) => ({
+      id: r.id,
+      fullName: r.full_name,
+      email: r.email,
+      phone: r.phone || null,
+      category: r.candidate_category,
+      createdAt: r.created_at,
+      profilePicture: r.profile_picture || null,
+    }));
+    try {
+      await ensurePublicCvsTable();
+      const baseUrl = process.env.FRONTEND_URL || process.env.SITE_URL || "https://ib-innovativesolutions.com";
+      const pubRows = await query(`SELECT candidate_id, slug FROM ${PUBLIC_CV_TABLE} ORDER BY created_at DESC`);
+      const slugByCid = {};
+      for (const row of pubRows) {
+        if (!slugByCid[row.candidate_id]) slugByCid[row.candidate_id] = row.slug;
+      }
+      candidates = candidates.map((c) => ({
+        ...c,
+        publicCvUrl: slugByCid[c.id] ? `${String(baseUrl).replace(/\/$/, "")}/cv/${slugByCid[c.id]}` : null,
+      }));
+    } catch (e) {
+      /* ignore */
+    }
     return res.status(200).json({
       success: true,
-      candidates: rows.map((r) => ({
-        id: r.id,
-        fullName: r.full_name,
-        email: r.email,
-        phone: r.phone || null,
-        category: r.candidate_category,
-        createdAt: r.created_at,
-      })),
+      candidates,
     });
   } catch (err) {
     console.error("Smart Apply candidates list error:", err);
     return res.status(500).json({ error: err.message || "Failed to list candidates" });
+  }
+});
+
+// Helper: load candidate profile by id (for recruiters)
+async function loadCandidateProfileById(cid) {
+  const rows = await query(
+    "SELECT id, full_name, email, phone, date_of_birth, primary_cv_id, gender, nationality, current_location, job_title, linkedin_url, website, candidate_category, cv_overview, profile_picture, show_profile_picture_on_cv FROM smart_apply_candidates WHERE id = ?",
+    [cid]
+  );
+  if (rows.length === 0) return null;
+  const u = rows[0];
+  const [we, edu, cert, skills, addrs] = await Promise.all([
+    query("SELECT content FROM smart_apply_work_experience WHERE candidate_id = ? ORDER BY sort_order", [cid]),
+    query("SELECT content FROM smart_apply_education WHERE candidate_id = ? ORDER BY sort_order", [cid]),
+    query("SELECT content FROM smart_apply_certifications WHERE candidate_id = ? ORDER BY sort_order", [cid]),
+    query("SELECT content FROM smart_apply_key_skills WHERE candidate_id = ? ORDER BY sort_order", [cid]),
+    query("SELECT id, label, address_line1, address_line2, city, state_region, postal_code, country, is_primary FROM smart_apply_addresses WHERE candidate_id = ? ORDER BY is_primary DESC, id", [cid]).catch(() => []),
+  ]);
+  const parseContent = (arr) => {
+    if (!arr || !arr.length) return [];
+    return arr.map((r) => {
+      const c = r.content;
+      if (c == null || c === "") return null;
+      try {
+        const o = typeof c === "string" ? JSON.parse(c) : c;
+        return o && typeof o === "object" ? o : { description: String(c) };
+      } catch {
+        return { description: String(c) };
+      }
+    }).filter(Boolean);
+  };
+  const workExperience = parseContent(we);
+  const education = parseContent(edu);
+  const certifications = parseContent(cert);
+  const keySkills = parseContent(skills);
+  const addresses = Array.isArray(addrs)
+    ? addrs.map((a) => ({
+        id: a.id,
+        label: a.label,
+        addressLine1: a.address_line1,
+        addressLine2: a.address_line2 || null,
+        city: a.city,
+        stateRegion: a.state_region || null,
+        postalCode: a.postal_code || null,
+        country: a.country,
+        isPrimary: !!a.is_primary,
+      }))
+    : [];
+  const dateOfBirth = u.date_of_birth ? (typeof u.date_of_birth === "string" ? u.date_of_birth : u.date_of_birth.toISOString?.().slice(0, 10)) : null;
+  let publicCvSlug = null;
+  let publicCvUrl = null;
+  try {
+    await ensurePublicCvsTable();
+    const pubRows = await query(`SELECT slug FROM ${PUBLIC_CV_TABLE} WHERE candidate_id = ? ORDER BY created_at DESC LIMIT 1`, [cid]);
+    if (pubRows.length > 0) {
+      publicCvSlug = pubRows[0].slug;
+      const baseUrl = process.env.FRONTEND_URL || process.env.SITE_URL || "https://ib-innovativesolutions.com";
+      publicCvUrl = `${String(baseUrl).replace(/\/$/, "")}/cv/${publicCvSlug}`;
+    }
+  } catch (e) {
+    /* ignore */
+  }
+  return {
+    id: u.id,
+    fullName: u.full_name,
+    email: u.email,
+    phone: u.phone || null,
+    dateOfBirth,
+    gender: u.gender || null,
+    nationality: u.nationality || null,
+    currentLocation: u.current_location || null,
+    jobTitle: u.job_title || null,
+    linkedinUrl: u.linkedin_url || null,
+    website: u.website || null,
+    category: u.candidate_category || null,
+    overview: u.cv_overview || null,
+    workExperience,
+    education,
+    certifications,
+    keySkills,
+    primaryCvId: u.primary_cv_id != null ? u.primary_cv_id : null,
+    profilePicture: u.profile_picture || null,
+    showProfilePictureOnCv: u.show_profile_picture_on_cv != null ? !!u.show_profile_picture_on_cv : true,
+    addresses,
+    publicCvSlug,
+    publicCvUrl,
+  };
+}
+
+// @route   GET /api/smart-apply/candidates/:id
+// @desc    Get candidate profile for recruiters (full profile, public CV link, profile pic)
+// @access  Public
+router.get("/candidates/:id", async (req, res) => {
+  try {
+    const cid = parseInt(req.params.id, 10);
+    if (!Number.isFinite(cid)) {
+      return res.status(400).json({ error: "Invalid candidate id" });
+    }
+    const profile = await loadCandidateProfileById(cid);
+    if (!profile) {
+      return res.status(404).json({ error: "Candidate not found" });
+    }
+    return res.status(200).json({ success: true, profile });
+  } catch (err) {
+    console.error("Smart Apply get candidate by id error:", err);
+    return res.status(500).json({ error: err.message || "Failed to load profile" });
   }
 });
 

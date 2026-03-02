@@ -1058,49 +1058,49 @@ const SmartApply = () => {
                 Applying as: <span className="font-medium text-gray-900">{[userDetails.name, userDetails.surname].filter(Boolean).join(" ") || "—"}</span>
                 {userDetails.email && <span className="text-gray-500"> ({userDetails.email})</span>}
               </p>
-              <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                <FileText className="h-4 w-4" />
                   Upload your CV <span className="text-red-600">*</span>
-                </h3>
-                <div className="space-y-2">
+              </h3>
+              <div className="space-y-2">
                   <Label className="text-gray-700 font-medium">Your CV will be attached to each application email.</Label>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Input
-                      type="file"
-                      accept=".pdf,.txt"
-                      onChange={handleCvFileChange}
-                      className={`${inputClass} max-w-xs file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-indigo-700 hover:file:bg-indigo-100`}
-                    />
-                    {cvFileName && (
-                      <span className="text-sm text-gray-600">
-                        {cvFileName}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="ml-1 h-6 px-1 text-red-600"
-                          onClick={() => {
-                            setCvFile(null);
-                            setCvFileName("");
-                            setCvText("");
-                          }}
-                        >
-                          Remove
-                        </Button>
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    PDF or .txt. .txt is used for AI tailoring; the file is attached to each email.
-                  </p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Input
+                    type="file"
+                    accept=".pdf,.txt"
+                    onChange={handleCvFileChange}
+                    className={`${inputClass} max-w-xs file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-indigo-700 hover:file:bg-indigo-100`}
+                  />
+                  {cvFileName && (
+                    <span className="text-sm text-gray-600">
+                      {cvFileName}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="ml-1 h-6 px-1 text-red-600"
+                        onClick={() => {
+                          setCvFile(null);
+                          setCvFileName("");
+                          setCvText("");
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </span>
+                  )}
                 </div>
+                <p className="text-xs text-gray-500">
+                    PDF or .txt. .txt is used for AI tailoring; the file is attached to each email.
+                </p>
               </div>
-              <div className="flex justify-end">
+            </div>
+            <div className="flex justify-end">
                 <Button onClick={handleStep1Next} disabled={!cvFile || savingProfile} className="bg-indigo-600 hover:bg-indigo-700">
                   {savingProfile ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…</> : <>Continue to profile <ChevronRight className="ml-2 h-4 w-4" /></>}
-                </Button>
-              </div>
+              </Button>
+            </div>
             </div>
             )}
 

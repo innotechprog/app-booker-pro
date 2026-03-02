@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, ArrowLeft, FileText, Plus, Trash2, UserPlus, Save, CreditCard, Eye, Download, Link2 } from "lucide-react";
+import { Loader2, ArrowLeft, FileText, Plus, Trash2, UserPlus, Save, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { smartApplyAPI } from "@/services/api";
 import type { WorkExperienceItem, EducationItem, CertificationItem, SkillItem, AddressItem } from "@/pages/SmartApplyProfile";
@@ -123,7 +123,6 @@ const SmartApplyCvEditor = () => {
   const [cvOnlineUrl, setCvOnlineUrl] = useState<string | null>(null);
   const [creatingPublicLink, setCreatingPublicLink] = useState(false);
   const [premiumCredits, setPremiumCredits] = useState(0);
-  const [resumeAnalytics, setResumeAnalytics] = useState<{ viewCount: number; downloadCount: number; linkClickCount: number } | null>(null);
   const initialDataRef = useRef<string>("");
 
   useEffect(() => {
@@ -135,13 +134,10 @@ const SmartApplyCvEditor = () => {
     Promise.all([
       smartApplyAPI.getProfile(),
       smartApplyAPI.getCredits().catch(() => ({ credits: 0 })),
-      smartApplyAPI.getResumeAnalytics().catch(() => ({ totals: { viewCount: 0, downloadCount: 0, linkClickCount: 0 } })),
     ])
-      .then(([profileRes, creditsRes, analyticsRes]) => {
+      .then(([profileRes, creditsRes]) => {
         const credits = (creditsRes as { credits?: number })?.credits ?? 0;
         setPremiumCredits(credits);
-        const totals = (analyticsRes as { totals?: { viewCount?: number; downloadCount?: number; linkClickCount?: number } })?.totals;
-        if (totals) setResumeAnalytics({ viewCount: totals.viewCount ?? 0, downloadCount: totals.downloadCount ?? 0, linkClickCount: totals.linkClickCount ?? 0 });
         const res = profileRes as { profile?: any };
         try {
           const p = res?.profile;
@@ -265,10 +261,6 @@ const SmartApplyCvEditor = () => {
       const res = await smartApplyAPI.createPublicCV(cvData, templateId);
       if (res?.url) {
         setCvOnlineUrl(res.url);
-        smartApplyAPI.getResumeAnalytics().then((a: { totals?: { viewCount?: number; downloadCount?: number; linkClickCount?: number } }) => {
-          const t = a?.totals;
-          if (t) setResumeAnalytics({ viewCount: t.viewCount ?? 0, downloadCount: t.downloadCount ?? 0, linkClickCount: t.linkClickCount ?? 0 });
-        }).catch(() => {});
         toast({ title: "Online CV link created", description: "QR code will appear on your CV. Share the link or print your CV for others to scan." });
       } else {
         toast({ title: "Could not create link", variant: "destructive" });
@@ -714,25 +706,6 @@ const SmartApplyCvEditor = () => {
                       "Add QR code to CV"
                     )}
                   </Button>
-                  {resumeAnalytics && (
-                    <div className="rounded-lg border border-gray-200 bg-gray-50/80 p-3">
-                      <p className="text-xs font-semibold text-gray-700 mb-2">Resume analytics</p>
-                      <div className="flex flex-wrap gap-4 text-sm">
-                        <span className="flex items-center gap-1.5 text-gray-600" title="CV views">
-                          <Eye className="h-4 w-4 text-gray-500" />
-                          <strong className="text-gray-900">{resumeAnalytics.viewCount}</strong> views
-                        </span>
-                        <span className="flex items-center gap-1.5 text-gray-600" title="Downloads">
-                          <Download className="h-4 w-4 text-gray-500" />
-                          <strong className="text-gray-900">{resumeAnalytics.downloadCount}</strong> downloads
-                        </span>
-                        <span className="flex items-center gap-1.5 text-gray-600" title="Link clicks">
-                          <Link2 className="h-4 w-4 text-gray-500" />
-                          <strong className="text-gray-900">{resumeAnalytics.linkClickCount}</strong> link clicks
-                        </span>
-                      </div>
-                    </div>
-                  )}
                 </CardHeader>
                 <CardContent className="flex-1 min-h-0 overflow-auto p-4 flex items-start justify-center">
                   <div className="w-full max-w-full min-w-0" style={{ maxWidth: "min(100%, 340px)" }}>

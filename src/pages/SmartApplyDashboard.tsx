@@ -4,7 +4,7 @@ import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Briefcase, Target, UserCheck, UserX, ArrowRight, Mail, FileText } from "lucide-react";
+import { Loader2, Briefcase, Target, UserCheck, UserX, ArrowRight, Mail, FileText, Eye, Download, Link2 } from "lucide-react";
 import { smartApplyAPI } from "@/services/api";
 
 interface DashboardData {
@@ -18,6 +18,7 @@ const SmartApplyDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [resumeAnalytics, setResumeAnalytics] = useState({ viewCount: 0, downloadCount: 0, linkClickCount: 0 });
 
   useEffect(() => {
     const token = localStorage.getItem("smart_apply_token");
@@ -26,16 +27,25 @@ const SmartApplyDashboard = () => {
       return;
     }
     setError(null);
-    smartApplyAPI
-      .getDashboard()
-      .then((res: { dashboard?: DashboardData }) => {
-        const d = res?.dashboard ?? res;
+    Promise.all([
+      smartApplyAPI.getDashboard(),
+      smartApplyAPI.getResumeAnalytics().catch(() => ({ totals: { viewCount: 0, downloadCount: 0, linkClickCount: 0 } })),
+    ])
+      .then(([dashboardRes, analyticsRes]) => {
+        const totals = (analyticsRes as { totals?: { viewCount?: number; downloadCount?: number; linkClickCount?: number } })?.totals;
+        setResumeAnalytics({
+          viewCount: totals?.viewCount ?? 0,
+          downloadCount: totals?.downloadCount ?? 0,
+          linkClickCount: totals?.linkClickCount ?? 0,
+        });
+        const res = dashboardRes as { dashboard?: DashboardData };
+        const d = (res?.dashboard ?? res) as DashboardData | Record<string, unknown>;
         const jobs = Number(d?.jobsApplied);
         const matching = Number(d?.matchingJobs);
         setData({
           jobsApplied: Number.isFinite(jobs) && jobs >= 0 ? jobs : 0,
           matchingJobs: Number.isFinite(matching) && matching >= 0 ? matching : 0,
-          profileStatus: d?.profileStatus === "complete" ? "complete" : "incomplete",
+          profileStatus: (d?.profileStatus as string) === "complete" ? "complete" : "incomplete",
         });
       })
       .catch((err) => {
@@ -168,6 +178,36 @@ const SmartApplyDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Resume analytics */}
+        <Card className="mt-6 border border-indigo-200 bg-indigo-50/50 overflow-hidden">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold text-indigo-900 flex items-center gap-2">
+              <FileText className="h-5 w-5 text-indigo-600" />
+              Resume analytics
+            </CardTitle>
+            <CardDescription>Views, downloads, and link clicks on your online CV</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-6 text-sm">
+              <span className="flex items-center gap-2 text-indigo-800" title="CV views">
+                <Eye className="h-5 w-5 text-indigo-600" />
+                <strong className="text-indigo-900 text-xl">{resumeAnalytics.viewCount}</strong> views
+              </span>
+              <span className="flex items-center gap-2 text-indigo-800" title="Downloads">
+                <Download className="h-5 w-5 text-indigo-600" />
+                <strong className="text-indigo-900 text-xl">{resumeAnalytics.downloadCount}</strong> downloads
+              </span>
+              <span className="flex items-center gap-2 text-indigo-800" title="Link clicks">
+                <Link2 className="h-5 w-5 text-indigo-600" />
+                <strong className="text-indigo-900 text-xl">{resumeAnalytics.linkClickCount}</strong> link clicks
+              </span>
+            </div>
+            <Link to="/smart-apply/cv-builder" className="inline-flex items-center gap-1.5 mt-4 text-sm font-medium text-indigo-600 hover:text-indigo-700">
+              Create or edit your CV <ArrowRight className="h-4 w-4" />
+            </Link>
+          </CardContent>
+        </Card>
 
         <div className="mt-10 flex flex-wrap gap-4">
           <Button asChild className="text-white hover:opacity-90" style={{ backgroundColor: "#1e3a5f" }}>

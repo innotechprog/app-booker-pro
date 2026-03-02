@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, User, Mail, Phone, MapPin, Briefcase, ArrowLeft } from "lucide-react";
+import { Loader2, User, Mail, Phone, MapPin, Briefcase, ArrowLeft, ExternalLink, Download, UserPlus } from "lucide-react";
 import { recruiterApi, type RecruiterCandidateProfile as ProfileType } from "@/services/recruiterApi";
 
 const DEEP_BLUE = "#1e3a5f";
@@ -13,6 +13,7 @@ const RecruiterCandidateProfile = () => {
   const [profile, setProfile] = useState<ProfileType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [downloadingCv, setDownloadingCv] = useState(false);
 
   useEffect(() => {
     if (!recruiterApi.hasToken()) {
@@ -63,6 +64,27 @@ const RecruiterCandidateProfile = () => {
   }
 
   const p = profile;
+  const profilePicUrl = p.profilePicture
+    ? (p.profilePicture.startsWith("data:") ? p.profilePicture : `data:image/jpeg;base64,${p.profilePicture}`)
+    : null;
+
+  const handleDownloadCv = async () => {
+    if (!id || !p.primaryCvId) return;
+    setDownloadingCv(true);
+    try {
+      const blob = await recruiterApi.getCandidateCvBlob(parseInt(id, 10));
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${(p.fullName || "cv").replace(/\s+/g, "-")}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("CV download error:", err);
+    } finally {
+      setDownloadingCv(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -75,20 +97,57 @@ const RecruiterCandidateProfile = () => {
 
         <Card className="border border-gray-200 bg-white shadow-sm overflow-hidden mb-6">
           <CardHeader className="pb-2">
-            <div className="flex items-start gap-4">
-              <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
-                <User className="h-8 w-8 text-gray-500" />
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex flex-wrap items-start gap-4">
+                <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center shrink-0 overflow-hidden">
+                  {profilePicUrl ? (
+                    <img src={profilePicUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="h-8 w-8 text-gray-500" />
+                  )}
+                </div>
+                <div>
+                  <CardTitle className="text-xl text-gray-900">{p.fullName || "—"}</CardTitle>
+                  {p.jobTitle && (
+                    <CardDescription className="text-base text-gray-600 mt-0.5">{p.jobTitle}</CardDescription>
+                  )}
+                  {p.category && (
+                    <span className="inline-block mt-2 text-xs font-medium px-2 py-1 rounded bg-gray-100 text-gray-700 capitalize">
+                      {p.category}
+                    </span>
+                  )}
+                </div>
               </div>
-              <div>
-                <CardTitle className="text-xl text-gray-900">{p.fullName || "—"}</CardTitle>
-                {p.jobTitle && (
-                  <CardDescription className="text-base text-gray-600 mt-0.5">{p.jobTitle}</CardDescription>
+              <div className="flex flex-wrap gap-2 shrink-0">
+                {p.publicCvUrl && (
+                  <Button asChild size="sm" variant="outline" className="border-gray-300 text-gray-800 hover:bg-gray-50">
+                    <a href={p.publicCvUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5">
+                      <ExternalLink className="h-4 w-4" /> View online CV
+                    </a>
+                  </Button>
                 )}
-                {p.category && (
-                  <span className="inline-block mt-2 text-xs font-medium px-2 py-1 rounded bg-gray-100 text-gray-700 capitalize">
-                    {p.category}
-                  </span>
+                {p.primaryCvId && (
+                  <Button
+                    size="sm"
+                    onClick={handleDownloadCv}
+                    disabled={downloadingCv}
+                    className="text-white hover:opacity-90"
+                    style={{ backgroundColor: DEEP_BLUE }}
+                  >
+                    {downloadingCv ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                    {" "}Download CV
+                  </Button>
                 )}
+                <Button asChild variant="outline" size="sm" className="border-gray-300">
+                  <a href={`mailto:${p.email}`} className="inline-flex items-center gap-1.5">
+                    <Mail className="h-4 w-4" /> Contact
+                  </a>
+                </Button>
+                <Button asChild variant="ghost" size="sm" className="text-gray-600">
+                  <Link to="/recruiter/recruitments" className="inline-flex items-center gap-1.5">
+                    <UserPlus className="h-4 w-4" /> Add to recruitment
+                  </Link>
+                </Button>
               </div>
             </div>
           </CardHeader>

@@ -34,8 +34,10 @@ async function run() {
 
     const migrationFiles = [
       'recruiter_tables.sql',
+      'recruiter_recruitments.sql',
       'recruiter_jobs_tables.sql',
       'recruiter_jobs_add_fields.sql',
+      'recruiter_job_applications_stage.sql',
       'smart_apply_job_requirement_responsibilities.sql',
     ];
     for (const file of migrationFiles) {
