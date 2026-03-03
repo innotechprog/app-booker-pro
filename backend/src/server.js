@@ -77,6 +77,14 @@ app.options('*', cors({
 app.use(express.json({ limit: '10mb' })); // Parse JSON (10mb for CV base64)
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
+// Debug: log all API requests in dev
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api')) console.log(`[API] ${req.method} ${req.originalUrl || req.url}`);
+    next();
+  });
+}
+
 // Health check (before rate limiting)
 app.get('/health', (req, res) => {
   res.json({
@@ -101,6 +109,8 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Routes
+// Explicit profile route to ensure PUT /api/smart-apply/profile is reachable (delegates to smartApply)
+app.use('/api/smart-apply', smartApplyRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/learner', learnerRoutes);
 app.use('/api/notes', notesRoutes);
@@ -112,7 +122,6 @@ app.use('/api/subjects', subjectsRoutes);
 app.use('/api/packages', packagesRoutes);
 app.use('/api/application-help', applicationHelpRoutes);
 app.use('/api/contact', contactRoutes);
-app.use('/api/smart-apply', smartApplyRoutes);
 app.use('/api/recruiter', recruiterRoutes);
 
 // Welcome route
@@ -136,9 +145,11 @@ app.get('/', (req, res) => {
 
 // 404 handler
 app.use((req, res) => {
+  console.warn(`[404] ${req.method} ${req.originalUrl || req.url}`);
   res.status(404).json({
     success: false,
-    message: 'Route not found'
+    message: 'Route not found',
+    _debug: 'app-booker-pro backend' // confirms response is from this server
   });
 });
 

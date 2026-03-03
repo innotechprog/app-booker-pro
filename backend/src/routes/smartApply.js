@@ -2,10 +2,18 @@ import express from "express";
 import nodemailer from "nodemailer";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import pdfParse from "pdf-parse";
+import OpenAI from "openai";
 import { query } from "../config/database.js";
 import { protectSmartApply } from "../middleware/auth.js";
 
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+
 const router = express.Router();
+
+// Simple health check – verifies Smart Apply routes are registered
+router.get("/ping", (req, res) => res.json({ ok: true, service: "smart-apply" }));
 
 const CV_TABLE = "smart_apply_cvs";
 const PUBLIC_CV_TABLE = "smart_apply_public_cvs";
@@ -149,7 +157,7 @@ router.post("/send-emails", async (req, res) => {
 // ---------- Smart Apply auth (standalone – uses smart_apply_candidates only) ----------
 
 // @route   POST /api/smart-apply/auth/register
-// @desc    Register new Smart Apply candidate (no shared users table)
+// @desc    Register new Smart Apply candidate (sends confirmation email)
 // @access  Public
 router.post("/auth/register", async (req, res) => {
   try {
@@ -162,21 +170,80 @@ router.post("/auth/register", async (req, res) => {
       return res.status(400).json({ success: false, message: "An account with this email already exists" });
     }
     const password_hash = await bcrypt.hash(password, 10);
+    const confirmationToken = crypto.randomBytes(32).toString("hex");
     const result = await query(
-      "INSERT INTO smart_apply_candidates (email, password_hash, full_name, phone) VALUES (?, ?, ?, ?)",
-      [email.trim(), password_hash, fullName.trim(), phone || null]
-    );
+      "INSERT INTO smart_apply_candidates (email, password_hash, full_name, phone, email_confirmation_token) VALUES (?, ?, ?, ?, ?)",
+      [email.trim(), password_hash, fullName.trim(), phone || null, confirmationToken]
+    ).catch((e) => {
+      if (e.code === "ER_BAD_FIELD_ERROR" || (e.message && e.message.includes("email_confirmation_token"))) {
+        return query(
+          "INSERT INTO smart_apply_candidates (email, password_hash, full_name, phone) VALUES (?, ?, ?, ?)",
+          [email.trim(), password_hash, fullName.trim(), phone || null]
+        );
+      }
+      throw e;
+    });
     const id = result.insertId;
+    const baseUrl = process.env.FRONTEND_URL || process.env.FRONTEND_URLS?.split(",")?.[0] || "http://localhost:8080";
+    const confirmUrl = `${baseUrl.replace(/\/+$/, "")}/smart-apply/confirm-email?token=${confirmationToken}`;
+    try {
+      const transporter = getTransporter();
+      await transporter.sendMail({
+        from: `"Smart Apply" <${process.env.EMAIL_USER || "noreply@example.com"}>`,
+        to: email.trim(),
+        subject: "Confirm your Smart Apply account",
+        text: `Hello ${fullName.trim()},\n\nThank you for signing up for Smart Apply. Please confirm your email by clicking the link below:\n\n${confirmUrl}\n\nOnce confirmed, you can upload your CV and start applying to jobs.\n\nIf you did not create this account, you can ignore this email.\n\nBest regards,\nSmart Apply Team`,
+      });
+    } catch (mailErr) {
+      console.error("Confirmation email send error:", mailErr);
+    }
     const token = signSmartApplyToken(id);
     return res.status(201).json({
       success: true,
-      message: "Account created",
+      message: "Account created. Please check your email to confirm your account before uploading your CV.",
       token,
-      candidate: { id, fullName: fullName.trim(), email: email.trim(), phone: phone || null },
+      candidate: { id, fullName: fullName.trim(), email: email.trim(), phone: phone || null, emailConfirmed: false },
     });
   } catch (err) {
     console.error("Smart Apply register error:", err);
     return res.status(500).json({ success: false, message: err.message || "Registration failed" });
+  }
+});
+
+// @route   GET /api/smart-apply/auth/confirm-email
+// @desc    Confirm email via token (sets email_confirmed_at, returns JWT)
+// @access  Public
+router.get("/auth/confirm-email", async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token || typeof token !== "string") {
+      return res.status(400).json({ success: false, message: "Token required" });
+    }
+    const rows = await query(
+      "SELECT id, full_name, email, phone, deactivated_at FROM smart_apply_candidates WHERE email_confirmation_token = ?",
+      [token]
+    ).catch(() => []);
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Invalid or expired confirmation link" });
+    }
+    const candidate = rows[0];
+    if (candidate.deactivated_at) {
+      return res.status(403).json({ success: false, message: "This account has been deactivated. Please contact support to reactivate." });
+    }
+    await query(
+      "UPDATE smart_apply_candidates SET email_confirmed_at = CURRENT_TIMESTAMP, email_confirmation_token = NULL WHERE id = ?",
+      [candidate.id]
+    ).catch(() => {});
+    const jwtoken = signSmartApplyToken(candidate.id);
+    return res.status(200).json({
+      success: true,
+      message: "Email confirmed. You can now upload your CV.",
+      token: jwtoken,
+      candidate: { id: candidate.id, fullName: candidate.full_name, email: candidate.email, phone: candidate.phone, emailConfirmed: true },
+    });
+  } catch (err) {
+    console.error("Smart Apply confirm email error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Confirmation failed" });
   }
 });
 
@@ -190,13 +257,19 @@ router.post("/auth/login", async (req, res) => {
       return res.status(400).json({ success: false, message: "Email and password required" });
     }
     const rows = await query(
+      "SELECT id, full_name, email, phone, password_hash, deactivated_at FROM smart_apply_candidates WHERE email = ?",
+      [email.trim()]
+    ).catch(() => query(
       "SELECT id, full_name, email, phone, password_hash FROM smart_apply_candidates WHERE email = ?",
       [email.trim()]
-    );
+    ));
     if (rows.length === 0) {
       return res.status(401).json({ success: false, message: "Invalid email or password" });
     }
     const candidate = rows[0];
+    if (candidate.deactivated_at) {
+      return res.status(403).json({ success: false, message: "This account has been deactivated. Please contact support to reactivate." });
+    }
     const valid = await bcrypt.compare(password, candidate.password_hash);
     if (!valid) {
       return res.status(401).json({ success: false, message: "Invalid email or password" });
@@ -211,6 +284,37 @@ router.post("/auth/login", async (req, res) => {
   } catch (err) {
     console.error("Smart Apply login error:", err);
     return res.status(500).json({ success: false, message: err.message || "Login failed" });
+  }
+});
+
+// @route   PUT /api/smart-apply/auth/deactivate
+// @desc    Deactivate account (requires password)
+// @access  Private (Smart Apply token)
+router.put("/auth/deactivate", protectSmartApply, async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password || typeof password !== "string" || !password.trim()) {
+      return res.status(400).json({ success: false, message: "Password is required to deactivate your account" });
+    }
+    const cid = req.candidate.id;
+    const rows = await query("SELECT password_hash, deactivated_at FROM smart_apply_candidates WHERE id = ?", [cid])
+      .catch(() => query("SELECT password_hash FROM smart_apply_candidates WHERE id = ?", [cid]));
+    if (rows.length === 0) {
+      return res.status(401).json({ success: false, message: "Not authorized" });
+    }
+    const storedHash = rows[0].password_hash ?? rows[0].PASSWORD_HASH ?? null;
+    if (!storedHash || typeof storedHash !== "string") {
+      return res.status(400).json({ success: false, message: "Deactivation not available for accounts signed in with Google. Contact support." });
+    }
+    const valid = await bcrypt.compare(String(password), storedHash);
+    if (!valid) {
+      return res.status(401).json({ success: false, message: "Incorrect password" });
+    }
+    await query("UPDATE smart_apply_candidates SET deactivated_at = CURRENT_TIMESTAMP WHERE id = ?", [cid]);
+    return res.status(200).json({ success: true, message: "Account deactivated successfully" });
+  } catch (err) {
+    console.error("Smart Apply deactivate error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to deactivate account" });
   }
 });
 
@@ -243,6 +347,8 @@ router.get("/profile", protectSmartApply, async (req, res) => {
         primaryCvId: u.primary_cv_id != null ? u.primary_cv_id : null,
         profilePicture: u.profile_picture || null,
         showProfilePictureOnCv: u.show_profile_picture_on_cv != null ? !!u.show_profile_picture_on_cv : true,
+        emailConfirmed: !!(u.email_confirmed_at != null && u.email_confirmed_at),
+        onboardingTourCompleted: !!(u.onboarding_tour_completed_at != null && u.onboarding_tour_completed_at),
         addresses: u.addresses || [],
       },
     });
@@ -252,10 +358,8 @@ router.get("/profile", protectSmartApply, async (req, res) => {
   }
 });
 
-// @route   PUT /api/smart-apply/profile
-// @desc    Save candidate profile (category + CV extract) in smart_apply_candidates
-// @access  Private (Smart Apply token)
-router.put("/profile", protectSmartApply, async (req, res) => {
+// Shared handler for saving profile (used by both PUT and POST)
+async function saveProfileHandler(req, res) {
   try {
     const { category, fullName, phone, dateOfBirth, gender, nationality, currentLocation, jobTitle, linkedinUrl, website, overview, workExperience, education, certifications, keySkills, primaryCvId, addresses, profilePicture, showProfilePictureOnCv } = req.body;
     if (!category || !["general", "professional"].includes(category)) {
@@ -321,7 +425,13 @@ router.put("/profile", protectSmartApply, async (req, res) => {
     console.error("Smart Apply profile update error:", err);
     return res.status(500).json({ error: err.message || "Failed to save profile" });
   }
-});
+}
+
+// @route   PUT/POST /api/smart-apply/profile + POST /api/smart-apply/save-profile (alternate path)
+router.put("/profile", protectSmartApply, saveProfileHandler);
+router.post("/profile", protectSmartApply, saveProfileHandler);
+router.get("/save-profile", (req, res) => res.json({ ok: true, route: "save-profile" })); // test: open in browser
+router.post("/save-profile", protectSmartApply, saveProfileHandler);
 
 // @route   GET /api/smart-apply/candidates
 // @desc    List candidates for recruiters; ?category=&search=&skills=&location=&experience=
@@ -648,6 +758,12 @@ router.get("/cvs/:id", protectSmartApply, async (req, res) => {
 router.post("/cvs", protectSmartApply, async (req, res) => {
   try {
     const cid = req.candidate.id;
+    const emailConfirmed = req.candidate.email_confirmed_at !== undefined
+      ? !!(req.candidate.email_confirmed_at != null && req.candidate.email_confirmed_at)
+      : true;
+    if (!emailConfirmed) {
+      return res.status(403).json({ error: "Please confirm your email before uploading a CV. Check your inbox for the confirmation link." });
+    }
     const { label, roleOrCategory, fileName, fileBase64 } = req.body;
     if (!label || typeof label !== "string" || !label.trim()) {
       return res.status(400).json({ error: "Label is required" });
@@ -693,6 +809,133 @@ router.post("/cvs", protectSmartApply, async (req, res) => {
   } catch (err) {
     console.error("Smart Apply upload CV error:", err);
     return res.status(500).json({ error: err.message || "Failed to save CV" });
+  }
+});
+
+// @route   POST /api/smart-apply/extract-cv
+// @desc    Extract structured profile data from CV PDF using OpenAI
+// @access  Private (Smart Apply token)
+router.post("/extract-cv", protectSmartApply, async (req, res) => {
+  try {
+    if (!openai) {
+      return res.status(503).json({ error: "OpenAI is not configured. Set OPENAI_API_KEY in environment." });
+    }
+    let base64 = typeof req.body?.fileBase64 === "string" ? req.body.fileBase64.replace(/\s/g, "") : "";
+    if (!base64) {
+      return res.status(400).json({ error: "fileBase64 is required" });
+    }
+    if (base64.length > MAX_CV_SIZE_BASE64) {
+      return res.status(400).json({ error: "File too large" });
+    }
+    let buffer;
+    try {
+      buffer = Buffer.from(base64, "base64");
+    } catch (e) {
+      return res.status(400).json({ error: "Invalid base64 file content" });
+    }
+    if (buffer.length === 0) {
+      return res.status(400).json({ error: "File content is empty" });
+    }
+
+    let cvText = "";
+    try {
+      const pdfData = await pdfParse(buffer);
+      cvText = (pdfData?.text || "").trim();
+    } catch (e) {
+      console.error("PDF parse error:", e);
+      return res.status(400).json({ error: "Could not extract text from PDF. Ensure it is a valid PDF." });
+    }
+    if (!cvText || cvText.length < 50) {
+      return res.status(400).json({ error: "No text could be extracted from the PDF. The file may be image-based or empty." });
+    }
+
+    const systemPrompt = `You are a CV/resume parser. Extract structured information from the CV text. Do NOT extract personal data (no name, phone, email, address, etc.). Focus only on professional and educational information.
+
+Return valid JSON only, no markdown. Use this exact structure:
+{
+  "summary": "A brief overview or summary of the candidate's profile.",
+  "skills": ["skill1", "skill2", "skill3"],
+  "work_experience": [
+    {
+      "company": "Company name",
+      "position": "Job title or position held",
+      "start_date": "Start date or empty string if not available",
+      "end_date": "End date or empty string if not available. Use empty string if 'present' or 'current'",
+      "description": "Job responsibilities, achievements, or relevant details",
+      "employment_status": "Current" if end_date is present/current, otherwise "Past"
+    }
+  ],
+  "education": [
+    {
+      "institution": "Educational institution name",
+      "degree": "Degree obtained",
+      "field_of_study": "Field of study or major",
+      "start_date": "Start date or empty string if not available",
+      "end_date": "End date or empty string if not available"
+    }
+  ]
+}
+
+Guidelines:
+- Ensure all relevant professional and educational data is extracted; leave nothing out.
+- For dates not in recognizable format, use empty strings for start_date and end_date.
+- If end_date is "present" or "current", set employment_status to "Current"; otherwise "Past".
+- If employment_status cannot be determined, default to "Past".
+- Omit fields if not found. Keep arrays empty [] if none found.`;
+
+    const userPrompt = `Extract the professional and educational information from this CV (no personal data):\n\n${cvText.slice(0, 12000)}`;
+
+    const completion = await openai.chat.completions.create({
+      model: process.env.OPENAI_CV_MODEL || "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      response_format: { type: "json_object" },
+      max_tokens: 4000,
+    });
+
+    const content = completion.choices?.[0]?.message?.content;
+    if (!content || typeof content !== "string") {
+      return res.status(500).json({ error: "OpenAI did not return valid data" });
+    }
+
+    let extracted;
+    try {
+      extracted = JSON.parse(content);
+    } catch (e) {
+      return res.status(500).json({ error: "Could not parse extracted data" });
+    }
+
+    const we = Array.isArray(extracted.work_experience) ? extracted.work_experience.map((w) => ({
+      company: w.company ?? "",
+      jobTitle: w.position ?? w.jobTitle ?? "",
+      startDate: w.start_date ?? "",
+      endDate: w.end_date ?? "",
+      description: [w.description, w.employment_status ? `(Status: ${w.employment_status})` : ""].filter(Boolean).join(" "),
+    })) : [];
+    const edu = Array.isArray(extracted.education) ? extracted.education.map((e) => ({
+      institution: e.institution ?? "",
+      qualification: [e.degree, e.field_of_study].filter(Boolean).join(e.degree && e.field_of_study ? " in " : ""),
+      startDate: e.start_date ?? "",
+      endDate: e.end_date ?? "",
+    })) : [];
+    const skills = Array.isArray(extracted.skills) ? extracted.skills.map((s) => ({ name: typeof s === "string" ? s : String(s), level: "" })) : [];
+
+    return res.status(200).json({
+      success: true,
+      profile: {
+        overview: extracted.summary ?? null,
+        category: ["general", "professional"].includes(extracted.category) ? extracted.category : "professional",
+        workExperience: we,
+        education: edu,
+        certifications: [],
+        keySkills: skills,
+      },
+    });
+  } catch (err) {
+    console.error("Smart Apply extract CV error:", err);
+    return res.status(500).json({ error: err.message || "Failed to extract CV data" });
   }
 });
 
@@ -837,6 +1080,22 @@ router.delete("/cvs/:id", protectSmartApply, async (req, res) => {
   } catch (err) {
     console.error("Smart Apply delete CV error:", err);
     return res.status(500).json({ error: err.message || "Failed to delete CV" });
+  }
+});
+
+// @route   POST /api/smart-apply/onboarding-tour-complete
+// @desc    Mark onboarding tour as completed
+// @access  Private (Smart Apply token)
+router.post("/onboarding-tour-complete", protectSmartApply, async (req, res) => {
+  try {
+    const cid = req.candidate.id;
+    await query(
+      "UPDATE smart_apply_candidates SET onboarding_tour_completed_at = CURRENT_TIMESTAMP WHERE id = ?",
+      [cid]
+    ).catch(() => {});
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message || "Failed to update" });
   }
 });
 

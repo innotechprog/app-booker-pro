@@ -69,13 +69,19 @@ export const protectSmartApply = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid token for Smart Apply' });
     }
     const rows = await query(
+      'SELECT id, full_name, email, phone, date_of_birth, primary_cv_id, gender, nationality, current_location, job_title, linkedin_url, website, candidate_category, cv_overview, profile_picture, show_profile_picture_on_cv, email_confirmed_at, onboarding_tour_completed_at, deactivated_at FROM smart_apply_candidates WHERE id = ?',
+      [decoded.id]
+    ).catch(() => query(
       'SELECT id, full_name, email, phone, date_of_birth, primary_cv_id, gender, nationality, current_location, job_title, linkedin_url, website, candidate_category, cv_overview, profile_picture, show_profile_picture_on_cv FROM smart_apply_candidates WHERE id = ?',
       [decoded.id]
-    );
+    ));
     if (rows.length === 0) {
       return res.status(401).json({ success: false, message: 'Candidate not found' });
     }
     const candidate = rows[0];
+    if (candidate.deactivated_at) {
+      return res.status(403).json({ success: false, message: 'This account has been deactivated.' });
+    }
     const cid = candidate.id;
     const [we, edu, cert, skills, addrs] = await Promise.all([
       query('SELECT content FROM smart_apply_work_experience WHERE candidate_id = ? ORDER BY sort_order', [cid]),

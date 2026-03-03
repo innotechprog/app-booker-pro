@@ -55,9 +55,6 @@ const Header = () => {
           <Link to="/smart-apply" className={getLinkClasses("/smart-apply")}>
             Smart Apply
           </Link>
-          <Link to="/smart-apply/apply" className={getLinkClasses("/smart-apply/apply")}>
-            APPLY MULTIPLE EMAILS
-          </Link>
           <Link to="/jobs" className={getLinkClasses("/jobs")}>
             Jobs
           </Link>
@@ -105,9 +102,6 @@ const Header = () => {
             </Link>
             <Link to="/smart-apply" className={`${getLinkClasses("/smart-apply")} py-2`} onClick={() => setIsMobileMenuOpen(false)}>
               Smart Apply
-            </Link>
-            <Link to="/smart-apply/apply" className={`${getLinkClasses("/smart-apply/apply")} py-2`} onClick={() => setIsMobileMenuOpen(false)}>
-              APPLY MULTIPLE EMAILS
             </Link>
             <Link to="/jobs" className={`${getLinkClasses("/jobs")} py-2`} onClick={() => setIsMobileMenuOpen(false)}>
               Jobs

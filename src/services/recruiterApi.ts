@@ -53,9 +53,11 @@ export interface RecruiterRecruitment {
 }
 
 export interface RecruiterJobApplication {
-  id: number;
+  id: number | string;
   candidateId: number;
   status: "pending" | "accepted" | "rejected";
+  stage?: "applied" | "shortlisted" | "interview" | "hired" | "rejected";
+  interviewInviteSentAt?: string | null;
   appliedAt: string;
   fullName: string;
   email: string;
@@ -264,6 +266,16 @@ export const recruiterApi = {
     return data;
   },
 
+  async deactivateAccount(password: string) {
+    const res = await authFetch("/recruiter/auth/deactivate", {
+      method: "PUT",
+      body: JSON.stringify({ password }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || "Failed to deactivate account");
+    return data;
+  },
+
   // ---------- Profile ----------
   async getProfile(): Promise<{ success: boolean; profile: RecruiterProfile }> {
     const res = await authFetch("/recruiter/profile");
@@ -364,8 +376,8 @@ export const recruiterApi = {
     return data;
   },
 
-  async getJob(id: number): Promise<{ success: boolean; job: RecruiterJobWithApplications }> {
-    const res = await authFetch(`/recruiter/jobs/${id}`);
+  async getJob(id: number | string): Promise<{ success: boolean; job: RecruiterJobWithApplications }> {
+    const res = await authFetch(`/recruiter/jobs/${encodeURIComponent(String(id))}`);
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       if (res.status === 404) throw new Error("Job not found");
@@ -374,8 +386,8 @@ export const recruiterApi = {
     return data;
   },
 
-  async updateJob(id: number, payload: { title?: string; description?: string; status?: "draft" | "posted" }) {
-    const res = await authFetch(`/recruiter/jobs/${id}`, {
+  async updateJob(id: number | string, payload: { title?: string; description?: string; status?: "draft" | "posted" }) {
+    const res = await authFetch(`/recruiter/jobs/${encodeURIComponent(String(id))}`, {
       method: "PUT",
       body: JSON.stringify(payload),
     });
@@ -384,8 +396,8 @@ export const recruiterApi = {
     return data;
   },
 
-  async deleteJob(id: number) {
-    const res = await authFetch(`/recruiter/jobs/${id}`, { method: "DELETE" });
+  async deleteJob(id: number | string) {
+    const res = await authFetch(`/recruiter/jobs/${encodeURIComponent(String(id))}`, { method: "DELETE" });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || "Failed to delete job");
     return data;
@@ -401,13 +413,49 @@ export const recruiterApi = {
     return data;
   },
 
-  async setApplicationStatus(jobId: number, applicationId: number, status: "accepted" | "rejected") {
-    const res = await authFetch(`/recruiter/jobs/${jobId}/applications/${applicationId}`, {
+  async setApplicationStatus(jobId: number | string, applicationId: number | string, status: "accepted" | "rejected") {
+    const res = await authFetch(`/recruiter/jobs/${encodeURIComponent(String(jobId))}/applications/${encodeURIComponent(String(applicationId))}`, {
       method: "PATCH",
       body: JSON.stringify({ status }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || "Failed to update application");
+    return data;
+  },
+
+  async setApplicationStage(jobId: number | string, applicationId: number | string, stage: "applied" | "shortlisted" | "interview" | "hired" | "rejected") {
+    const res = await authFetch(`/recruiter/jobs/${encodeURIComponent(String(jobId))}/applications/${encodeURIComponent(String(applicationId))}/stage`, {
+      method: "PATCH",
+      body: JSON.stringify({ stage }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || "Failed to set stage");
+    return data;
+  },
+
+  async getSearchSuggestions(): Promise<{ success: boolean; suggestions: string[] }> {
+    const res = await authFetch("/recruiter/search-suggestions");
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || "Failed to get suggestions");
+    return data;
+  },
+
+  async addSearchSuggestion(query: string) {
+    const res = await authFetch("/recruiter/search-suggestions", {
+      method: "POST",
+      body: JSON.stringify({ query: query.trim().slice(0, 500) }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || "Failed to add suggestion");
+    return data;
+  },
+
+  async sendInterviewInvitation(jobId: number | string, applicationId: number | string) {
+    const res = await authFetch(`/recruiter/jobs/${encodeURIComponent(String(jobId))}/applications/${encodeURIComponent(String(applicationId))}/send-interview-invite`, {
+      method: "POST",
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || "Failed to send invitation");
     return data;
   },
 };

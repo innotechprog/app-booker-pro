@@ -6,7 +6,20 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import nodemailer from 'nodemailer';
 import { query } from '../config/database.js';
+
+function getEmailTransporter() {
+  return nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    port: Number(process.env.EMAIL_PORT) || 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD,
+    },
+  });
+}
 
 const router = express.Router();
 const JWT_OPTIONS = { expiresIn: process.env.JWT_EXPIRE || '7d' };
@@ -41,25 +54,28 @@ async function protectRecruiter(req, res, next) {
     let rows = null;
     try {
       rows = await query(
-        'SELECT recruiter_id, id, email, full_name, company, phone FROM recruiters WHERE recruiter_id = ?',
+        'SELECT recruiter_id, id, email, full_name, company, phone, deactivated_at FROM recruiters WHERE recruiter_id = ?',
         [pk]
       );
     } catch (e) {
       if (isRecruiterIdColumnError(e)) {
         rows = await query(
-          'SELECT id, email, full_name, company, phone FROM recruiters WHERE id = ?',
+          'SELECT id, email, full_name, company, phone, deactivated_at FROM recruiters WHERE id = ?',
           [pk]
         ).catch(() => []);
       } else throw e;
     }
     if (!rows || rows.length === 0) {
       rows = await query(
-        'SELECT id, email, full_name, company, phone FROM recruiters WHERE id = ?',
+        'SELECT id, email, full_name, company, phone, deactivated_at FROM recruiters WHERE id = ?',
         [pk]
       ).catch(() => []);
     }
     if (!rows || rows.length === 0) {
       return res.status(401).json({ success: false, message: 'Recruiter not found' });
+    }
+    if (rows[0].deactivated_at) {
+      return res.status(403).json({ success: false, message: 'This account has been deactivated.' });
     }
     req.recruiter = rows[0];
     next();
@@ -165,13 +181,13 @@ router.post('/auth/login', async (req, res) => {
     let rows;
     try {
       rows = await query(
-        'SELECT recruiter_id, id, email, full_name, company, phone, password_hash FROM recruiters WHERE email = ?',
+        'SELECT recruiter_id, id, email, full_name, company, phone, password_hash, deactivated_at FROM recruiters WHERE email = ?',
         [emailTrimmed]
       );
     } catch (e) {
       if (isRecruiterIdColumnError(e)) {
         rows = await query(
-          'SELECT id, email, full_name, company, phone, password_hash FROM recruiters WHERE email = ?',
+          'SELECT id, email, full_name, company, phone, password_hash, deactivated_at FROM recruiters WHERE email = ?',
           [emailTrimmed]
         ).catch(() => []);
       } else throw e;
@@ -180,6 +196,9 @@ router.post('/auth/login', async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
     const recruiter = rows[0];
+    if (recruiter.deactivated_at) {
+      return res.status(403).json({ success: false, message: 'This account has been deactivated. Please contact support to reactivate.' });
+    }
     const storedHash = recruiter.password_hash ?? recruiter.PASSWORD_HASH ?? null;
     if (!storedHash || typeof storedHash !== 'string') {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
@@ -211,6 +230,49 @@ router.post('/auth/login', async (req, res) => {
     }
     console.error('Recruiter login error:', err);
     return res.status(500).json({ success: false, message: err.message || 'Login failed' });
+  }
+});
+
+// Deactivate account (requires auth + password)
+router.put('/auth/deactivate', protectRecruiter, async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password || typeof password !== 'string' || !password.trim()) {
+      return res.status(400).json({ success: false, message: 'Password is required to deactivate your account' });
+    }
+    const rid = recruiterPk(req.recruiter);
+    let rows;
+    try {
+      rows = await query('SELECT password_hash, deactivated_at FROM recruiters WHERE recruiter_id = ?', [rid]);
+    } catch (e) {
+      if (isRecruiterIdColumnError(e)) {
+        rows = await query('SELECT password_hash, deactivated_at FROM recruiters WHERE id = ?', [rid]).catch(() => []);
+      } else throw e;
+    }
+    if (!rows || rows.length === 0) {
+      return res.status(401).json({ success: false, message: 'Not authorized' });
+    }
+    const storedHash = rows[0].password_hash ?? rows[0].PASSWORD_HASH ?? null;
+    if (!storedHash || typeof storedHash !== 'string') {
+      return res.status(400).json({ success: false, message: 'Deactivation not available.' });
+    }
+    const valid = await bcrypt.compare(String(password), storedHash);
+    if (!valid) {
+      return res.status(401).json({ success: false, message: 'Incorrect password' });
+    }
+    try {
+      await query('UPDATE recruiters SET deactivated_at = CURRENT_TIMESTAMP WHERE recruiter_id = ?', [rid]);
+    } catch (e) {
+      if (isRecruiterIdColumnError(e)) {
+        await query('UPDATE recruiters SET deactivated_at = CURRENT_TIMESTAMP WHERE id = ?', [rid]);
+      } else if (e?.message?.includes('deactivated_at') || e?.code === 'ER_BAD_FIELD_ERROR') {
+        return res.status(503).json({ success: false, message: 'Deactivation not set up. Run: npm run db:migrate-recruiter' });
+      } else throw e;
+    }
+    return res.status(200).json({ success: true, message: 'Account deactivated successfully' });
+  } catch (err) {
+    console.error('Recruiter deactivate error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Failed to deactivate account' });
   }
 });
 
@@ -504,6 +566,313 @@ router.delete('/recruitments/:recruitmentId/candidates/:candidateId', protectRec
     }
     console.error('Recruiter remove candidate error:', err);
     return res.status(500).json({ success: false, message: err.message || 'Failed to remove' });
+  }
+});
+
+// ---------- Jobs ----------
+// @route   GET /api/recruiter/jobs
+// @desc    List jobs for recruiter
+// @access  Private
+router.get('/jobs', protectRecruiter, async (req, res) => {
+  try {
+    const pk = recruiterPk(req.recruiter);
+    const jobs = await query(
+      `SELECT j.job_id, j.job_id AS jobId, j.recruiter_id, j.title, j.description, j.status, j.created_at, j.updated_at,
+       j.job_intro, j.job_title, j.job_desc, j.reporting_to, j.min_salary, j.max_salary, j.job_salary, j.currency, j.sal_interval,
+       j.post_type, j.work_method, j.start_date, j.application_link, j.qualification, j.experience, j.position_level, j.num_pos,
+       j.date_posted, j.closing_date, j.external_job_id, j.comp_id, j.company_id,
+       (SELECT COUNT(*) FROM recruiter_job_applications a WHERE a.job_id = j.job_id) AS applicationCount
+       FROM recruiter_jobs j WHERE j.recruiter_id = ?
+       ORDER BY j.updated_at DESC`,
+      [pk]
+    ).catch(() => []);
+    return res.json({ success: true, jobs: jobs || [] });
+  } catch (err) {
+    if (isRecruiterIdColumnError(err)) {
+      const pk = req.recruiter.id;
+      const jobs = await query(
+        `SELECT j.job_id, j.job_id AS jobId, j.recruiter_id, j.title, j.description, j.status, j.created_at, j.updated_at,
+         j.job_intro, j.job_title, j.job_desc, j.reporting_to, j.min_salary, j.max_salary, j.job_salary, j.currency, j.sal_interval,
+         j.post_type, j.work_method, j.start_date, j.application_link, j.qualification, j.experience, j.position_level, j.num_pos,
+         j.date_posted, j.closing_date, j.external_job_id, j.comp_id, j.company_id,
+         (SELECT COUNT(*) FROM recruiter_job_applications a WHERE a.job_id = j.job_id) AS applicationCount
+         FROM recruiter_jobs j WHERE j.recruiter_id = ?
+         ORDER BY j.updated_at DESC`,
+        [pk]
+      ).catch(() => []);
+      return res.json({ success: true, jobs: jobs || [] });
+    }
+    console.error('Recruiter list jobs error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Failed to list jobs' });
+  }
+});
+
+// @route   POST /api/recruiter/jobs
+router.post('/jobs', protectRecruiter, async (req, res) => {
+  try {
+    const pk = recruiterPk(req.recruiter);
+    const jobId = crypto.randomUUID();
+    const { title, description, status, jobIntro, jobTitle, jobDesc, reportingTo, minSalary, maxSalary, jobSalary, currency, salInterval, postType, workMethod, startDate, applicationLink, qualification, experience, positionLevel, numPos, datePosted, closingDate, externalJobId, compId, companyId } = req.body;
+    if (!title || !String(title).trim()) {
+      return res.status(400).json({ success: false, message: 'Title required' });
+    }
+    await query(
+      `INSERT INTO recruiter_jobs (job_id, recruiter_id, title, description, status, job_intro, job_title, job_desc, reporting_to, min_salary, max_salary, job_salary, currency, sal_interval, post_type, work_method, start_date, application_link, qualification, experience, position_level, num_pos, date_posted, closing_date, external_job_id, comp_id, company_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [jobId, pk, String(title).trim(), description?.trim() || null, status === 'posted' ? 'posted' : 'draft', jobIntro?.trim() || null, jobTitle?.trim() || null, jobDesc?.trim() || null, reportingTo?.trim() || null, minSalary != null ? Number(minSalary) : null, maxSalary != null ? Number(maxSalary) : null, jobSalary?.trim() || null, currency?.trim() || null, salInterval?.trim() || null, postType?.trim() || null, workMethod?.trim() || null, startDate || null, applicationLink?.trim() || null, qualification?.trim() || null, experience?.trim() || null, positionLevel?.trim() || null, numPos != null ? Number(numPos) : null, datePosted || null, closingDate || null, externalJobId?.trim() || null, compId != null ? Number(compId) : null, companyId != null ? Number(companyId) : null]
+    );
+    const rows = await query('SELECT * FROM recruiter_jobs WHERE job_id = ?', [jobId]);
+    const job = rows && rows[0] ? { ...rows[0], jobId: rows[0].job_id, applicationCount: 0 } : { job_id: jobId, jobId, title: String(title).trim(), status: status === 'posted' ? 'posted' : 'draft', applicationCount: 0 };
+    return res.status(201).json({ success: true, job });
+  } catch (err) {
+    console.error('Recruiter create job error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Failed to create job' });
+  }
+});
+
+// @route   GET /api/recruiter/jobs/:id
+router.get('/jobs/:id', protectRecruiter, async (req, res) => {
+  try {
+    const jobIdParam = req.params.id;
+    const pk = recruiterPk(req.recruiter);
+    const jobs = await query(
+      'SELECT * FROM recruiter_jobs WHERE job_id = ? AND recruiter_id = ?',
+      [jobIdParam, pk]
+    ).catch(() => []);
+    if (!jobs || jobs.length === 0) {
+      const fallback = await query('SELECT * FROM recruiter_jobs WHERE job_id = ? AND recruiter_id = ?', [jobIdParam, req.recruiter.id]).catch(() => []);
+      if (!fallback || fallback.length === 0) return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+    const job = (jobs && jobs[0]) || (await query('SELECT * FROM recruiter_jobs WHERE job_id = ?', [jobIdParam]))[0];
+    const applications = await query(
+      `SELECT a.application_id, a.application_id AS id, a.job_id, a.candidate_id AS candidateId, a.status, a.stage, a.interview_invite_sent_at AS interviewInviteSentAt, a.created_at AS appliedAt,
+       c.full_name AS fullName, c.email, c.phone, cat.name AS category
+       FROM recruiter_job_applications a
+       LEFT JOIN smart_apply_candidates c ON c.id = a.candidate_id
+       LEFT JOIN smart_apply_candidate_categories cat ON cat.id = c.category_id
+       WHERE a.job_id = ?
+       ORDER BY a.created_at DESC`,
+      [jobIdParam]
+    ).catch(() => []);
+    const jobWithApps = { ...job, jobId: job.job_id, applications: applications || [] };
+    return res.json({ success: true, job: jobWithApps });
+  } catch (err) {
+    if (isRecruiterIdColumnError(err)) {
+      const jobIdParam = req.params.id;
+      const jobs = await query('SELECT * FROM recruiter_jobs WHERE job_id = ? AND recruiter_id = ?', [jobIdParam, req.recruiter.id]).catch(() => []);
+      if (!jobs || jobs.length === 0) return res.status(404).json({ success: false, message: 'Job not found' });
+      const job = jobs[0];
+      const applications = await query(
+        `SELECT a.application_id, a.application_id AS id, a.job_id, a.candidate_id AS candidateId, a.status, a.stage, a.interview_invite_sent_at AS interviewInviteSentAt, a.created_at AS appliedAt,
+         c.full_name AS fullName, c.email, c.phone, cat.name AS category
+         FROM recruiter_job_applications a
+         LEFT JOIN smart_apply_candidates c ON c.id = a.candidate_id
+         LEFT JOIN smart_apply_candidate_categories cat ON cat.id = c.category_id
+         WHERE a.job_id = ? ORDER BY a.created_at DESC`,
+        [jobIdParam]
+      ).catch(() => []);
+      const jobWithApps = { ...job, jobId: job.job_id, applications: applications || [] };
+      return res.json({ success: true, job: jobWithApps });
+    }
+    console.error('Recruiter get job error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Failed to get job' });
+  }
+});
+
+// @route   PUT /api/recruiter/jobs/:id
+router.put('/jobs/:id', protectRecruiter, async (req, res) => {
+  try {
+    const jobIdParam = req.params.id;
+    const pk = recruiterPk(req.recruiter);
+    const jobs = await query('SELECT job_id FROM recruiter_jobs WHERE job_id = ? AND recruiter_id = ?', [jobIdParam, pk]).catch(() => []);
+    if (!jobs || jobs.length === 0) {
+      const fb = await query('SELECT job_id FROM recruiter_jobs WHERE job_id = ? AND recruiter_id = ?', [jobIdParam, req.recruiter.id]).catch(() => []);
+      if (!fb || fb.length === 0) return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+    const { title, description, status } = req.body;
+    const updates = [];
+    const vals = [];
+    if (title != null) { updates.push('title = ?'); vals.push(String(title).trim()); }
+    if (description != null) { updates.push('description = ?'); vals.push(description?.trim() || null); }
+    if (status === 'posted' || status === 'draft') { updates.push('status = ?'); vals.push(status); }
+    if (updates.length === 0) return res.json({ success: true, message: 'No changes' });
+    vals.push(jobIdParam);
+    await query(`UPDATE recruiter_jobs SET ${updates.join(', ')} WHERE job_id = ?`, vals);
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Recruiter update job error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Failed to update job' });
+  }
+});
+
+// @route   DELETE /api/recruiter/jobs/:id
+router.delete('/jobs/:id', protectRecruiter, async (req, res) => {
+  try {
+    const jobIdParam = req.params.id;
+    const pk = recruiterPk(req.recruiter);
+    const jobs = await query('SELECT job_id FROM recruiter_jobs WHERE job_id = ? AND recruiter_id = ?', [jobIdParam, pk]).catch(() => []);
+    if (!jobs || jobs.length === 0) {
+      const fb = await query('SELECT job_id FROM recruiter_jobs WHERE job_id = ? AND recruiter_id = ?', [jobIdParam, req.recruiter.id]).catch(() => []);
+      if (!fb || fb.length === 0) return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+    await query('DELETE FROM recruiter_jobs WHERE job_id = ?', [jobIdParam]);
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Recruiter delete job error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Failed to delete job' });
+  }
+});
+
+// @route   POST /api/recruiter/jobs/:id/applications
+router.post('/jobs/:id/applications', protectRecruiter, async (req, res) => {
+  try {
+    const jobIdParam = req.params.id;
+    const { candidateId } = req.body;
+    const pk = recruiterPk(req.recruiter);
+    const jobs = await query('SELECT job_id FROM recruiter_jobs WHERE job_id = ? AND recruiter_id = ?', [jobIdParam, pk]).catch(() => []);
+    if (!jobs || jobs.length === 0) {
+      const fb = await query('SELECT job_id FROM recruiter_jobs WHERE job_id = ? AND recruiter_id = ?', [jobIdParam, req.recruiter.id]).catch(() => []);
+      if (!fb || fb.length === 0) return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+    const cId = parseInt(candidateId, 10);
+    if (!Number.isFinite(cId)) return res.status(400).json({ success: false, message: 'Valid candidateId required' });
+    const appId = crypto.randomUUID();
+    await query(
+      'INSERT INTO recruiter_job_applications (application_id, job_id, candidate_id, status, stage) VALUES (?, ?, ?, ?, ?)',
+      [appId, jobIdParam, cId, 'pending', 'applied']
+    );
+    return res.status(201).json({ success: true, applicationId: appId });
+  } catch (err) {
+    if (err?.code === 'ER_DUP_ENTRY') return res.status(409).json({ success: false, message: 'Candidate already applied' });
+    console.error('Recruiter add application error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Failed to add application' });
+  }
+});
+
+// @route   PATCH /api/recruiter/jobs/:id/applications/:appId
+router.patch('/jobs/:id/applications/:appId', protectRecruiter, async (req, res) => {
+  try {
+    const { id: jobIdParam, appId } = req.params;
+    const pk = recruiterPk(req.recruiter);
+    const jobs = await query('SELECT job_id FROM recruiter_jobs WHERE job_id = ? AND recruiter_id = ?', [jobIdParam, pk]).catch(() => []);
+    if (!jobs || jobs.length === 0) {
+      const fb = await query('SELECT job_id FROM recruiter_jobs WHERE job_id = ? AND recruiter_id = ?', [jobIdParam, req.recruiter.id]).catch(() => []);
+      if (!fb || fb.length === 0) return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+    const { status, stage } = req.body;
+    const updates = []; const vals = [];
+    if (status === 'accepted' || status === 'rejected') { updates.push('status = ?'); vals.push(status); }
+    if (stage && ['applied', 'shortlisted', 'interview', 'hired', 'rejected'].includes(stage)) { updates.push('stage = ?'); vals.push(stage); }
+    if (updates.length === 0) return res.json({ success: true });
+    vals.push(appId);
+    await query(`UPDATE recruiter_job_applications SET ${updates.join(', ')} WHERE application_id = ? AND job_id = ?`, [...vals, jobIdParam]);
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Recruiter patch application error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Failed to update application' });
+  }
+});
+
+// @route   PATCH /api/recruiter/jobs/:id/applications/:appId/stage
+router.patch('/jobs/:id/applications/:appId/stage', protectRecruiter, async (req, res) => {
+  try {
+    const { id: jobIdParam, appId } = req.params;
+    const { stage } = req.body;
+    const pk = recruiterPk(req.recruiter);
+    const jobs = await query('SELECT job_id FROM recruiter_jobs WHERE job_id = ? AND recruiter_id = ?', [jobIdParam, pk]).catch(() => []);
+    if (!jobs || jobs.length === 0) {
+      const fb = await query('SELECT job_id FROM recruiter_jobs WHERE job_id = ? AND recruiter_id = ?', [jobIdParam, req.recruiter.id]).catch(() => []);
+      if (!fb || fb.length === 0) return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+    const validStages = ['applied', 'shortlisted', 'interview', 'hired', 'rejected'];
+    if (!stage || !validStages.includes(stage)) return res.status(400).json({ success: false, message: 'Valid stage required: applied, shortlisted, interview, hired, rejected' });
+    await query('UPDATE recruiter_job_applications SET stage = ? WHERE application_id = ? AND job_id = ?', [stage, appId, jobIdParam]);
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Recruiter set stage error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Failed to set stage' });
+  }
+});
+
+// @route   POST /api/recruiter/jobs/:id/applications/:appId/send-interview-invite
+router.post('/jobs/:id/applications/:appId/send-interview-invite', protectRecruiter, async (req, res) => {
+  try {
+    const { id: jobIdParam, appId } = req.params;
+    const pk = recruiterPk(req.recruiter);
+    let jobRows = await query('SELECT j.job_id, j.title FROM recruiter_jobs j WHERE j.job_id = ? AND j.recruiter_id = ?', [jobIdParam, pk]).catch(() => []);
+    if (!jobRows || jobRows.length === 0) {
+      jobRows = await query('SELECT j.job_id, j.title FROM recruiter_jobs j WHERE j.job_id = ? AND j.recruiter_id = ?', [jobIdParam, req.recruiter.id]).catch(() => []);
+      if (!jobRows || jobRows.length === 0) return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+    const job = jobRows[0];
+    const apps = await query(
+      'SELECT a.application_id, a.candidate_id, c.full_name, c.email FROM recruiter_job_applications a LEFT JOIN smart_apply_candidates c ON c.id = a.candidate_id WHERE a.application_id = ? AND a.job_id = ?',
+      [appId, jobIdParam]
+    ).catch(() => []);
+    if (!apps || apps.length === 0) return res.status(404).json({ success: false, message: 'Application not found' });
+    const app = apps[0];
+    if (!app.email) return res.status(400).json({ success: false, message: 'Candidate has no email' });
+    const transporter = getEmailTransporter();
+    const jobTitle = job.title || 'Position';
+    const candidateName = app.full_name || 'Candidate';
+    await transporter.sendMail({
+      from: `"${req.recruiter.full_name || 'Recruiter'}" <${process.env.EMAIL_USER || 'noreply@example.com'}>`,
+      to: app.email,
+      subject: `Interview invitation – ${jobTitle}`,
+      text: `Hello ${candidateName},\n\nYou have been shortlisted for the position: ${jobTitle}.\n\nWe would like to invite you for an interview. Our team will be in touch with further details.\n\nBest regards,\n${req.recruiter.full_name || 'Recruiting Team'}`,
+    });
+    await query(
+      'UPDATE recruiter_job_applications SET interview_invite_sent_at = CURRENT_TIMESTAMP, stage = ? WHERE application_id = ? AND job_id = ?',
+      ['interview', appId, jobIdParam]
+    );
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Recruiter send interview invite error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Failed to send invitation' });
+  }
+});
+
+// ---------- Search suggestions (talent search) ----------
+// @route   GET /api/recruiter/search-suggestions
+router.get('/search-suggestions', protectRecruiter, async (req, res) => {
+  try {
+    const pk = String(recruiterPk(req.recruiter));
+    const rows = await query(
+      'SELECT query FROM recruiter_search_suggestions WHERE recruiter_pk = ? ORDER BY created_at DESC LIMIT 30',
+      [pk]
+    ).catch(() => []);
+    const suggestions = (rows || []).map((r) => r.query);
+    return res.json({ success: true, suggestions });
+  } catch (err) {
+    console.error('Recruiter get search suggestions error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Failed to get suggestions' });
+  }
+});
+
+// @route   POST /api/recruiter/search-suggestions
+router.post('/search-suggestions', protectRecruiter, async (req, res) => {
+  try {
+    const pk = String(recruiterPk(req.recruiter));
+    const queryStr = req.body?.query;
+    if (!queryStr || typeof queryStr !== 'string') {
+      return res.status(400).json({ success: false, message: 'Query required' });
+    }
+    const trimmed = String(queryStr).trim().slice(0, 500);
+    if (!trimmed) return res.json({ success: true });
+    await query('DELETE FROM recruiter_search_suggestions WHERE recruiter_pk = ? AND LOWER(TRIM(query)) = LOWER(?)', [pk, trimmed]);
+    await query('INSERT INTO recruiter_search_suggestions (recruiter_pk, query) VALUES (?, ?)', [pk, trimmed]);
+    const all = await query('SELECT id FROM recruiter_search_suggestions WHERE recruiter_pk = ? ORDER BY created_at ASC', [pk]).catch(() => []);
+    if (all && all.length > 30) {
+      const toDelete = all.slice(0, all.length - 30).map((r) => r.id);
+      if (toDelete.length) {
+        const placeholders = toDelete.map(() => '?').join(',');
+        await query(`DELETE FROM recruiter_search_suggestions WHERE id IN (${placeholders})`, toDelete).catch(() => {});
+      }
+    }
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Recruiter add search suggestion error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Failed to add suggestion' });
   }
 });
 

@@ -110,12 +110,14 @@ const SmartApplyHeader = () => {
             <Link
               to="/smart-apply/dashboard"
               className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+              data-tour="nav-dashboard"
             >
               DASHBOARD
             </Link>
             <Link
               to="/smart-apply/apply"
               className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+              data-tour="nav-apply"
             >
               APPLY TO MULTIPLE EMAILS
             </Link>
@@ -144,12 +146,14 @@ const SmartApplyHeader = () => {
             <Link
               to="/smart-apply/jobs"
               className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors uppercase tracking-wide"
+              data-tour="nav-jobs"
             >
               FIND A JOB
             </Link>
             <Link
               to="/smart-apply/cv-builder"
               className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors uppercase tracking-wide"
+              data-tour="nav-cv-builder"
             >
               CV Builder
             </Link>
@@ -212,8 +216,9 @@ const SmartApplyHeader = () => {
             ) : null}
           </div>
 
-          {/* Mobile menu button */}
+          {/* Mobile menu button - id used by SmartApplyTour to open menu on mobile */}
           <Button
+            id="smart-apply-mobile-menu-btn"
             variant="ghost"
             size="icon"
             className="md:hidden p-2 text-gray-700"
@@ -232,6 +237,7 @@ const SmartApplyHeader = () => {
             <Link
               to="/smart-apply/dashboard"
               className="py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+              data-tour="nav-dashboard"
               onClick={() => setMobileMenuOpen(false)}
             >
               Dashboard
@@ -239,6 +245,7 @@ const SmartApplyHeader = () => {
             <Link
               to="/smart-apply/apply"
               className="py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+              data-tour="nav-apply"
               onClick={() => setMobileMenuOpen(false)}
             >
               APPLY TO MULTIPLE EMAILS
@@ -271,6 +278,7 @@ const SmartApplyHeader = () => {
             <Link
               to="/smart-apply/jobs"
               className="py-2 text-sm font-medium text-gray-600 hover:text-gray-900 uppercase tracking-wide"
+              data-tour="nav-jobs"
               onClick={() => setMobileMenuOpen(false)}
             >
               FIND A JOB
@@ -278,13 +286,7 @@ const SmartApplyHeader = () => {
             <Link
               to="/smart-apply/cv-builder"
               className="py-2 text-sm font-medium text-gray-600 hover:text-gray-900 uppercase tracking-wide"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              CV Builder
-            </Link>
-            <Link
-              to="/smart-apply/cv-builder"
-              className="py-2 text-sm font-medium text-gray-600 hover:text-gray-900 uppercase tracking-wide"
+              data-tour="nav-cv-builder"
               onClick={() => setMobileMenuOpen(false)}
             >
               CV Builder

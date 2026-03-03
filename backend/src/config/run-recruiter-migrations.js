@@ -38,7 +38,9 @@ async function run() {
       'recruiter_jobs_tables.sql',
       'recruiter_jobs_add_fields.sql',
       'recruiter_job_applications_stage.sql',
+      'recruiter_search_suggestions.sql',
       'smart_apply_job_requirement_responsibilities.sql',
+      'recruiter_deactivated_at.sql',
     ];
     for (const file of migrationFiles) {
       let sql = readFileSync(join(MIGRATIONS_DIR, file), 'utf8');

@@ -6,10 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Lock, ArrowLeft } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2, Lock, ArrowLeft, UserX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { smartApplyAPI } from "@/services/api";
 
+const SMART_APPLY_TOKEN_KEY = "smart_apply_token";
 const PRIMARY_COLOR = "#1e3a5f";
 
 const SmartApplySettings = () => {
@@ -19,6 +21,9 @@ const SmartApplySettings = () => {
   const [passwordNew, setPasswordNew] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
+  const [deactivatePassword, setDeactivatePassword] = useState("");
+  const [deactivateConfirmed, setDeactivateConfirmed] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("smart_apply_token");
@@ -137,6 +142,72 @@ const SmartApplySettings = () => {
                   )}
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Account deactivation */}
+          <Card className="mb-6 border border-red-200 bg-white shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2 text-red-700">
+                <UserX className="h-5 w-5" /> Deactivate account
+              </CardTitle>
+              <CardDescription>
+                Permanently deactivate your account. You will not be able to sign in or access your profile. Contact support to reactivate.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="deactivate-confirm"
+                  checked={deactivateConfirmed}
+                  onCheckedChange={(v) => setDeactivateConfirmed(!!v)}
+                  className="mt-0.5"
+                />
+                <Label htmlFor="deactivate-confirm" className="text-sm text-gray-600 cursor-pointer">
+                  I understand that my account will be deactivated and I will need to contact support to reactivate.
+                </Label>
+              </div>
+              <div className="max-w-md">
+                <Label>Confirm your password</Label>
+                <Input
+                  type="password"
+                  autoComplete="current-password"
+                  value={deactivatePassword}
+                  onChange={(e) => setDeactivatePassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="mt-1 bg-white border-gray-300"
+                  disabled={!deactivateConfirmed}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={deactivating || !deactivateConfirmed || !deactivatePassword.trim()}
+                onClick={async () => {
+                  setDeactivating(true);
+                  try {
+                    await smartApplyAPI.deactivateAccount(deactivatePassword.trim());
+                    localStorage.removeItem(SMART_APPLY_TOKEN_KEY);
+                    toast({ title: "Account deactivated", variant: "default" });
+                    navigate("/smart-apply");
+                  } catch (err) {
+                    toast({
+                      title: err instanceof Error ? err.message : "Failed to deactivate account",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setDeactivating(false);
+                  }
+                }}
+              >
+                {deactivating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Deactivating…
+                  </>
+                ) : (
+                  "Deactivate account"
+                )}
+              </Button>
             </CardContent>
           </Card>
         </div>

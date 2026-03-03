@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, ArrowLeft, UserPlus, User, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, ArrowLeft, UserPlus, User, CheckCircle2, XCircle, ChevronRight, CalendarCheck, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { recruiterApi, type RecruiterJobWithApplications, type RecruiterCandidateListItem } from "@/services/recruiterApi";
 
@@ -31,12 +31,12 @@ const RecruiterJobDetail = () => {
   const [saving, setSaving] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [candidatesList, setCandidatesList] = useState<RecruiterCandidateListItem[]>([]);
-  const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [updatingId, setUpdatingId] = useState<number | string | null>(null);
 
-  const jobId = id ? parseInt(id, 10) : NaN;
+  const jobId = id ?? "";
 
   const loadJob = () => {
-    if (!Number.isFinite(jobId)) return;
+    if (!jobId) return;
     recruiterApi
       .getJob(jobId)
       .then((res) => {
@@ -57,7 +57,7 @@ const RecruiterJobDetail = () => {
       navigate("/recruiter/sign-in");
       return;
     }
-    if (!Number.isFinite(jobId)) {
+    if (!jobId) {
       navigate("/recruiter/jobs");
       return;
     }
@@ -87,8 +87,8 @@ const RecruiterJobDetail = () => {
     }
   };
 
-  const handleAccept = async (applicationId: number) => {
-    setUpdatingId(applicationId);
+  const handleAccept = async (applicationId: number | string) => {
+    setUpdatingId(applicationId as number);
     try {
       await recruiterApi.setApplicationStatus(jobId, applicationId, "accepted");
       loadJob();
@@ -100,7 +100,7 @@ const RecruiterJobDetail = () => {
     }
   };
 
-  const handleReject = async (applicationId: number) => {
+  const handleReject = async (applicationId: number | string) => {
     setUpdatingId(applicationId);
     try {
       await recruiterApi.setApplicationStatus(jobId, applicationId, "rejected");
@@ -108,6 +108,63 @@ const RecruiterJobDetail = () => {
       toast({ title: "Candidate rejected" });
     } catch (err) {
       toast({ title: err instanceof Error ? err.message : "Failed to update", variant: "destructive" });
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const PIPELINE_STAGES: { key: "applied" | "shortlisted" | "interview" | "hired"; label: string }[] = [
+    { key: "applied", label: "Applied" },
+    { key: "shortlisted", label: "Shortlisted" },
+    { key: "interview", label: "Interview" },
+    { key: "hired", label: "Hired" },
+  ];
+
+  const getApplicationsByStage = (stage: string) =>
+    (job?.applications || []).filter((a) => (a.stage || "applied") === stage && a.status !== "rejected");
+  const getRejected = () => (job?.applications || []).filter((a) => a.stage === "rejected" || a.status === "rejected");
+
+  const handleShortlist = async (appId: number | string) => {
+    setUpdatingId(appId);
+    try {
+      await recruiterApi.setApplicationStage(jobId, appId, "shortlisted");
+      loadJob();
+      toast({ title: "Candidate shortlisted" });
+    } catch (err) {
+      toast({ title: err instanceof Error ? err.message : "Failed to shortlist", variant: "destructive" });
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleMoveToNextStage = async (appId: number | string, currentStage: string) => {
+    const nextMap: Record<string, "shortlisted" | "interview" | "hired"> = {
+      applied: "shortlisted",
+      shortlisted: "interview",
+      interview: "hired",
+    };
+    const next = nextMap[currentStage];
+    if (!next) return;
+    setUpdatingId(appId as number);
+    try {
+      await recruiterApi.setApplicationStage(jobId, appId, next);
+      loadJob();
+      toast({ title: `Moved to ${PIPELINE_STAGES.find((s) => s.key === next)?.label || next}` });
+    } catch (err) {
+      toast({ title: err instanceof Error ? err.message : "Failed to move", variant: "destructive" });
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleSendInterviewInvite = async (appId: number | string) => {
+    setUpdatingId(appId);
+    try {
+      await recruiterApi.sendInterviewInvitation(jobId, appId);
+      loadJob();
+      toast({ title: "Interview invitation sent" });
+    } catch (err) {
+      toast({ title: err instanceof Error ? err.message : "Failed to send invitation", variant: "destructive" });
     } finally {
       setUpdatingId(null);
     }
@@ -141,7 +198,7 @@ const RecruiterJobDetail = () => {
     <>
       <SEO title={`${job.title} – Recruiter`} />
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto px-4 py-8">
           <Button asChild variant="ghost" size="sm" className="mb-6 text-gray-600">
             <Link to="/recruiter/jobs" className="inline-flex items-center gap-2">
               <ArrowLeft className="h-4 w-4" /> Back to jobs
@@ -177,41 +234,103 @@ const RecruiterJobDetail = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-2">
-              {(job.applications || []).map((app) => (
-                <Card key={app.id} className="border border-gray-200 bg-white shadow-sm">
-                  <CardContent className="py-3 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
-                        <User className="h-5 w-5 text-gray-500" />
+            <>
+              {/* Pipeline stages */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                {PIPELINE_STAGES.map(({ key, label }) => {
+                  const apps = getApplicationsByStage(key);
+                  return (
+                    <div key={key} className="rounded-lg border border-gray-200 bg-gray-50/50 p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-semibold text-gray-700">{label}</span>
+                        <span className="text-xs text-gray-500 bg-white px-2 py-0.5 rounded">{apps.length}</span>
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{app.fullName}</p>
-                        <p className="text-sm text-gray-600">{app.email}</p>
+                      <div className="space-y-2 min-h-[60px]">
+                        {apps.map((app) => (
+                          <Card key={app.id} className="border border-gray-200 bg-white shadow-sm">
+                            <CardContent className="py-2 px-3">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
+                                  <User className="h-4 w-4 text-gray-500" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="font-medium text-gray-900 text-sm truncate">{app.fullName}</p>
+                                  <p className="text-xs text-gray-600 truncate">{app.email}</p>
+                                </div>
+                              </div>
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                <Button asChild size="sm" variant="ghost" className="h-7 text-xs p-1">
+                                  <Link to={`/recruiter/candidates/${app.candidateId}`}>Profile</Link>
+                                </Button>
+                                {key === "applied" && (
+                                  <Button size="sm" className="h-7 text-xs bg-indigo-600 hover:bg-indigo-700 text-white" disabled={updatingId === app.id} onClick={() => handleShortlist(app.id)}>
+                                    {updatingId === app.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "Shortlist"}
+                                  </Button>
+                                )}
+                                {key === "shortlisted" && (
+                                  <>
+                                    <Button size="sm" className="h-7 text-xs text-white" style={{ backgroundColor: DEEP_BLUE }} disabled={updatingId === app.id} onClick={() => handleSendInterviewInvite(app.id)}>
+                                      {updatingId === app.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />} Invite
+                                    </Button>
+                                    <Button size="sm" variant="outline" className="h-7 text-xs" disabled={updatingId === app.id} onClick={() => handleMoveToNextStage(app.id, key)}>
+                                      {updatingId === app.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <ChevronRight className="h-3 w-3" />}
+                                    </Button>
+                                  </>
+                                )}
+                                {key === "interview" && app.interviewInviteSentAt && (
+                                  <span className="text-xs text-green-600 flex items-center gap-0.5">
+                                    <CalendarCheck className="h-3 w-3" /> Invite sent
+                                  </span>
+                                )}
+                                {key === "interview" && (
+                                  <Button size="sm" variant="outline" className="h-7 text-xs" disabled={updatingId === app.id} onClick={() => handleMoveToNextStage(app.id, key)}>
+                                    {updatingId === app.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <ChevronRight className="h-3 w-3" />}
+                                  </Button>
+                                )}
+                                {key === "hired" && (
+                                  <span className="text-xs text-green-600">Hired</span>
+                                )}
+                                {app.status === "pending" && (
+                                  <>
+                                    <Button size="sm" className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white" disabled={updatingId === app.id} onClick={() => handleAccept(app.id)}>
+                                      {updatingId === app.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
+                                    </Button>
+                                    <Button size="sm" variant="outline" className="h-7 text-xs text-red-600" disabled={updatingId === app.id} onClick={() => handleReject(app.id)}>
+                                      {updatingId === app.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <XCircle className="h-3 w-3" />}
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
                       </div>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded capitalize ${app.status === "accepted" ? "bg-green-100 text-green-800" : app.status === "rejected" ? "bg-red-100 text-red-800" : "bg-gray-100 text-gray-700"}`}>
-                        {app.status}
-                      </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button asChild size="sm" variant="outline" className="border-gray-300">
-                        <Link to={`/recruiter/candidates/${app.candidateId}`}>Profile</Link>
-                      </Button>
-                      {app.status === "pending" && (
-                        <>
-                          <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" disabled={updatingId === app.id} onClick={() => handleAccept(app.id)}>
-                            {updatingId === app.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Accept
+                  );
+                })}
+              </div>
+              {getRejected().length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-sm font-semibold text-gray-600 mb-2">Rejected</h3>
+                  <div className="space-y-2">
+                    {getRejected().map((app) => (
+                      <Card key={app.id} className="border border-red-100 bg-red-50/50">
+                        <CardContent className="py-2 px-3 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-gray-500" />
+                            <span className="text-sm">{app.fullName}</span>
+                            <span className="text-xs text-red-600">Rejected</span>
+                          </div>
+                          <Button asChild size="sm" variant="ghost">
+                            <Link to={`/recruiter/candidates/${app.candidateId}`}>Profile</Link>
                           </Button>
-                          <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" disabled={updatingId === app.id} onClick={() => handleReject(app.id)}>
-                            {updatingId === app.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />} Reject
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

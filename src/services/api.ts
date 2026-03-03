@@ -445,7 +445,11 @@ const fetchWithSmartApplyAuth = async (url: string, options: RequestInit = {}) =
   }
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error(data.message || data.error || `Server error: ${response.status}`);
+    const msg = data.message || data.error || `Server error: ${response.status}`;
+    if (response.status === 404) {
+      throw new Error(`${msg}. Ensure the app-booker-pro backend is running (cd backend && npm run dev) on port 5000.`);
+    }
+    throw new Error(msg);
   }
   return response.json();
 };
@@ -488,6 +492,17 @@ export const smartApplyAPI = {
     return await fetchWithSmartApplyAuth('/smart-apply/dashboard');
   },
 
+  generateEmails: async (payload: {
+    applications: { to: string; topic: string }[];
+    userDetails?: { name?: string; surname?: string; fullName?: string; email?: string; contactNumber?: string };
+    profile?: { category?: string | null; overview?: string | null; workExperience?: string | null; education?: string | null; certifications?: string | null; keySkills?: string | null };
+  }): Promise<{ success: boolean; emails: { to: string; subject: string; body: string }[] }> => {
+    return await fetchWithSmartApplyAuth('/smart-apply/generate-emails', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
   register: async (payload: { fullName: string; email: string; password: string; phone?: string }) => {
     const res = await fetch(`${API_BASE_URL}/smart-apply/auth/register`, {
       method: 'POST',
@@ -496,8 +511,29 @@ export const smartApplyAPI = {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.message || 'Registration failed');
-    if (data.token) localStorage.setItem(SMART_APPLY_TOKEN_KEY, data.token);
     return data;
+  },
+
+  confirmEmail: async (token: string) => {
+    const res = await fetch(`${API_BASE_URL}/smart-apply/auth/confirm-email?token=${encodeURIComponent(token)}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || 'Confirmation failed');
+    return data;
+  },
+
+  resendConfirmationEmail: async (email: string) => {
+    const res = await fetch(`${API_BASE_URL}/smart-apply/auth/resend-confirmation`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || 'Failed to resend confirmation link');
+    return data;
+  },
+
+  markOnboardingTourComplete: async () => {
+    return fetchWithSmartApplyAuth('/smart-apply/onboarding-tour-complete', { method: 'POST' });
   },
 
   login: async (email: string, password: string) => {
@@ -537,6 +573,13 @@ export const smartApplyAPI = {
     return await fetchWithSmartApplyAuth('/smart-apply/auth/change-password', {
       method: 'PUT',
       body: JSON.stringify({ currentPassword, newPassword })
+    });
+  },
+
+  deactivateAccount: async (password: string) => {
+    return await fetchWithSmartApplyAuth('/smart-apply/auth/deactivate', {
+      method: 'PUT',
+      body: JSON.stringify({ password })
     });
   },
 
@@ -597,6 +640,14 @@ export const smartApplyAPI = {
       method: 'POST',
       body: JSON.stringify(payload)
     });
+  },
+
+  extractCV: async (fileBase64: string): Promise<{ success: boolean; profile: Record<string, unknown> }> => {
+    const data = await fetchWithSmartApplyAuth('/smart-apply/extract-cv', {
+      method: 'POST',
+      body: JSON.stringify({ fileBase64 })
+    });
+    return data as { success: boolean; profile: Record<string, unknown> };
   },
 
   deleteCV: async (id: number) => {

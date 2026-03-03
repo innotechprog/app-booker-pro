@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
@@ -9,15 +9,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus, Trash2, User, FileText, Download, Eye, MapPin, Camera, X } from "lucide-react";
+import { Loader2, Plus, Trash2, User, FileText, Download, Eye, MapPin, Camera, X, Mail, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { smartApplyAPI } from "@/services/api";
+import { runSmartApplyTour } from "@/components/SmartApplyTour";
 
 export interface WorkExperienceItem {
   company?: string;
@@ -86,30 +95,80 @@ function ensureArray<T>(val: T[] | T | null | undefined): T[] {
   return [val as T];
 }
 
-function normalizeWorkExp(item: WorkExperienceItem | { text?: string }): WorkExperienceItem {
-  if ("company" in item || "jobTitle" in item) return item as WorkExperienceItem;
-  return { description: (item as { text?: string }).text || "" };
+function parseMaybeJsonBlocks(value: unknown): unknown[] {
+  if (typeof value !== "string") return [value];
+  const text = value.trim();
+  if (!text) return [];
+  const blocks = text.split(/\n\s*\n+/).map((b) => b.trim()).filter(Boolean);
+  return blocks.map((block) => {
+    try {
+      return JSON.parse(block);
+    } catch {
+      return { text: block };
+    }
+  });
 }
 
-function normalizeEducation(item: EducationItem | { text?: string }): EducationItem {
-  if ("institution" in item || "qualification" in item) return item as EducationItem;
-  return { qualification: (item as { text?: string }).text || "" };
+function normalizeWorkExp(item: unknown): WorkExperienceItem {
+  if (item && typeof item === "object" && ("company" in item || "jobTitle" in item || "position" in item)) {
+    const obj = item as Record<string, unknown>;
+    return {
+      company: typeof obj.company === "string" ? obj.company : undefined,
+      jobTitle: typeof obj.jobTitle === "string" ? obj.jobTitle : (typeof obj.position === "string" ? obj.position : undefined),
+      startDate: typeof obj.startDate === "string" ? obj.startDate : (typeof obj.start_date === "string" ? obj.start_date : undefined),
+      endDate: typeof obj.endDate === "string" ? obj.endDate : (typeof obj.end_date === "string" ? obj.end_date : undefined),
+      description: typeof obj.description === "string" ? obj.description : undefined,
+    };
+  }
+  if (typeof item === "string") return { description: item };
+  return { description: (item as { text?: string })?.text || "" };
 }
 
-function normalizeCert(item: CertificationItem | { text?: string }): CertificationItem {
-  if ("name" in item || "issuer" in item) return item as CertificationItem;
-  return { name: (item as { text?: string }).text || "" };
+function normalizeEducation(item: unknown): EducationItem {
+  if (item && typeof item === "object" && ("institution" in item || "qualification" in item || "degree" in item)) {
+    const obj = item as Record<string, unknown>;
+    return {
+      institution: typeof obj.institution === "string" ? obj.institution : undefined,
+      qualification: typeof obj.qualification === "string" ? obj.qualification : (typeof obj.degree === "string" ? obj.degree : undefined),
+      startDate: typeof obj.startDate === "string" ? obj.startDate : (typeof obj.start_date === "string" ? obj.start_date : undefined),
+      endDate: typeof obj.endDate === "string" ? obj.endDate : (typeof obj.end_date === "string" ? obj.end_date : undefined),
+    };
+  }
+  if (typeof item === "string") return { qualification: item };
+  return { qualification: (item as { text?: string })?.text || "" };
 }
 
-function normalizeSkill(item: SkillItem | { text?: string }): SkillItem {
-  if ("name" in item && "level" in item) return item as SkillItem;
-  if ("name" in item) return item as SkillItem;
-  return { name: (item as { text?: string }).text || "", level: "" };
+function normalizeCert(item: unknown): CertificationItem {
+  if (item && typeof item === "object" && ("name" in item || "issuer" in item)) {
+    const obj = item as Record<string, unknown>;
+    return {
+      name: typeof obj.name === "string" ? obj.name : undefined,
+      issuer: typeof obj.issuer === "string" ? obj.issuer : undefined,
+      date: typeof obj.date === "string" ? obj.date : undefined,
+    };
+  }
+  if (typeof item === "string") return { name: item };
+  return { name: (item as { text?: string })?.text || "" };
+}
+
+function normalizeSkill(item: unknown): SkillItem {
+  if (item && typeof item === "object" && "name" in item) {
+    const obj = item as Record<string, unknown>;
+    return {
+      name: typeof obj.name === "string" ? obj.name : "",
+      level: typeof obj.level === "string" ? obj.level : "",
+    };
+  }
+  if (typeof item === "string") return { name: item, level: "" };
+  return { name: (item as { text?: string })?.text || "", level: "" };
 }
 
 const SmartApplyProfile = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const justConfirmed = searchParams.get("confirmed") === "1";
+  const shouldPromptTour = searchParams.get("tour_prompt") === "1";
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [overview, setOverview] = useState("");
@@ -139,7 +198,11 @@ const SmartApplyProfile = () => {
   const [cvRole, setCvRole] = useState("");
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [uploadingCV, setUploadingCV] = useState(false);
+  const [extractingCV, setExtractingCV] = useState(false);
+  const [emailConfirmed, setEmailConfirmed] = useState(true);
+  const [onboardingTourCompleted, setOnboardingTourCompleted] = useState(false);
   const [showLoaderOverlay, setShowLoaderOverlay] = useState(false);
+  const [tourPromptOpen, setTourPromptOpen] = useState(false);
   const loadingDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const profilePicInputRef = useRef<HTMLInputElement>(null);
 
@@ -190,6 +253,12 @@ const SmartApplyProfile = () => {
           setCategory((p.category === "general" || p.category === "professional" ? p.category : "professional") as "general" | "professional");
           setOverview(p.overview ?? "");
           setPrimaryCvId(p.primaryCvId != null ? Number(p.primaryCvId) : null);
+          setEmailConfirmed(p.emailConfirmed !== false);
+          const completed = !!p.onboardingTourCompleted;
+          setOnboardingTourCompleted(completed);
+          if (shouldPromptTour && !completed) {
+            setTourPromptOpen(true);
+          }
           setAddresses(Array.isArray(p.addresses) ? p.addresses.map((a: any) => ({
             id: a.id,
             label: a.label ?? "Current",
@@ -201,20 +270,56 @@ const SmartApplyProfile = () => {
             country: a.country ?? "",
             isPrimary: !!a.isPrimary,
           })) : []);
-          setWorkExperience(ensureArray(p.workExperience).map(normalizeWorkExp));
-          setEducation(ensureArray(p.education).map(normalizeEducation));
-          setCertifications(ensureArray(p.certifications).map(normalizeCert));
-          setKeySkills(ensureArray(p.keySkills).map(normalizeSkill));
+          setWorkExperience(ensureArray(p.workExperience).flatMap(parseMaybeJsonBlocks).map(normalizeWorkExp));
+          setEducation(ensureArray(p.education).flatMap(parseMaybeJsonBlocks).map(normalizeEducation));
+          setCertifications(ensureArray(p.certifications).flatMap(parseMaybeJsonBlocks).map(normalizeCert));
+          setKeySkills(ensureArray(p.keySkills).flatMap(parseMaybeJsonBlocks).map(normalizeSkill));
         }
         loadCVs();
         setLoading(false);
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         setLoading(false);
-        if (!cancelled) navigate("/smart-apply");
+        if (cancelled) return;
+        const message = err instanceof Error ? err.message : "";
+        const isAuthError =
+          /not authorized|unauthorized|invalid token|401/i.test(message);
+        if (isAuthError) {
+          navigate("/smart-apply/sign-in", { replace: true });
+          return;
+        }
+        toast({
+          title: "Could not load profile",
+          description: message || "Please refresh and try again.",
+          variant: "destructive",
+        });
       });
-    return () => { cancelled = true; };
-  }, [navigate]);
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate, toast, shouldPromptTour]);
+
+  const markTourComplete = async () => {
+    try {
+      await smartApplyAPI.markOnboardingTourComplete();
+    } catch {
+      // No-op: tour preference is non-critical
+    } finally {
+      setOnboardingTourCompleted(true);
+    }
+  };
+
+  const handleStartTour = () => {
+    setTourPromptOpen(false);
+    runSmartApplyTour(() => {
+      markTourComplete();
+    });
+  };
+
+  const handleSkipTour = async () => {
+    setTourPromptOpen(false);
+    await markTourComplete();
+  };
 
   // Show loader overlay only after a short delay to avoid blink on fast load or Strict Mode remount
   useEffect(() => {
@@ -427,6 +532,82 @@ const SmartApplyProfile = () => {
     }
   };
 
+  const handleExtractAndPopulate = async () => {
+    const file = cvFile;
+    if (!file) return;
+    setExtractingCV(true);
+    try {
+      const fileBase64 = await fileToBase64(file);
+      if (!fileBase64 || fileBase64.length < 100) {
+        toast({ title: "Could not read file", variant: "destructive" });
+        return;
+      }
+      const { profile } = await smartApplyAPI.extractCV(fileBase64);
+      if (!profile || typeof profile !== "object") return;
+      const p = profile as Record<string, unknown>;
+      const extractedOverview = (p.overview as string) || "";
+      const extractedCategory = ((p.category as string) === "general" ? "general" : "professional") as "general" | "professional";
+      setOverview(extractedOverview);
+      setCategory(extractedCategory);
+      const we = Array.isArray(p.workExperience) ? p.workExperience as WorkExperienceItem[] : [];
+      const normalizedWorkExperience = we.map((w) => ({ company: (w as any).company, jobTitle: (w as any).jobTitle || (w as any).position, startDate: (w as any).startDate, endDate: (w as any).endDate, description: (w as any).description }));
+      setWorkExperience(normalizedWorkExperience);
+      const edu = Array.isArray(p.education) ? p.education as EducationItem[] : [];
+      const normalizedEducation = edu.map((e) => ({ institution: (e as any).institution, qualification: (e as any).qualification || (e as any).degree, startDate: (e as any).startDate, endDate: (e as any).endDate }));
+      setEducation(normalizedEducation);
+      const cert = Array.isArray(p.certifications) ? p.certifications as CertificationItem[] : [];
+      const normalizedCertifications = cert.map((c) => ({ name: (c as any).name, issuer: (c as any).issuer, date: (c as any).date }));
+      setCertifications(normalizedCertifications);
+      const skills = Array.isArray(p.keySkills) ? p.keySkills as SkillItem[] : [];
+      const normalizedSkills = skills.map((s) => ({ name: (s as any).name || (s as any).text, level: (s as any).level || "" }));
+      setKeySkills(normalizedSkills);
+
+      await smartApplyAPI.saveProfile({
+        category: extractedCategory,
+        overview: extractedOverview || null,
+        workExperience: normalizedWorkExperience.length ? (normalizedWorkExperience as Record<string, unknown>[]) : null,
+        education: normalizedEducation.length ? (normalizedEducation as Record<string, unknown>[]) : null,
+        certifications: normalizedCertifications.length ? (normalizedCertifications as Record<string, unknown>[]) : null,
+        keySkills: normalizedSkills.length ? normalizedSkills.map((s) => ({ name: s.name || "", level: s.level || "" })) : null,
+      });
+
+      const label = cvLabel.trim() || file.name.replace(/\.pdf$/i, "") || "Main CV";
+      try {
+        await smartApplyAPI.uploadCV({
+          label,
+          roleOrCategory: cvRole.trim() || undefined,
+          fileName: file.name,
+          fileBase64,
+        });
+        loadCVs();
+      } catch (uploadErr: any) {
+        toast({
+          title: "Profile populated",
+          description: uploadErr?.message
+            ? `Your profile was updated, but CV upload failed: ${uploadErr.message}`
+            : "Your profile was updated, but CV upload failed.",
+          variant: "destructive",
+        });
+      }
+
+      setCvLabel("");
+      setCvRole("");
+      setCvFile(null);
+
+      toast({
+        title: "Profile populated and CV saved",
+        description: `You were categorized as ${extractedCategory}. You can change this in your profile so the jobs you see match your category better.`,
+      });
+      if (!onboardingTourCompleted) {
+        setTourPromptOpen(true);
+      }
+    } catch (err) {
+      toast({ title: err instanceof Error ? err.message : "Extraction failed", variant: "destructive" });
+    } finally {
+      setExtractingCV(false);
+    }
+  };
+
   const handleUploadCV = async () => {
     if (!cvLabel.trim()) {
       toast({ title: "Label required", description: "Give this CV a name (e.g. Software Developer CV).", variant: "destructive" });
@@ -475,6 +656,14 @@ const SmartApplyProfile = () => {
           </div>
         )}
         <div className="max-w-3xl mx-auto px-4 py-10">
+          {justConfirmed && cvs.length === 0 && (
+            <Card className="mb-6 border-indigo-200 bg-indigo-50/80">
+              <CardContent className="py-4">
+                <p className="text-indigo-900 font-medium">Your email is confirmed. Upload your CV below and we&apos;ll extract your experience, skills, and education to prefill your profile.</p>
+                <p className="text-sm text-indigo-700 mt-1">Scroll down to the &quot;My CVs&quot; section to upload your first CV (PDF). We&apos;ll extract your info to get you started quickly.</p>
+              </CardContent>
+            </Card>
+          )}
           {/* Profile picture / Avatar */}
           <div className="flex items-center gap-6 mb-8">
             <div className="relative group">
@@ -737,7 +926,7 @@ const SmartApplyProfile = () => {
           </Card>
 
           {/* My CVs – view, download, upload multiple for different roles */}
-          <Card className="mb-6 border border-gray-200 bg-white shadow-sm">
+          <Card className="mb-6 border border-gray-200 bg-white shadow-sm" data-tour="profile-cvs">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <FileText className="h-5 w-5" /> My CVs
@@ -840,14 +1029,26 @@ const SmartApplyProfile = () => {
                     {uploadingCV ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
                     {uploadingCV ? " Uploading…" : " Upload CV"}
                   </Button>
+                  {cvFile && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleExtractAndPopulate}
+                      disabled={extractingCV}
+                      className="border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+                    >
+                      {extractingCV ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Sparkles className="h-4 w-4 mr-1.5" />}
+                      Extract &amp; populate
+                    </Button>
+                  )}
                 </div>
-                <p className="text-xs text-gray-500">PDF only. Use a clear label and role so you can pick the right CV when applying.</p>
+                <p className="text-xs text-gray-500">PDF only. Select a file, then &quot;Extract &amp; populate&quot; to fill your profile and save the CV, or &quot;Upload CV&quot; to save only (with a label).</p>
               </div>
             </CardContent>
           </Card>
 
           {/* Overview */}
-          <Card className="mb-6 border border-gray-200 bg-white shadow-sm">
+          <Card className="mb-6 border border-gray-200 bg-white shadow-sm" data-tour="profile-overview">
             <CardHeader>
               <CardTitle className="text-lg">Overview</CardTitle>
               <CardDescription>Short summary for recruiters.</CardDescription>
@@ -1138,6 +1339,24 @@ const SmartApplyProfile = () => {
           </div>
         </div>
       </div>
+      <Dialog open={tourPromptOpen} onOpenChange={setTourPromptOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Take a quick tour?</DialogTitle>
+            <DialogDescription>
+              Your data has been populated. Would you like a short guided tour of Smart Apply features?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleSkipTour}>
+              No, thanks
+            </Button>
+            <Button type="button" onClick={handleStartTour} className="text-white hover:opacity-90" style={{ backgroundColor: PRIMARY_COLOR }}>
+              Start tour
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };

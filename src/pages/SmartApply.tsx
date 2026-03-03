@@ -185,6 +185,7 @@ const SmartApply = () => {
   const [recruiterCompany, setRecruiterCompany] = useState("");
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [isRecruiterMode, setIsRecruiterMode] = useState(() => searchParams.get("mode") === "recruiter");
@@ -329,6 +330,7 @@ const SmartApply = () => {
             if (c.fullName) localStorage.setItem("smart_apply_full_name", c.fullName);
           }
           toast({ title: "Signed in with Google", description: "Welcome to Smart Apply." });
+          navigate("/smart-apply", { replace: true });
         } catch (err: any) {
           setAuthError(err?.message || "Google sign-in failed.");
           toast({ title: "Google sign-in failed", description: err?.message, variant: "destructive" });
@@ -342,6 +344,26 @@ const SmartApply = () => {
       }
     );
   }, [toast]);
+
+  const handleResendConfirmation = async () => {
+    const email = loginForm.email.trim();
+    if (!email) {
+      setAuthError("Enter your email first, then resend the confirmation link.");
+      return;
+    }
+    setResendLoading(true);
+    try {
+      const res = await smartApplyAPI.resendConfirmationEmail(email);
+      toast({
+        title: "Confirmation email sent",
+        description: res?.message || "Please check your inbox for the confirmation link.",
+      });
+    } catch (err: any) {
+      setAuthError(err?.message || "Could not resend confirmation email.");
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   const handleAuthLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -398,7 +420,6 @@ const SmartApply = () => {
         password: signupForm.password,
         phone: signupForm.contactNumber.trim() || undefined,
       });
-      setHasToken(true);
       localStorage.setItem("smart_apply_full_name", fullName);
       setUserDetails({
         name: signupForm.name,
@@ -406,7 +427,9 @@ const SmartApply = () => {
         contactNumber: signupForm.contactNumber,
         email: signupForm.email,
       });
-      toast({ title: "Account created", description: "You can log in next time with your email and password." });
+      setAuthView("login");
+      navigate("/smart-apply/sign-in", { replace: true });
+      toast({ title: "Account created", description: "Check your email, confirm your account, then sign in." });
     } catch (err: any) {
       const msg = err?.message || "";
       if (msg.includes("already exists")) {
@@ -450,26 +473,71 @@ const SmartApply = () => {
       toast({ title: "CV required", description: "Please upload your CV.", variant: "destructive" });
       return;
     }
-    const category = categorizeFromCvText(cvText);
-    setCandidateCategory(category);
-    const extract = extractCvSections(cvText);
-    setCvExtract(extract);
+    const ext = cvFile.name.split(".").pop()?.toLowerCase();
     setSavingProfile(true);
     try {
+      let category: "general" | "professional" = "professional";
+      let overview: string | null = null;
+      let workExperience: Record<string, unknown>[] | string | null = null;
+      let education: Record<string, unknown>[] | string | null = null;
+      let certifications: Record<string, unknown>[] | string | null = null;
+      let keySkills: { name: string; level?: string }[] | string | null = null;
+
+      if (ext === "pdf") {
+        const fileBase64 = await fileToBase64(cvFile);
+        if (!fileBase64 || fileBase64.length < 100) {
+          toast({ title: "Could not read file", description: "Please choose a valid PDF.", variant: "destructive" });
+          return;
+        }
+        const { profile } = await smartApplyAPI.extractCV(fileBase64);
+        if (profile && typeof profile === "object") {
+          const p = profile as Record<string, unknown>;
+          overview = (p.overview as string) || null;
+          category = ((p.category as string) === "general" ? "general" : "professional") as "general" | "professional";
+          const we = Array.isArray(p.workExperience) ? p.workExperience : [];
+          const edu = Array.isArray(p.education) ? p.education : [];
+          const cert = Array.isArray(p.certifications) ? p.certifications : [];
+          const skills = Array.isArray(p.keySkills) ? p.keySkills : [];
+          workExperience = we as Record<string, unknown>[];
+          education = edu as Record<string, unknown>[];
+          certifications = cert as Record<string, unknown>[];
+          keySkills = skills as { name: string; level?: string }[];
+        }
+        await smartApplyAPI.uploadCV({
+          label: "Main CV",
+          fileName: cvFile.name,
+          fileBase64,
+        });
+      } else {
+        const cat = categorizeFromCvText(cvText);
+        category = cat;
+        const extract = extractCvSections(cvText);
+        setCvExtract(extract);
+        overview = extract.overview || null;
+        workExperience = extract.workExperience || null;
+        education = extract.education || null;
+        certifications = extract.certifications || null;
+        keySkills = extract.keySkills || null;
+      }
+
+      setCandidateCategory(category);
       await smartApplyAPI.saveProfile({
         category,
-        overview: extract.overview || null,
-        workExperience: extract.workExperience || null,
-        education: extract.education || null,
-        certifications: extract.certifications || null,
-        keySkills: extract.keySkills || null,
+        overview,
+        workExperience,
+        education,
+        certifications,
+        keySkills,
       });
-      toast({ title: "Profile saved", description: "You can edit your profile and apply to companies next." });
-      navigate("/smart-apply/profile");
+      toast({
+        title: "Profile saved",
+        description: `You were categorized as ${category}. You can update this in your profile to see jobs that better match your category.`,
+      });
+      navigate("/smart-apply/profile?tour_prompt=1");
     } catch (err: any) {
       const msg = err?.message || "Please try again.";
       const hint = msg === "Failed to fetch" || msg.includes("Cannot reach server")
-        ? " Start ib-backend (npm run dev in C:\\xampp\\htdocs\\ib-backend) and ensure VITE_API_URL in .env points to it."
+        ? " Make sure the backend is running (npm run dev in backend folder)."
         : "";
       toast({ title: "Could not save profile", description: msg + hint, variant: "destructive" });
     } finally {
@@ -513,7 +581,7 @@ const SmartApply = () => {
     e.target.value = "";
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     const hasProfileForEmail = !!(cvExtract?.overview?.trim() || cvExtract?.keySkills?.trim());
     const hasCvForEmail = !!(cvFile || cvText?.trim());
     if (!hasProfileForEmail && !hasCvForEmail) {
@@ -540,19 +608,55 @@ const SmartApply = () => {
     }
 
     setIsGenerating(true);
-    setTimeout(() => {
+    try {
+      const ai = await smartApplyAPI.generateEmails({
+        applications: validRows.map((r) => ({ to: r.email.trim().toLowerCase(), topic: r.topic.trim() })),
+        userDetails: {
+          ...userDetails,
+          fullName: [userDetails.name, userDetails.surname].filter(Boolean).join(" ").trim() || undefined,
+        },
+        profile: {
+          category: candidateCategory,
+          overview: cvExtract?.overview || null,
+          workExperience: cvExtract?.workExperience || null,
+          education: cvExtract?.education || null,
+          certifications: cvExtract?.certifications || null,
+          keySkills: cvExtract?.keySkills || null,
+        },
+      });
+
+      const generated = (ai?.emails || []).map((e, i) => ({
+        id: `email-${Date.now()}-${i}`,
+        companyEmail: String(e.to || "").trim().toLowerCase(),
+        subject: String(e.subject || "").trim(),
+        body: String(e.body || "").trim(),
+      })).filter((e) => e.companyEmail && e.subject && e.body);
+
+      if (!generated.length) {
+        throw new Error("AI did not return valid emails");
+      }
+
+      setEmails(generated.map((e, i) => ({ ...e, isExpanded: i === 0 })));
+      setStep(4);
+      toast({
+        title: "Emails generated",
+        description: `AI created ${generated.length} tailored email(s) for your review.`,
+      });
+    } catch (err: any) {
       const cvContent = cvText.trim() || undefined;
       const generated = validRows.map((r, i) =>
         generateEmailForRow(r.email, r.topic.trim(), i, userDetails, cvContent, cvExtract)
       );
       setEmails(generated.map((e, i) => ({ ...e, isExpanded: i === 0 })));
-      setIsGenerating(false);
       setStep(4);
       toast({
-        title: "Emails generated",
-        description: `Created ${generated.length} email(s) for your review.`,
+        title: "AI unavailable",
+        description: `Used standard templates instead (${err?.message || "generation fallback"}).`,
+        variant: "destructive",
       });
-    }, 1200);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const toggleExpand = (id: string) => {
@@ -733,8 +837,12 @@ const SmartApply = () => {
           </div>
         </div>
         {/* Right – Form */}
-        <div className="w-full lg:w-1/2 lg:ml-[50%] flex items-center justify-center bg-white p-8 overflow-y-auto h-screen">
-          <div className="w-full max-w-md space-y-8">
+        <div
+          className={`w-full lg:w-1/2 lg:ml-[50%] flex justify-center bg-white p-8 overflow-y-auto h-screen ${
+            authView === "signup" ? "items-start" : "items-center"
+          }`}
+        >
+          <div className={`w-full max-w-md space-y-8 ${authView === "signup" ? "mt-6 lg:mt-10" : ""}`}>
             <Link to="/">
               <Button type="button" variant="outline" className="gap-2">
                 <ChevronLeft className="h-4 w-4" />
@@ -812,6 +920,17 @@ const SmartApply = () => {
                       className="h-12 text-gray-900 placeholder:text-gray-500 bg-white"
                     />
                     {authError && <p className="text-sm text-red-600">{authError}</p>}
+                    {!isRecruiterMode && /confirm your email/i.test(authError) && (
+                      <Button
+                        type="button"
+                        variant="outlineLight"
+                        className="w-full"
+                        onClick={handleResendConfirmation}
+                        disabled={resendLoading}
+                      >
+                        {resendLoading ? "Sending confirmation link..." : "Resend confirmation link"}
+                      </Button>
+                    )}
                     <Button type="submit" className="w-full h-12 bg-blue-600 hover:bg-blue-700" disabled={authLoading}>
                       {authLoading ? "Signing in..." : "Sign in"}
                     </Button>
@@ -1012,10 +1131,10 @@ const SmartApply = () => {
               <div>
                 <CardTitle className="flex items-center gap-2 text-black">
                   <Sparkles className="h-5 w-5 text-indigo-600" />
-                  Setup your bulk application
+                  {showCvUploadOnly ? "Upload your CV to get started" : "Setup your bulk application"}
                 </CardTitle>
                 <CardDescription className="text-gray-800 mt-1">
-                  {showCvUploadOnly && "Upload your CV"}
+                  {showCvUploadOnly && "We'll extract your experience, skills, and education from your CV to prefill your profile."}
                   {isApplyFlow && step === 3 && "Companies to apply to"}
                   {isApplyFlow && step === 4 && "Review generated emails"}
                   {isApplyFlow && step === 5 && "Sending results"}
@@ -1054,17 +1173,13 @@ const SmartApply = () => {
             {/* CV upload screen: only when logged in on /smart-apply and no profile yet */}
             {showCvUploadOnly && (
             <div className="space-y-6">
-              <p className="text-sm text-gray-600">
-                Applying as: <span className="font-medium text-gray-900">{[userDetails.name, userDetails.surname].filter(Boolean).join(" ") || "—"}</span>
-                {userDetails.email && <span className="text-gray-500"> ({userDetails.email})</span>}
-              </p>
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                   Upload your CV <span className="text-red-600">*</span>
               </h3>
               <div className="space-y-2">
-                  <Label className="text-gray-700 font-medium">Your CV will be attached to each application email.</Label>
+                  <Label className="text-gray-700 font-medium">Upload a PDF and we&apos;ll extract your experience, skills, and education to prefill your profile. It will also be attached to each application email.</Label>
                 <div className="flex flex-wrap items-center gap-3">
                   <Input
                     type="file"
@@ -1234,9 +1349,9 @@ const SmartApply = () => {
             <div className="flex justify-between">
               <Button
                 type="button"
-                variant="outline"
+                variant="outlineLight"
                 onClick={() => isApplyFlow ? navigate("/smart-apply/profile") : setStep(2)}
-                className="border-gray-300 text-gray-800 hover:bg-gray-50 bg-white inline-flex items-center gap-2"
+                className="gap-2"
               >
                 <ChevronLeft className="h-4 w-4" />
                 Back
@@ -1255,7 +1370,7 @@ const SmartApply = () => {
             <div className="flex items-center justify-between">
               <p className="text-gray-600">Review and edit your {emails.length} generated email{emails.length !== 1 ? "s" : ""}.</p>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep(3)} className="border-gray-300 text-gray-800 hover:bg-gray-50 bg-white inline-flex items-center gap-2">
+                <Button variant="outlineLight" onClick={() => setStep(3)} className="gap-2">
                   <ChevronLeft className="h-4 w-4" /> Back
                 </Button>
                 <Button onClick={handleSendAll} className="bg-indigo-600 hover:bg-indigo-700">
@@ -1362,7 +1477,7 @@ const SmartApply = () => {
               ))}
             </div>
             <div className="flex justify-between pt-4 border-t border-gray-200">
-              <Button variant="outline" onClick={() => setStep(3)} className="border-gray-300 text-gray-800 hover:bg-gray-50 bg-white inline-flex items-center gap-2">
+              <Button variant="outlineLight" onClick={() => setStep(3)} className="gap-2">
                 <ChevronLeft className="h-4 w-4" /> Back
               </Button>
               <Button onClick={handleSendAll} className="bg-indigo-600 hover:bg-indigo-700">
@@ -1394,7 +1509,7 @@ const SmartApply = () => {
               ) : (
                 <div className="space-y-6">
                   <div className="flex gap-4">
-                    <Button variant="outline" onClick={() => setStep(4)} className="border-gray-300 text-gray-800 hover:bg-gray-50 bg-white inline-flex items-center gap-2">
+                    <Button variant="outlineLight" onClick={() => setStep(4)} className="gap-2">
                       <ChevronLeft className="h-4 w-4" /> Back to emails
                     </Button>
                     <Button onClick={() => { setStep(1); setEmails([]); setSentEmails([]); setFailedEmails([]); }} className="bg-indigo-600 hover:bg-indigo-700">

@@ -16,6 +16,7 @@ import Contact from "./pages/Contact";
 import Education from "./pages/Education";
 import ITSolutions from "./pages/ITSolutions";
 import SmartApply from "./pages/SmartApply";
+import SmartApplyConfirmEmail from "./pages/SmartApplyConfirmEmail";
 import SmartApplyProfile from "./pages/SmartApplyProfile";
 import SmartApplyDashboard from "./pages/SmartApplyDashboard";
 import SmartApplySettings from "./pages/SmartApplySettings";
@@ -75,6 +76,7 @@ const App = () => (
                 <Route path="/smart-apply" element={<SmartApply />} />
                 <Route path="/smart-apply/sign-in" element={<SmartApply />} />
                 <Route path="/smart-apply/sign-up" element={<SmartApply />} />
+                <Route path="/smart-apply/confirm-email" element={<SmartApplyConfirmEmail />} />
                 <Route path="/smart-apply/apply" element={<SmartApply />} />
                 <Route path="/smart-apply/profile" element={<SmartApplyProfile />} />
                 <Route path="/smart-apply/settings" element={<SmartApplySettings />} />

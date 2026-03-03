@@ -105,11 +105,48 @@ export const triggerGoogleSignIn = () => {
 
   if (window.google?.accounts?.id) {
     window.google.accounts.id.prompt((notification: any) => {
-      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-        // User dismissed the prompt
-        if (onErrorCallback) {
-          onErrorCallback('Sign in was cancelled');
+      if (!onErrorCallback) return;
+
+      const notDisplayed = typeof notification?.isNotDisplayed === 'function' && notification.isNotDisplayed();
+      const skipped = typeof notification?.isSkippedMoment === 'function' && notification.isSkippedMoment();
+      const dismissed = typeof notification?.isDismissedMoment === 'function' && notification.isDismissedMoment();
+
+      if (notDisplayed) {
+        const reason = typeof notification?.getNotDisplayedReason === 'function'
+          ? String(notification.getNotDisplayedReason() || '')
+          : '';
+        if (/unregistered_origin|invalid_client|missing_client_id/i.test(reason)) {
+          onErrorCallback('Google sign-in is not allowed for this app origin. Add this site URL to Authorized JavaScript origins in Google Cloud Console.');
+          return;
         }
+        onErrorCallback(reason ? `Google sign-in unavailable (${reason}).` : 'Google sign-in is currently unavailable on this browser/session.');
+        return;
+      }
+
+      if (skipped) {
+        const reason = typeof notification?.getSkippedReason === 'function'
+          ? String(notification.getSkippedReason() || '')
+          : '';
+        if (/auto_cancel|user_cancel|tap_outside|issuing_failed/i.test(reason)) {
+          onErrorCallback('Sign in was cancelled.');
+          return;
+        }
+        if (!reason || /unknown_reason/i.test(reason)) {
+          const origin = window.location.origin;
+          onErrorCallback(
+            `Google sign-in could not start on this browser/session. If this keeps happening, verify ${origin} is added to Authorized JavaScript origins in Google Cloud Console, then allow popups/3rd-party cookies and try again.`
+          );
+          return;
+        }
+        onErrorCallback(reason ? `Google sign-in skipped (${reason}).` : 'Google sign-in was skipped.');
+        return;
+      }
+
+      if (dismissed) {
+        const reason = typeof notification?.getDismissedReason === 'function'
+          ? String(notification.getDismissedReason() || '')
+          : '';
+        onErrorCallback(reason ? `Google sign-in dismissed (${reason}).` : 'Sign in was cancelled.');
       }
     });
   } else {

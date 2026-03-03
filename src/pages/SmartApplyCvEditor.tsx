@@ -24,6 +24,8 @@ import {
 import { Loader2, ArrowLeft, FileText, Plus, Trash2, UserPlus, Save, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { smartApplyAPI } from "@/services/api";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 import type { WorkExperienceItem, EducationItem, CertificationItem, SkillItem, AddressItem } from "@/pages/SmartApplyProfile";
 import { CvPreviewByTemplate, type CvPreviewData, type CustomSection } from "@/components/cv-templates/CvTemplatePreviews";
 
@@ -68,24 +70,72 @@ function ensureArray<T>(val: T[] | T | null | undefined): T[] {
   return [val as T];
 }
 
-function normalizeWorkExp(item: WorkExperienceItem | { text?: string }): WorkExperienceItem {
-  if ("company" in item || "jobTitle" in item) return item as WorkExperienceItem;
-  return { description: (item as { text?: string }).text || "" };
+function parseMaybeJsonBlocks(value: unknown): unknown[] {
+  if (typeof value !== "string") return [value];
+  const text = value.trim();
+  if (!text) return [];
+  const blocks = text.split(/\n\s*\n+/).map((b) => b.trim()).filter(Boolean);
+  return blocks.map((block) => {
+    try {
+      return JSON.parse(block);
+    } catch {
+      return { text: block };
+    }
+  });
 }
 
-function normalizeEducation(item: EducationItem | { text?: string }): EducationItem {
-  if ("institution" in item || "qualification" in item) return item as EducationItem;
-  return { qualification: (item as { text?: string }).text || "" };
+function normalizeWorkExp(item: unknown): WorkExperienceItem {
+  if (item && typeof item === "object" && ("company" in item || "jobTitle" in item || "position" in item)) {
+    const obj = item as Record<string, unknown>;
+    return {
+      company: typeof obj.company === "string" ? obj.company : undefined,
+      jobTitle: typeof obj.jobTitle === "string" ? obj.jobTitle : (typeof obj.position === "string" ? obj.position : undefined),
+      startDate: typeof obj.startDate === "string" ? obj.startDate : (typeof obj.start_date === "string" ? obj.start_date : undefined),
+      endDate: typeof obj.endDate === "string" ? obj.endDate : (typeof obj.end_date === "string" ? obj.end_date : undefined),
+      description: typeof obj.description === "string" ? obj.description : undefined,
+    };
+  }
+  if (typeof item === "string") return { description: item };
+  return { description: (item as { text?: string })?.text || "" };
 }
 
-function normalizeCert(item: CertificationItem | { text?: string }): CertificationItem {
-  if ("name" in item || "issuer" in item) return item as CertificationItem;
-  return { name: (item as { text?: string }).text || "" };
+function normalizeEducation(item: unknown): EducationItem {
+  if (item && typeof item === "object" && ("institution" in item || "qualification" in item || "degree" in item)) {
+    const obj = item as Record<string, unknown>;
+    return {
+      institution: typeof obj.institution === "string" ? obj.institution : undefined,
+      qualification: typeof obj.qualification === "string" ? obj.qualification : (typeof obj.degree === "string" ? obj.degree : undefined),
+      startDate: typeof obj.startDate === "string" ? obj.startDate : (typeof obj.start_date === "string" ? obj.start_date : undefined),
+      endDate: typeof obj.endDate === "string" ? obj.endDate : (typeof obj.end_date === "string" ? obj.end_date : undefined),
+    };
+  }
+  if (typeof item === "string") return { qualification: item };
+  return { qualification: (item as { text?: string })?.text || "" };
 }
 
-function normalizeSkill(item: SkillItem | { text?: string }): SkillItem {
-  if ("name" in item) return item as SkillItem;
-  return { name: (item as { text?: string }).text || "", level: "" };
+function normalizeCert(item: unknown): CertificationItem {
+  if (item && typeof item === "object" && ("name" in item || "issuer" in item)) {
+    const obj = item as Record<string, unknown>;
+    return {
+      name: typeof obj.name === "string" ? obj.name : undefined,
+      issuer: typeof obj.issuer === "string" ? obj.issuer : undefined,
+      date: typeof obj.date === "string" ? obj.date : undefined,
+    };
+  }
+  if (typeof item === "string") return { name: item };
+  return { name: (item as { text?: string })?.text || "" };
+}
+
+function normalizeSkill(item: unknown): SkillItem {
+  if (item && typeof item === "object" && "name" in item) {
+    const obj = item as Record<string, unknown>;
+    return {
+      name: typeof obj.name === "string" ? obj.name : "",
+      level: typeof obj.level === "string" ? obj.level : "",
+    };
+  }
+  if (typeof item === "string") return { name: item, level: "" };
+  return { name: (item as { text?: string })?.text || "", level: "" };
 }
 
 const SmartApplyCvEditor = () => {
@@ -123,7 +173,9 @@ const SmartApplyCvEditor = () => {
   const [cvOnlineUrl, setCvOnlineUrl] = useState<string | null>(null);
   const [creatingPublicLink, setCreatingPublicLink] = useState(false);
   const [premiumCredits, setPremiumCredits] = useState(0);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const initialDataRef = useRef<string>("");
+  const previewCaptureRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("smart_apply_token");
@@ -168,10 +220,10 @@ const SmartApplyCvEditor = () => {
             });
             setCategory((p.category === "general" || p.category === "professional" ? p.category : "professional") as "general" | "professional");
             setOverview(p.overview ?? "");
-            setWorkExperience(ensureArray(p.workExperience).map(normalizeWorkExp));
-            setEducation(ensureArray(p.education).map(normalizeEducation));
-            setCertifications(ensureArray(p.certifications).map(normalizeCert));
-            setKeySkills(ensureArray(p.keySkills).map(normalizeSkill));
+            setWorkExperience(ensureArray(p.workExperience).flatMap(parseMaybeJsonBlocks).map(normalizeWorkExp));
+            setEducation(ensureArray(p.education).flatMap(parseMaybeJsonBlocks).map(normalizeEducation));
+            setCertifications(ensureArray(p.certifications).flatMap(parseMaybeJsonBlocks).map(normalizeCert));
+            setKeySkills(ensureArray(p.keySkills).flatMap(parseMaybeJsonBlocks).map(normalizeSkill));
             setAddresses(Array.isArray(p.addresses) ? p.addresses : []);
           }
         } catch (err) {
@@ -276,9 +328,54 @@ const SmartApplyCvEditor = () => {
     setCustomSections((prev) => prev.map((item, idx) => (idx === i ? { ...item, [field]: value } : item)));
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (canDownload(templateId, overview, keySkills, premiumCredits)) {
-      toast({ title: "Download", description: "PDF download will be available when the backend is connected." });
+      if (!previewCaptureRef.current) {
+        toast({ title: "Could not download CV", description: "Preview is not ready yet. Please try again.", variant: "destructive" });
+        return;
+      }
+      setDownloadingPdf(true);
+      try {
+        const canvas = await html2canvas(previewCaptureRef.current, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+        });
+        const imgData = canvas.toDataURL("image/png");
+
+        const pdf = new jsPDF({
+          orientation: "portrait",
+          unit: "pt",
+          format: "a4",
+        });
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = pageWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        let heightLeft = imgHeight;
+        let position = 0;
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft > 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
+
+        const safeName = (personal.fullName || "smart-apply-cv")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+        pdf.save(`${safeName || "smart-apply-cv"}-template-${templateId}.pdf`);
+        toast({ title: "CV downloaded", description: "Your CV PDF has been downloaded." });
+      } catch (err: any) {
+        toast({ title: "Could not download CV", description: err?.message || "Please try again.", variant: "destructive" });
+      } finally {
+        setDownloadingPdf(false);
+      }
       return;
     }
     setPayModalOpen(true);
@@ -708,7 +805,7 @@ const SmartApplyCvEditor = () => {
                   </Button>
                 </CardHeader>
                 <CardContent className="flex-1 min-h-0 overflow-auto p-4 flex items-start justify-center">
-                  <div className="w-full max-w-full min-w-0" style={{ maxWidth: "min(100%, 340px)" }}>
+                  <div ref={previewCaptureRef} className="w-full max-w-full min-w-0" style={{ maxWidth: "min(100%, 340px)" }}>
                     <CvPreviewByTemplate
                       templateId={templateId}
                       data={{
@@ -733,11 +830,13 @@ const SmartApplyCvEditor = () => {
               <div className="mt-4 flex flex-wrap gap-3">
                 <Button
                   size="default"
+                  disabled={downloadingPdf}
                   className="rounded-lg text-white font-semibold shadow-md hover:opacity-90 hover:shadow-lg transition-all px-6"
                   style={{ backgroundColor: DEEP_BLUE }}
                   onClick={handleDownload}
                 >
-                  <FileText className="h-4 w-4 mr-2" /> Download CV
+                  {downloadingPdf ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
+                  {downloadingPdf ? "Preparing PDF..." : "Download CV"}
                 </Button>
                 {hasChanges() && (
                   <Button

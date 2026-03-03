@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Settings, Lock, Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ArrowLeft, Settings, Lock, Loader2, UserX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { recruiterApi } from "@/services/recruiterApi";
 
@@ -18,6 +19,9 @@ const RecruiterSettings = () => {
   const [passwordNew, setPasswordNew] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
+  const [deactivatePassword, setDeactivatePassword] = useState("");
+  const [deactivateConfirmed, setDeactivateConfirmed] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
 
   useEffect(() => {
     if (!recruiterApi.hasToken()) {
@@ -151,6 +155,72 @@ const RecruiterSettings = () => {
                   )}
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Account deactivation */}
+          <Card className="mb-6 border border-red-200 bg-white shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2 text-red-700">
+                <UserX className="h-5 w-5" /> Deactivate account
+              </CardTitle>
+              <CardDescription>
+                Permanently deactivate your recruiter account. You will not be able to sign in or access your jobs and candidates. Contact support to reactivate.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="recruiter-deactivate-confirm"
+                  checked={deactivateConfirmed}
+                  onCheckedChange={(v) => setDeactivateConfirmed(!!v)}
+                  className="mt-0.5"
+                />
+                <Label htmlFor="recruiter-deactivate-confirm" className="text-sm text-gray-600 cursor-pointer">
+                  I understand that my account will be deactivated and I will need to contact support to reactivate.
+                </Label>
+              </div>
+              <div className="max-w-md">
+                <Label>Confirm your password</Label>
+                <Input
+                  type="password"
+                  autoComplete="current-password"
+                  value={deactivatePassword}
+                  onChange={(e) => setDeactivatePassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="mt-1 bg-white border-gray-300"
+                  disabled={!deactivateConfirmed}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={deactivating || !deactivateConfirmed || !deactivatePassword.trim()}
+                onClick={async () => {
+                  setDeactivating(true);
+                  try {
+                    await recruiterApi.deactivateAccount(deactivatePassword.trim());
+                    recruiterApi.logout();
+                    toast({ title: "Account deactivated", variant: "default" });
+                    navigate("/recruiter/sign-in");
+                  } catch (err) {
+                    toast({
+                      title: err instanceof Error ? err.message : "Failed to deactivate account",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setDeactivating(false);
+                  }
+                }}
+              >
+                {deactivating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Deactivating…
+                  </>
+                ) : (
+                  "Deactivate account"
+                )}
+              </Button>
             </CardContent>
           </Card>
         </div>
