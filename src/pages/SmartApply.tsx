@@ -477,6 +477,7 @@ const SmartApply = () => {
     setSavingProfile(true);
     try {
       let category: "general" | "professional" = "professional";
+      let jobTitle: string | null = null;
       let overview: string | null = null;
       let workExperience: Record<string, unknown>[] | string | null = null;
       let education: Record<string, unknown>[] | string | null = null;
@@ -492,6 +493,7 @@ const SmartApply = () => {
         const { profile } = await smartApplyAPI.extractCV(fileBase64);
         if (profile && typeof profile === "object") {
           const p = profile as Record<string, unknown>;
+          jobTitle = String(p.jobTitle || p.job_title || "").trim() || null;
           overview = (p.overview as string) || null;
           category = ((p.category as string) === "general" ? "general" : "professional") as "general" | "professional";
           const we = Array.isArray(p.workExperience) ? p.workExperience : [];
@@ -523,6 +525,7 @@ const SmartApply = () => {
       setCandidateCategory(category);
       await smartApplyAPI.saveProfile({
         category,
+        jobTitle,
         overview,
         workExperience,
         education,

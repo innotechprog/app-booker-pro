@@ -190,7 +190,7 @@ npm start           # Production
 ```
 
 ### 5. Test
-Visit: http://localhost:5000
+Visit: https://ib-backend.ib-innovativesolutions.com/api/
 
 ---
 
@@ -257,7 +257,7 @@ localStorage.setItem('learner_current', JSON.stringify(user));
 
 ### After (API):
 ```javascript
-const response = await fetch('http://localhost:5000/api/auth/login', {
+const response = await fetch('https://ib-backend.ib-innovativesolutions.com/api/auth/login', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ email, password })

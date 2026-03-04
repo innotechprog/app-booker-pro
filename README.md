@@ -50,8 +50,8 @@ npm install
 cp .env.example .env
 
 # Backend: this app uses ib-backend for all API calls (auth, Smart Apply, contact, etc.).
-# Point VITE_API_URL to your running ib-backend (default: http://localhost:5000/api).
-VITE_API_URL=http://localhost:5000/api
+# Point VITE_API_URL to your running ib-backend.
+VITE_API_URL=https://ib-backend.ib-innovativesolutions.com/api/
 ```
 
 4. Start the development server:
@@ -63,7 +63,7 @@ The application will be available at `http://localhost:8080`.
 
 ### Backend (ib-backend)
 
-All API requests (auth, Smart Apply, contact, bookings, etc.) go to **ib-backend**, not a backend inside this repo. Run the backend from `C:\xampp\htdocs\ib-backend` (or your ib-backend path) and set `VITE_API_URL` in `.env` to its base URL (e.g. `http://localhost:5000/api`).
+All API requests (auth, Smart Apply, contact, bookings, etc.) go to **ib-backend**, not a backend inside this repo. Set `VITE_API_URL` in `.env` to its base URL (e.g. `https://ib-backend.ib-innovativesolutions.com/api/`).
 
 ## Available Scripts
 

@@ -534,7 +534,14 @@ const SmartApplyProfile = () => {
 
   const handleExtractAndPopulate = async () => {
     const file = cvFile;
-    if (!file) return;
+    if (!file) {
+      toast({ title: "File required", description: "Choose a PDF file first.", variant: "destructive" });
+      return;
+    }
+    if (!/\.pdf$/i.test(file.name)) {
+      toast({ title: "Invalid file", description: "Please choose a PDF file.", variant: "destructive" });
+      return;
+    }
     setExtractingCV(true);
     try {
       const fileBase64 = await fileToBase64(file);
@@ -542,28 +549,44 @@ const SmartApplyProfile = () => {
         toast({ title: "Could not read file", variant: "destructive" });
         return;
       }
-      const { profile } = await smartApplyAPI.extractCV(fileBase64);
-      if (!profile || typeof profile !== "object") return;
+      const extracted = await smartApplyAPI.extractCV(fileBase64);
+      const profile = (extracted?.profile ?? extracted) as unknown;
+      if (!profile || typeof profile !== "object") {
+        throw new Error("Could not extract profile data from this CV.");
+      }
       const p = profile as Record<string, unknown>;
       const extractedOverview = (p.overview as string) || "";
+      const extractedJobTitle = String(p.jobTitle || p.job_title || "").trim();
       const extractedCategory = ((p.category as string) === "general" ? "general" : "professional") as "general" | "professional";
       setOverview(extractedOverview);
       setCategory(extractedCategory);
-      const we = Array.isArray(p.workExperience) ? p.workExperience as WorkExperienceItem[] : [];
-      const normalizedWorkExperience = we.map((w) => ({ company: (w as any).company, jobTitle: (w as any).jobTitle || (w as any).position, startDate: (w as any).startDate, endDate: (w as any).endDate, description: (w as any).description }));
+      if (extractedJobTitle) {
+        setPersonal((prev) => ({ ...prev, jobTitle: extractedJobTitle }));
+      }
+      const normalizedWorkExperience = ensureArray(p.workExperience)
+        .flatMap(parseMaybeJsonBlocks)
+        .map(normalizeWorkExp)
+        .filter((w) => w.company || w.jobTitle || w.description);
       setWorkExperience(normalizedWorkExperience);
-      const edu = Array.isArray(p.education) ? p.education as EducationItem[] : [];
-      const normalizedEducation = edu.map((e) => ({ institution: (e as any).institution, qualification: (e as any).qualification || (e as any).degree, startDate: (e as any).startDate, endDate: (e as any).endDate }));
+      const normalizedEducation = ensureArray(p.education)
+        .flatMap(parseMaybeJsonBlocks)
+        .map(normalizeEducation)
+        .filter((e) => e.institution || e.qualification);
       setEducation(normalizedEducation);
-      const cert = Array.isArray(p.certifications) ? p.certifications as CertificationItem[] : [];
-      const normalizedCertifications = cert.map((c) => ({ name: (c as any).name, issuer: (c as any).issuer, date: (c as any).date }));
+      const normalizedCertifications = ensureArray(p.certifications)
+        .flatMap(parseMaybeJsonBlocks)
+        .map(normalizeCert)
+        .filter((c) => c.name || c.issuer);
       setCertifications(normalizedCertifications);
-      const skills = Array.isArray(p.keySkills) ? p.keySkills as SkillItem[] : [];
-      const normalizedSkills = skills.map((s) => ({ name: (s as any).name || (s as any).text, level: (s as any).level || "" }));
+      const normalizedSkills = ensureArray(p.keySkills)
+        .flatMap(parseMaybeJsonBlocks)
+        .map(normalizeSkill)
+        .filter((s) => s.name);
       setKeySkills(normalizedSkills);
 
       await smartApplyAPI.saveProfile({
         category: extractedCategory,
+        jobTitle: extractedJobTitle || null,
         overview: extractedOverview || null,
         workExperience: normalizedWorkExperience.length ? (normalizedWorkExperience as Record<string, unknown>[]) : null,
         education: normalizedEducation.length ? (normalizedEducation as Record<string, unknown>[]) : null,
@@ -598,11 +621,17 @@ const SmartApplyProfile = () => {
         title: "Profile populated and CV saved",
         description: `You were categorized as ${extractedCategory}. You can change this in your profile so the jobs you see match your category better.`,
       });
+      // Do not interrupt Extract & Populate flow with tour prompt.
       if (!onboardingTourCompleted) {
-        setTourPromptOpen(true);
+        setOnboardingTourCompleted(true);
+        void smartApplyAPI.markOnboardingTourComplete().catch(() => {});
       }
-    } catch (err) {
-      toast({ title: err instanceof Error ? err.message : "Extraction failed", variant: "destructive" });
+    } catch (err: any) {
+      toast({
+        title: "Extraction failed",
+        description: err?.message || "Could not extract and populate profile from this CV.",
+        variant: "destructive",
+      });
     } finally {
       setExtractingCV(false);
     }
@@ -1032,10 +1061,10 @@ const SmartApplyProfile = () => {
                   {cvFile && (
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="outlineLight"
                       onClick={handleExtractAndPopulate}
                       disabled={extractingCV}
-                      className="border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+                      className="border-[#1e3a5f]/30 text-[#1e3a5f] hover:bg-[#1e3a5f]/10 hover:text-[#1e3a5f]"
                     >
                       {extractingCV ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Sparkles className="h-4 w-4 mr-1.5" />}
                       Extract &amp; populate

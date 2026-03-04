@@ -336,11 +336,43 @@ const SmartApplyCvEditor = () => {
       }
       setDownloadingPdf(true);
       try {
-        const canvas = await html2canvas(previewCaptureRef.current, {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: "#ffffff",
-        });
+        const sourceNode = previewCaptureRef.current;
+        const a4PxWidth = 794; // Approx A4 width at 96 DPI for cleaner export
+        const exportHost = document.createElement("div");
+        exportHost.style.position = "fixed";
+        exportHost.style.left = "-100000px";
+        exportHost.style.top = "0";
+        exportHost.style.width = `${a4PxWidth}px`;
+        exportHost.style.padding = "0";
+        exportHost.style.margin = "0";
+        exportHost.style.background = "#ffffff";
+        exportHost.style.zIndex = "-1";
+        exportHost.style.pointerEvents = "none";
+        document.body.appendChild(exportHost);
+
+        const clone = sourceNode.cloneNode(true) as HTMLDivElement;
+        clone.style.width = `${a4PxWidth}px`;
+        clone.style.maxWidth = "none";
+        clone.style.minWidth = "0";
+        clone.style.margin = "0";
+        clone.style.background = "#ffffff";
+        exportHost.appendChild(clone);
+
+        let canvas: HTMLCanvasElement;
+        try {
+          canvas = await html2canvas(clone, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: "#ffffff",
+            windowWidth: a4PxWidth,
+            scrollX: 0,
+            scrollY: 0,
+          });
+        } finally {
+          if (document.body.contains(exportHost)) {
+            document.body.removeChild(exportHost);
+          }
+        }
         const imgData = canvas.toDataURL("image/png");
 
         const pdf = new jsPDF({
@@ -350,19 +382,20 @@ const SmartApplyCvEditor = () => {
         });
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
-        const imgWidth = pageWidth;
+        const margin = 24;
+        const imgWidth = pageWidth - margin * 2;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
         let heightLeft = imgHeight;
-        let position = 0;
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+        let position = margin;
+        pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight - margin * 2;
 
         while (heightLeft > 0) {
-          position = heightLeft - imgHeight;
+          position = margin + (heightLeft - imgHeight);
           pdf.addPage();
-          pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-          heightLeft -= pageHeight;
+          pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight - margin * 2;
         }
 
         const safeName = (personal.fullName || "smart-apply-cv")

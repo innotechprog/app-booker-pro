@@ -1,7 +1,7 @@
 // API Service for Backend Communication
 
 // In dev, use relative /api so Vite proxies to backend (avoids CORS). Set VITE_API_URL to override (e.g. direct to backend).
-const RAW_API_BASE_URL = (import.meta.env.DEV && !import.meta.env.VITE_API_URL) ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:5000/api');
+const RAW_API_BASE_URL = (import.meta.env.DEV && !import.meta.env.VITE_API_URL) ? '/api' : (import.meta.env.VITE_API_URL || 'https://ib-backend.ib-innovativesolutions.com/api/');
 const API_BASE_URL = RAW_API_BASE_URL.replace(/\/+$/, '');
 
 // Helper to get auth token
@@ -438,8 +438,9 @@ const fetchWithSmartApplyAuth = async (url: string, options: RequestInit = {}) =
     response = await fetch(fullUrl, { ...options, headers });
   } catch (networkErr: unknown) {
     const isFailedFetch = networkErr instanceof Error && networkErr.message === 'Failed to fetch';
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'unknown-origin';
     const msg = isFailedFetch
-      ? `Cannot reach server at ${fullUrl}. Start ib-backend (C:\\xampp\\htdocs\\ib-backend → npm run dev) and set VITE_API_URL in .env, then restart the frontend.`
+      ? `Cannot reach server at ${fullUrl}. Check that VITE_API_URL is correct and that CORS allows this origin: ${currentOrigin}. If you are using a LAN/dev URL, open the app via http://localhost:8080 (or add your current origin on backend CORS allowlist).`
       : (networkErr instanceof Error ? networkErr.message : 'Network error');
     throw new Error(msg);
   }
@@ -546,8 +547,9 @@ export const smartApplyAPI = {
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Network error';
+      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'unknown-origin';
       const hint = msg === 'Failed to fetch' || msg.includes('fetch')
-        ? ' Make sure ib-backend is running (C:\\xampp\\htdocs\\ib-backend → npm run dev) and VITE_API_URL in .env points to it (e.g. http://localhost:5000/api).'
+        ? ` Make sure VITE_API_URL in .env points to ib-backend (e.g. https://ib-backend.ib-innovativesolutions.com/api/), and ensure backend CORS allows your current origin (${currentOrigin}).`
         : '';
       throw new Error(msg + hint);
     }

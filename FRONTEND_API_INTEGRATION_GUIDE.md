@@ -2,7 +2,7 @@
 
 ## ✅ Current Status
 
-- ✅ **Backend**: Complete API ready at http://localhost:5000
+- ✅ **Backend**: Complete API ready at https://ib-backend.ib-innovativesolutions.com/api/
 - ✅ **Database**: MySQL with all tables and sample data
 - ✅ **API Service**: Created `src/services/api.ts` for frontend
 - ⏳ **Frontend**: Still using localStorage (needs update)
@@ -16,7 +16,7 @@
 Create a file named `.env.local` in the root of your project (same level as `package.json`):
 
 ```env
-VITE_API_URL=http://72.62.31.228:5000/api
+VITE_API_URL=https://ib-backend.ib-innovativesolutions.com/api/
 ```
 
 ### 2. Start Backend Server
@@ -27,7 +27,7 @@ npm install        # If not done yet
 npm run dev        # Start backend
 ```
 
-Backend runs on: **http://localhost:5000**
+Backend runs on: **https://ib-backend.ib-innovativesolutions.com/api/**
 
 ### 3. Start Frontend
 
@@ -125,7 +125,7 @@ I've already created `src/services/api.ts` with these functions:
 Before integrating, test the backend is working:
 
 ### Option 1: Browser
-Visit: http://localhost:5000
+Visit: https://ib-backend.ib-innovativesolutions.com/api/
 Should show: Welcome message with API endpoints
 
 ### Option 2: Test Login
@@ -133,7 +133,7 @@ Open browser console on your frontend and run:
 
 ```javascript
 // Test login API
-fetch('http://localhost:5000/api/auth/login', {
+fetch('https://ib-backend.ib-innovativesolutions.com/api/auth/login', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
