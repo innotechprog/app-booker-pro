@@ -178,71 +178,116 @@ const Booking = () => {
                         type="text"
                         placeholder="Please describe the service you need..."
                         value={bookingData.customService}
-                        onChange={(e) => handleChange("customService", e.target.value)}
-                        className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300"
-                        required={bookingData.specificService === "other"}
-                      />
-                    </div>
-                  )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="urgency" className="text-white font-semibold">Urgency Level</Label>
-                  <Select value={bookingData.urgency} onValueChange={(value) => handleChange("urgency", value)}>
-                    <SelectTrigger className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900">
-                      <SelectValue placeholder="Select urgency level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low - Within a week</SelectItem>
-                      <SelectItem value="normal">Normal - Within 2-3 days</SelectItem>
-                      <SelectItem value="high">High - Within 24 hours</SelectItem>
-                      <SelectItem value="urgent">Urgent - Same day</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="contactMethod" className="text-white font-semibold">Preferred Contact Method</Label>
-                  <Select value={bookingData.contactMethod} onValueChange={(value) => handleChange("contactMethod", value)}>
-                    <SelectTrigger className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 bg-white text-gray-900">
-                      <SelectValue placeholder="Select contact method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="phone">Phone Call</SelectItem>
-                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                      <SelectItem value="email">Email</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description" className="text-white font-semibold">Service Description</Label>
-                                     <Textarea
-                     id="description"
-                     placeholder={bookingData.specificService === "other" 
-                       ? "Please describe your custom service request in detail..." 
-                       : "Describe what you need help with in detail..."}
-                     value={bookingData.description}
-                     onChange={(e) => handleChange("description", e.target.value)}
-                     className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300 min-h-[120px] resize-none"
-                     required
-                   />
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Booking Service..." : "Book Send Me Service"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
-    </>
-  );
-};
-
-export default Booking;
+                        <>
+                          <SEO page="booking" />
+                          <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
+                            <div className="px-4 py-8">
+                              <div className="max-w-2xl mx-auto">
+                                <Button
+                                  variant="ghost"
+                                  onClick={() => navigate("/book-service")}
+                                  className="mb-6 text-white hover:text-blue-300 hover:bg-white/10 px-4 py-2 rounded-xl transition-all duration-300 group"
+                                >
+                                  <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform duration-300" />
+                                  Back to Send Me
+                                </Button>
+                                <Card className="bg-white/10 backdrop-blur-sm border-white/20 shadow-xl">
+                                  <CardHeader>
+                                    <div className="flex items-center space-x-3 mb-4">
+                                      <div>
+                                        <CardTitle className="text-2xl font-bold text-white">
+                                          Book Send Me Service
+                                        </CardTitle>
+                                        <CardDescription className="text-gray-300">
+                                          Fill in the details below to book your Send Me service
+                                        </CardDescription>
+                                      </div>
+                                    </div>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <form onSubmit={handleSubmit} className="space-y-6">
+                                      {/* Personal Details Section */}
+                                      <div className="space-y-2">
+                                        <Label htmlFor="fullName" className="text-white font-semibold">Full Name</Label>
+                                        <Input
+                                          id="fullName"
+                                          type="text"
+                                          placeholder="Enter your full name"
+                                          value={bookingData.fullName || ""}
+                                          onChange={(e) => handleChange("fullName", e.target.value)}
+                                          className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300"
+                                          required
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label htmlFor="email" className="text-white font-semibold">Email Address</Label>
+                                        <Input
+                                          id="email"
+                                          type="email"
+                                          placeholder="Enter your email address"
+                                          value={bookingData.email || ""}
+                                          onChange={(e) => handleChange("email", e.target.value)}
+                                          className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300"
+                                          required
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label htmlFor="phone" className="text-white font-semibold">Phone Number</Label>
+                                        <Input
+                                          id="phone"
+                                          type="tel"
+                                          placeholder="Enter your phone number"
+                                          value={bookingData.phone || ""}
+                                          onChange={(e) => handleChange("phone", e.target.value)}
+                                          className="border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300"
+                                          required
+                                        />
+                                      </div>
+                                      {/* ...existing code... */}
+                                      {/* Service Details Section (unchanged) */}
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                          <Label htmlFor="date" className="text-white font-semibold">Preferred Date</Label>
+                                          <div className="relative">
+                                            <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                                            <Input
+                                              id="date"
+                                              type="date"
+                                              value={bookingData.date}
+                                              onChange={(e) => handleChange("date", e.target.value)}
+                                              className="pl-10 border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300"
+                                              required
+                                              min={new Date().toISOString().split('T')[0]}
+                                            />
+                                          </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                          <Label htmlFor="time" className="text-white font-semibold">Preferred Time</Label>
+                                          <div className="relative">
+                                            <Clock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                                            <Input
+                                              id="time"
+                                              type="time"
+                                              value={bookingData.time}
+                                              onChange={(e) => handleChange("time", e.target.value)}
+                                              className="pl-10 border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-all duration-300"
+                                              required
+                                            />
+                                          </div>
+                                        </div>
+                                      </div>
+                                      {/* ...existing code... */}
+                                      <Button
+                                        type="submit"
+                                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                                        disabled={isLoading}
+                                      >
+                                        {isLoading ? "Booking Service..." : "Book Send Me Service"}
+                                      </Button>
+                                    </form>
+                                  </CardContent>
+                                </Card>
+                              </div>
+                            </div>
+                          </div>
+                        </>

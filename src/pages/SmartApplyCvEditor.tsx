@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, Link, useParams } from "react-router-dom";
+import { useNavigate, useLocation, Link, useParams } from "react-router-dom";
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -228,6 +228,14 @@ const SmartApplyCvEditor = () => {
           }
         } catch (err) {
           console.error("Profile parse error:", err);
+        }
+        // If navigated from Job Assist, overlay AI-tailored content on top of profile data
+        if (jobAssistData) {
+          if (jobAssistData.overview) setOverview(jobAssistData.overview);
+          if (jobAssistData.keySkills?.length) setKeySkills(jobAssistData.keySkills);
+          if (jobAssistData.workExperience?.length) setWorkExperience(jobAssistData.workExperience);
+          if (jobAssistData.education?.length) setEducation(jobAssistData.education);
+          if (jobAssistData.personal?.jobTitle) setPersonal((prev) => ({ ...prev, jobTitle: jobAssistData.personal.jobTitle }));
         }
       })
       .catch((err) => {

@@ -29,9 +29,7 @@ const Layout = ({ children }: LayoutProps) => {
         ) : isSmartApply ? (
           <SmartApplyHeader />
         ) : (
-          <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40">
-            <Header />
-          </div>
+          <Header />
         )}
       </div>
       {/* Main Content Section - Takes remaining space */}

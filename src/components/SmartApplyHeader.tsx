@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, X, User, Sparkles, LogOut, LayoutDashboard, Settings, Crown, Bell } from "lucide-react";
+import { Menu, X, User, Sparkles, LogOut, LayoutDashboard, Settings, Crown, Bell, Wand2 } from "lucide-react";
 import ibLogoBlack from "@/images/ib-logo-black.png";
 import { smartApplyAPI } from "@/services/api";
 
@@ -158,6 +158,13 @@ const SmartApplyHeader = () => {
               CV Builder
             </Link>
             <Link
+              to="/smart-apply/job-assist"
+              className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-1 uppercase tracking-wide"
+            >
+              <Wand2 className="h-4 w-4" />
+              Job Assist
+            </Link>
+            <Link
               to="/smart-apply/premium"
               className="text-sm font-medium text-amber-600 hover:text-amber-700 transition-colors flex items-center gap-1 uppercase tracking-wide"
             >
@@ -290,6 +297,13 @@ const SmartApplyHeader = () => {
               onClick={() => setMobileMenuOpen(false)}
             >
               CV Builder
+            </Link>
+            <Link
+              to="/smart-apply/job-assist"
+              className="py-2 text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-2 uppercase tracking-wide"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <Wand2 className="h-4 w-4" /> Job Assist
             </Link>
             <Link
               to="/smart-apply/premium"

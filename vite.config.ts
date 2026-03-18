@@ -8,6 +8,11 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     proxy: {
+      // Job Assist route lives on the local ib-backend (not yet on production)
+      "/api/job-assist": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+      },
       "/api": {
         target: "https://ib-backend.ib-innovativesolutions.com",
         changeOrigin: true,

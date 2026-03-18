@@ -733,3 +733,106 @@ export const smartApplyAPI = {
   },
 };
 
+// =============================================
+// JOB ASSIST API
+// Calls POST /api/job-assist – file upload or plain text.
+// Uses VITE_LOCAL_API_URL (local backend) because this route is not yet on production.
+// Returns AI-generated CV content structured as CvPreviewData fields.
+// =============================================
+
+// Points to local backend when set; falls back to the same base URL as everything else.
+const JOB_ASSIST_BASE_URL = (import.meta.env.VITE_LOCAL_API_URL || API_BASE_URL).replace(/\/+$/, '');
+
+export interface JobAssistCvContent {
+  jobTitle?: string;
+  overview: string;
+  keySkills: { name: string; level?: string }[];
+  workExperience: {
+    jobTitle?: string;
+    company?: string;
+    startDate?: string;
+    endDate?: string;
+    description?: string;
+    location?: string;
+  }[];
+  education: {
+    qualification?: string;
+    institution?: string;
+    startDate?: string;
+    endDate?: string;
+  }[];
+}
+
+export const jobAssistAPI = {
+  /**
+   * Generate a CV from a job description.
+   * @param payload  { file } OR { jobText }, plus optional profileData (existing CV data to tailor)
+   */
+  generate: async (
+    payload: ({ file: File; jobText?: never } | { jobText: string; file?: never }) & {
+      profileData?: {
+        overview?: string;
+        workExperience?: object[];
+        education?: object[];
+        keySkills?: object[];
+      };
+    }
+  ): Promise<{ success: boolean; cvContent: JobAssistCvContent }> => {
+    const token = localStorage.getItem('smart_apply_token');
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    let body: FormData | string;
+    let contentType: string | undefined;
+
+    if (payload.file) {
+      // Multipart upload – append profileData as a JSON string field
+      const fd = new FormData();
+      fd.append('file', payload.file);
+      if (payload.profileData) fd.append('profileData', JSON.stringify(payload.profileData));
+      body = fd;
+      // Do NOT set Content-Type; browser will do it with boundary
+    } else {
+      body = JSON.stringify({ jobText: payload.jobText, profileData: payload.profileData });
+      contentType = 'application/json';
+    }
+
+    if (contentType) headers['Content-Type'] = contentType;
+
+    const doRequest = async (baseUrl: string) => {
+      const res = await fetch(`${baseUrl}/job-assist`, {
+        method: 'POST',
+        headers,
+        body,
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.message || `Server error: ${res.status}`);
+      }
+      return data as { success: boolean; cvContent: JobAssistCvContent };
+    };
+
+    try {
+      return await doRequest(JOB_ASSIST_BASE_URL);
+    } catch (err: unknown) {
+      const isNetworkError = err instanceof TypeError || (err instanceof Error && err.message === 'Failed to fetch');
+
+      // If local job-assist backend is unavailable, fall back to the primary API base.
+      if (isNetworkError && JOB_ASSIST_BASE_URL !== API_BASE_URL) {
+        try {
+          return await doRequest(API_BASE_URL);
+        } catch {
+          // Continue to friendly network error below.
+        }
+      }
+
+      if (isNetworkError) {
+        throw new Error(`Cannot connect to Job Assist service. Checked ${JOB_ASSIST_BASE_URL} and ${API_BASE_URL}.`);
+      }
+
+      throw err;
+    }
+  },
+};
+

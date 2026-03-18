@@ -7,52 +7,53 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import ComingSoon from "./pages/ComingSoon";
-import BookService from "./pages/BookService";
-import Booking from "./pages/Booking";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import Contact from "./pages/Contact";
 import Education from "./pages/Education";
 import ITSolutions from "./pages/ITSolutions";
-import SmartApply from "./pages/SmartApply";
-import SmartApplyConfirmEmail from "./pages/SmartApplyConfirmEmail";
-import SmartApplyProfile from "./pages/SmartApplyProfile";
-import SmartApplyDashboard from "./pages/SmartApplyDashboard";
-import SmartApplySettings from "./pages/SmartApplySettings";
-import SmartApplyPremium from "./pages/SmartApplyPremium";
-import SmartApplyNotifications from "./pages/SmartApplyNotifications";
-import SmartApplyMyApplications from "./pages/SmartApplyMyApplications";
-import SmartApplyCvBuilder from "./pages/SmartApplyCvBuilder";
-import SmartApplyCvEditor from "./pages/SmartApplyCvEditor";
-import PublicCvView from "./pages/PublicCvView";
-import SmartApplyBilling from "./pages/SmartApplyBilling";
-import SmartApplyCheckout from "./pages/SmartApplyCheckout";
-import Recruiters from "./pages/Recruiters";
-import Jobs from "./pages/Jobs";
-import RecruiterTalentSearch from "./pages/recruiter/RecruiterTalentSearch";
-import RecruiterCandidateProfile from "./pages/recruiter/RecruiterCandidateProfile";
-import RecruiterProfilePage from "./pages/recruiter/RecruiterProfilePage";
-import RecruiterRecruitments from "./pages/recruiter/RecruiterRecruitments";
-import RecruiterRecruitmentDetail from "./pages/recruiter/RecruiterRecruitmentDetail";
-import RecruiterSettings from "./pages/recruiter/RecruiterSettings";
-import RecruiterJobs from "./pages/recruiter/RecruiterJobs";
-import RecruiterJobDetail from "./pages/recruiter/RecruiterJobDetail";
-import Layout from "./components/Layout";
 import Universities from "./pages/Universities";
 import LearnerDashboard from "./pages/LearnerDashboard";
 import LearnerDashboardHome from "./pages/LearnerDashboardHome";
 import LearnerSubjectsPage from "./pages/LearnerSubjectsPage";
 import LearnerTutorialsPage from "./pages/LearnerTutorialsPage";
 import LearnerTutorsPage from "./pages/LearnerTutorsPage";
-import TutorProfile from "./pages/TutorProfile";
-import TutorBooking from "./pages/TutorBooking";
-import AvailableTutorials from "./pages/AvailableTutorials";
-import Billing from "./pages/Billing";
-import Checkout from "./pages/Checkout";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PackageProvider } from "@/contexts/PackageContext";
+
+// Smart Apply pages
+import SmartApply from "./pages/SmartApply";
+import SmartApplyConfirmEmail from "./pages/SmartApplyConfirmEmail";
+import SmartApplyDashboard from "./pages/SmartApplyDashboard";
+import SmartApplyProfile from "./pages/SmartApplyProfile";
+import SmartApplySettings from "./pages/SmartApplySettings";
+import SmartApplyCvBuilder from "./pages/SmartApplyCvBuilder";
+import SmartApplyCvEditor from "./pages/SmartApplyCvEditor";
+import SmartApplyPremium from "./pages/SmartApplyPremium";
+import SmartApplyBilling from "./pages/SmartApplyBilling";
+import SmartApplyCheckout from "./pages/SmartApplyCheckout";
+import SmartApplyNotifications from "./pages/SmartApplyNotifications";
+import SmartApplyMyApplications from "./pages/SmartApplyMyApplications";
+import SmartApplyJobAssist from "./pages/SmartApplyJobAssist";
+import Jobs from "./pages/Jobs";
+import PublicCvView from "./pages/PublicCvView";
+import BookService from "./pages/BookService";
+
+// Recruiter pages
+import RecruiterAuth from "./pages/recruiter/RecruiterAuth";
+import RecruiterJobs from "./pages/recruiter/RecruiterJobs";
+import RecruiterJobDetail from "./pages/recruiter/RecruiterJobDetail";
+import RecruiterRecruitments from "./pages/recruiter/RecruiterRecruitments";
+import RecruiterRecruitmentDetail from "./pages/recruiter/RecruiterRecruitmentDetail";
+import RecruiterProfilePage from "./pages/recruiter/RecruiterProfilePage";
+import RecruiterSettings from "./pages/recruiter/RecruiterSettings";
+import RecruiterTalentSearch from "./pages/recruiter/RecruiterTalentSearch";
+import RecruiterCandidateProfile from "./pages/recruiter/RecruiterCandidateProfile";
+
+// Other public pages
+import Recruiters from "./pages/Recruiters";
 
 import ScrollToTop from "./components/ScrollToTop";
 
@@ -72,35 +73,8 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/education" element={<Education />} />
+                <Route path="/book-service" element={<BookService />} />
                 <Route path="/it-solutions" element={<ITSolutions />} />
-                <Route path="/smart-apply" element={<SmartApply />} />
-                <Route path="/smart-apply/sign-in" element={<SmartApply />} />
-                <Route path="/smart-apply/sign-up" element={<SmartApply />} />
-                <Route path="/smart-apply/confirm-email" element={<SmartApplyConfirmEmail />} />
-                <Route path="/smart-apply/apply" element={<SmartApply />} />
-                <Route path="/smart-apply/profile" element={<SmartApplyProfile />} />
-                <Route path="/smart-apply/settings" element={<SmartApplySettings />} />
-                <Route path="/smart-apply/dashboard" element={<SmartApplyDashboard />} />
-                <Route path="/smart-apply/premium" element={<SmartApplyPremium />} />
-                <Route path="/smart-apply/billing" element={<SmartApplyBilling />} />
-                <Route path="/smart-apply/checkout" element={<SmartApplyCheckout />} />
-                <Route path="/smart-apply/notifications" element={<SmartApplyNotifications />} />
-                <Route path="/smart-apply/my-applications" element={<SmartApplyMyApplications />} />
-                <Route path="/smart-apply/cv-builder/edit/:templateId" element={<SmartApplyCvEditor />} />
-                <Route path="/smart-apply/cv-builder" element={<SmartApplyCvBuilder />} />
-                <Route path="/smart-apply/jobs" element={<Jobs />} />
-                <Route path="/cv/:slug" element={<PublicCvView />} />
-                <Route path="/recruiters" element={<Recruiters />} />
-                <Route path="/recruiter" element={<Layout><RecruiterTalentSearch /></Layout>} />
-                <Route path="/recruiter/sign-in" element={<Navigate to="/smart-apply/sign-in?mode=recruiter" replace />} />
-                <Route path="/recruiter/profile" element={<Layout><RecruiterProfilePage /></Layout>} />
-                <Route path="/recruiter/recruitments" element={<Layout><RecruiterRecruitments /></Layout>} />
-                <Route path="/recruiter/recruitments/:id" element={<Layout><RecruiterRecruitmentDetail /></Layout>} />
-                <Route path="/recruiter/jobs" element={<Layout><RecruiterJobs /></Layout>} />
-                <Route path="/recruiter/jobs/:id" element={<Layout><RecruiterJobDetail /></Layout>} />
-                <Route path="/recruiter/settings" element={<Layout><RecruiterSettings /></Layout>} />
-                <Route path="/recruiter/candidates/:id" element={<Layout><RecruiterCandidateProfile /></Layout>} />
-                <Route path="/jobs" element={<Jobs />} />
                 <Route path="/universities" element={<Universities />} />
                 <Route path="/learner/login" element={<LearnerLogin />} />
                 <Route path="/learner/register" element={<LearnerRegister />} />
@@ -112,16 +86,45 @@ const App = () => (
                 <Route path="/learner/tutorials" element={<LearnerTutorialsPage />} />
                 <Route path="/learner/packages" element={<Packages />} />
                 <Route path="/learner/tutors" element={<LearnerTutorsPage />} />
-                <Route path="/tutor/:tutorId" element={<TutorProfile />} />
-                <Route path="/tutor-booking/:tutorId" element={<TutorBooking />} />
-                <Route path="/tutorials/available" element={<AvailableTutorials />} />
-                <Route path="/billing" element={<Billing />} />
-                <Route path="/checkout/:packageId" element={<Checkout />} />
-                <Route path="/send-me" element={<BookService />} />
-                <Route path="/book-service" element={<BookService />} />
-                <Route path="/booking" element={<Booking />} />
-                {/* All other routes show Coming Soon */}
-                <Route path="*" element={<ComingSoon />} />
+
+                {/* ── Smart Apply ── */}
+                <Route path="/smart-apply" element={<SmartApply />} />
+                <Route path="/smart-apply/sign-in" element={<SmartApply />} />
+                <Route path="/smart-apply/sign-up" element={<SmartApply />} />
+                <Route path="/smart-apply/apply" element={<SmartApply />} />
+                <Route path="/smart-apply/confirm-email" element={<SmartApplyConfirmEmail />} />
+                <Route path="/smart-apply/dashboard" element={<SmartApplyDashboard />} />
+                <Route path="/smart-apply/profile" element={<SmartApplyProfile />} />
+                <Route path="/smart-apply/settings" element={<SmartApplySettings />} />
+                <Route path="/smart-apply/cv-builder" element={<SmartApplyCvBuilder />} />
+                <Route path="/smart-apply/cv-builder/edit/:templateId" element={<SmartApplyCvEditor />} />
+                <Route path="/smart-apply/premium" element={<SmartApplyPremium />} />
+                <Route path="/smart-apply/billing" element={<SmartApplyBilling />} />
+                <Route path="/smart-apply/checkout" element={<SmartApplyCheckout />} />
+                <Route path="/smart-apply/notifications" element={<SmartApplyNotifications />} />
+                <Route path="/smart-apply/my-applications" element={<SmartApplyMyApplications />} />
+                <Route path="/smart-apply/jobs" element={<Jobs />} />
+                <Route path="/smart-apply/job-assist" element={<SmartApplyJobAssist />} />
+                {/* Public CV shareable link */}
+                <Route path="/cv/:slug" element={<PublicCvView />} />
+
+                {/* ── Recruiter ── */}
+                <Route path="/recruiter" element={<RecruiterAuth />} />
+                <Route path="/recruiter/sign-in" element={<RecruiterAuth />} />
+                <Route path="/recruiter/jobs" element={<RecruiterJobs />} />
+                <Route path="/recruiter/jobs/:id" element={<RecruiterJobDetail />} />
+                <Route path="/recruiter/recruitments" element={<RecruiterRecruitments />} />
+                <Route path="/recruiter/recruitments/:id" element={<RecruiterRecruitmentDetail />} />
+                <Route path="/recruiter/profile" element={<RecruiterProfilePage />} />
+                <Route path="/recruiter/settings" element={<RecruiterSettings />} />
+                <Route path="/recruiter/talent" element={<RecruiterTalentSearch />} />
+                <Route path="/recruiter/candidates/:id" element={<RecruiterCandidateProfile />} />
+
+                {/* ── Other public pages ── */}
+                <Route path="/recruiters" element={<Recruiters />} />
+
+                {/* 404 */}
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
           </TooltipProvider>
