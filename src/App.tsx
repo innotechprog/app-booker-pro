@@ -39,7 +39,8 @@ import SmartApplyMyApplications from "./pages/SmartApplyMyApplications";
 import SmartApplyJobAssist from "./pages/SmartApplyJobAssist";
 import Jobs from "./pages/Jobs";
 import PublicCvView from "./pages/PublicCvView";
-import BookService from "./pages/BookService";
+import BookServicePage from "@/features/sendMe/pages/BookServicePage";
+import BookingPage from "@/features/sendMe/pages/BookingPage";
 
 // Recruiter pages
 import RecruiterAuth from "./pages/recruiter/RecruiterAuth";
@@ -73,7 +74,8 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/education" element={<Education />} />
-                <Route path="/book-service" element={<BookService />} />
+                <Route path="/book-service" element={<BookServicePage />} />
+                <Route path="/booking" element={<BookingPage />} />
                 <Route path="/it-solutions" element={<ITSolutions />} />
                 <Route path="/universities" element={<Universities />} />
                 <Route path="/learner/login" element={<LearnerLogin />} />
