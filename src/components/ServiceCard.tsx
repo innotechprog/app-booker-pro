@@ -1,1 +1,1 @@
-export { default } from "@/features/public/components/ServiceInfoCard";
+export { ServiceInfoCard as default } from "@/features/public";

@@ -1,6 +1,5 @@
 import Layout from "@/components/Layout";
-import HeroSection from "@/features/public/components/HeroSection";
-import ServicesOverviewSection from "@/features/public/components/ServicesOverviewSection";
+import { HeroSection, ServicesOverviewSection } from "@/features/public";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 

@@ -1,1 +1,1 @@
-export { default } from "@/features/sendMe/pages/BookServicePage";
+export { BookServicePage as default } from "@/features/sendMe";

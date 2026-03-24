@@ -1,7 +1,1 @@
-import LearnerDashboard from "./LearnerDashboard";
-
-export default function LearnerNotesPage() {
-  return <LearnerDashboard initialTab="notes" hideTabs />;
-}
-
-
+export { default } from "@/features/education/pages/LearnerNotesPage";

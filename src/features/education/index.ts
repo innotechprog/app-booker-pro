@@ -1,0 +1,12 @@
+export { default as EducationPage } from "./pages/EducationPage";
+export { default as ApplicationHelpPage } from "./pages/ApplicationHelpPage";
+export { default as UniversitiesPage } from "./pages/UniversitiesPage";
+export { default as LearnerLoginPage } from "./pages/LearnerLoginPage";
+export { default as LearnerRegisterPage } from "./pages/LearnerRegisterPage";
+export { default as LearnerDashboardPage } from "./pages/LearnerDashboardPage";
+export { default as LearnerDashboardHomePage } from "./pages/LearnerDashboardHomePage";
+export { default as LearnerNotesPage } from "./pages/LearnerNotesPage";
+export { default as LearnerProfilePage } from "./pages/LearnerProfilePage";
+export { default as LearnerSubjectsPage } from "./pages/LearnerSubjectsPage";
+export { default as LearnerTutorialsPage } from "./pages/LearnerTutorialsPage";
+export { default as LearnerTutorsPage } from "./pages/LearnerTutorsPage";

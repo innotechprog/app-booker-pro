@@ -96,12 +96,7 @@ const SmartApplyHeader = () => {
                 </span>
                 <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-pink-500" aria-hidden />
               </span>
-              <span
-                className="text-xs sm:text-sm font-medium tracking-wide"
-                style={{ color: DEEP_BLUE }}
-              >
-                Apply to many companies at once
-              </span>
+
             </div>
           </Link>
 

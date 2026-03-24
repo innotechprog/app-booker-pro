@@ -1,1 +1,1 @@
-export { default } from "@/features/public/components/HeroSection";
+export { HeroSection as default } from "@/features/public";

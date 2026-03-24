@@ -1,1 +1,1 @@
-export { default } from "@/features/public/components/ContactSection";
+export { ContactSection as default } from "@/features/public";

@@ -1,0 +1,14 @@
+export { default as SmartApplyPage } from "./pages/SmartApplyPage";
+export { default as SmartApplyConfirmEmailPage } from "./pages/SmartApplyConfirmEmailPage";
+export { default as SmartApplyDashboardPage } from "./pages/SmartApplyDashboardPage";
+export { default as SmartApplyProfilePage } from "./pages/SmartApplyProfilePage";
+export { default as SmartApplySettingsPage } from "./pages/SmartApplySettingsPage";
+export { default as SmartApplyCvBuilderPage } from "./pages/SmartApplyCvBuilderPage";
+export { default as SmartApplyPremiumPage } from "./pages/SmartApplyPremiumPage";
+export { default as SmartApplyBillingPage } from "./pages/SmartApplyBillingPage";
+export { default as SmartApplyCheckoutPage } from "./pages/SmartApplyCheckoutPage";
+export { default as SmartApplyNotificationsPage } from "./pages/SmartApplyNotificationsPage";
+export { default as SmartApplyMyApplicationsPage } from "./pages/SmartApplyMyApplicationsPage";
+export { default as SmartApplyJobAssistPage } from "./pages/SmartApplyJobAssistPage";
+export { default as SmartApplyJobsPage } from "./pages/SmartApplyJobsPage";
+export { default as PublicCvViewPage } from "./pages/PublicCvViewPage";

@@ -1,0 +1,10 @@
+export { default as RecruiterAuthPage } from "./pages/RecruiterAuthPage";
+export { default as RecruiterJobsPage } from "./pages/RecruiterJobsPage";
+export { default as RecruiterJobDetailPage } from "./pages/RecruiterJobDetailPage";
+export { default as RecruiterRecruitmentsPage } from "./pages/RecruiterRecruitmentsPage";
+export { default as RecruiterRecruitmentDetailPage } from "./pages/RecruiterRecruitmentDetailPage";
+export { default as RecruiterProfilePage } from "./pages/RecruiterProfilePage";
+export { default as RecruiterSettingsPage } from "./pages/RecruiterSettingsPage";
+export { default as RecruiterTalentSearchPage } from "./pages/RecruiterTalentSearchPage";
+export { default as RecruiterCandidateProfilePage } from "./pages/RecruiterCandidateProfilePage";
+export { default as RecruitersPage } from "./pages/RecruitersPage";

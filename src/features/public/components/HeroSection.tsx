@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import heroImage from "@/images/hero.png";
+import { heroContent } from "@/features/public/constants";
 
 const HeroSection = () => {
   return (
@@ -17,14 +18,12 @@ const HeroSection = () => {
       <div className="relative z-10 mx-auto max-w-4xl text-center">
         <div className="space-y-8">
           <div className="space-y-4">
-            <h1 className="mb-4 text-5xl font-bold text-white md:text-6xl">IB Innovative Solutions</h1>
+            <h1 className="mb-4 text-5xl font-bold text-white md:text-6xl">{heroContent.title}</h1>
 
-            <h2 className="text-2xl font-medium text-white md:text-3xl">Solutions you can trust everyday.</h2>
+            <h2 className="text-2xl font-medium text-white md:text-3xl">{heroContent.subtitle}</h2>
           </div>
 
-          <p className="mx-auto max-w-2xl text-lg leading-relaxed text-gray-200">
-            We are committed to provide you with best solutions that is beyond your expectation.
-          </p>
+          <p className="mx-auto max-w-2xl text-lg leading-relaxed text-gray-200">{heroContent.description}</p>
 
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
             <Button
@@ -35,7 +34,7 @@ const HeroSection = () => {
                 window.location.href = "/contact";
               }}
             >
-              Contact Us
+              {heroContent.primaryActionLabel}
             </Button>
             <Button
               asChild
@@ -44,7 +43,7 @@ const HeroSection = () => {
               className="rounded-lg border border-gray-600 bg-gray-800 px-8 py-4 text-lg font-semibold text-white hover:bg-gray-700"
             >
               <a href="#services" aria-label="Learn more about our services">
-                Learn more
+                {heroContent.secondaryActionLabel}
               </a>
             </Button>
           </div>

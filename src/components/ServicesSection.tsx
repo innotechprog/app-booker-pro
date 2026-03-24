@@ -1,1 +1,1 @@
-export { default } from "@/features/public/components/ServicesOverviewSection";
+export { ServicesOverviewSection as default } from "@/features/public";

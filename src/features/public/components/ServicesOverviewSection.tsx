@@ -1,44 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, Monitor, Send, Sparkles } from "lucide-react";
-
-interface ServiceItem {
-  name: string;
-  icon: React.ComponentType<{ className?: string }>;
-  route: string;
-  description: string;
-  features?: string[];
-}
+import { publicServices } from "@/features/public/constants";
 
 const ServicesOverviewSection = () => {
   const navigate = useNavigate();
-
-  const services: ServiceItem[] = [
-    {
-      name: "Education",
-      icon: GraduationCap,
-      route: "/education",
-      description: "Comprehensive educational support including tutoring, university applications, and career guidance",
-    },
-    {
-      name: "Send Me",
-      icon: Send,
-      route: "/book-service",
-      description: "Personal errand running, delivery services, and on-demand assistance for your daily needs",
-    },
-    {
-      name: "IT Solutions",
-      icon: Monitor,
-      route: "/book-service",
-      description: "Professional IT services including web development, system maintenance, and technical support",
-    },
-    {
-      name: "Smart Apply",
-      icon: Sparkles,
-      route: "/smart-apply",
-      description: "Apply to many companies at once. AI generates tailored email subjects and bodies-view and edit before sending",
-    },
-  ];
 
   return (
     <section className="relative px-6 py-20">
@@ -51,7 +16,7 @@ const ServicesOverviewSection = () => {
         </div>
 
         <div className="mb-16 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-          {services.map((service, index) => {
+          {publicServices.map((service, index) => {
             const IconComponent = service.icon;
             return (
               <div key={index} className="group relative" style={{ animationDelay: `${index * 100}ms` }}>
