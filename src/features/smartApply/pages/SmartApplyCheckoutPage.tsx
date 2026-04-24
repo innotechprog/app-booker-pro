@@ -31,7 +31,7 @@ interface LocationState {
   };
 }
 
-const SmartApplyCheckoutPage = () => {
+const JobAssistantCheckoutPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -54,7 +54,7 @@ const SmartApplyCheckoutPage = () => {
         setProcessing(false);
         toast({
           title: "Redirecting to PayFast",
-          description: "You will complete your secure payment on PayFast and then return to Smart Apply.",
+          description: "You will complete your secure payment on PayFast and then return to Job Assistant.",
         });
         navigate("/smart-apply/dashboard");
       }, 800);
@@ -73,7 +73,7 @@ const SmartApplyCheckoutPage = () => {
 
   return (
     <Layout>
-      <SEO title="Checkout - Smart Apply credits" />
+      <SEO title="Checkout - Job Assistant credits" />
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 py-8">
           <Button asChild variant="ghost" size="sm" className="mb-6 text-gray-700 hover:text-gray-900">
@@ -139,7 +139,7 @@ const SmartApplyCheckoutPage = () => {
                 {paymentMethod === "payfast" && (
                   <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-3 text-xs text-emerald-900">
                     You will be redirected to <strong>PayFast</strong> to complete your payment securely, then returned
-                    to Smart Apply.
+                    to Job Assistant.
                   </div>
                 )}
 
@@ -204,7 +204,7 @@ const SmartApplyCheckoutPage = () => {
                   <p className="text-gray-500 text-xs mt-1">{selected.description}</p>
                 )}
                 <div className="mt-4 border-t border-gray-200 pt-3 text-xs text-gray-500">
-                  Credits are linked to your Smart Apply profile and are used only when you accept an auto-apply match.
+                  Credits are linked to your Job Assistant profile and are used only when you accept an auto-apply match.
                 </div>
               </CardContent>
             </Card>
@@ -215,4 +215,4 @@ const SmartApplyCheckoutPage = () => {
   );
 };
 
-export default SmartApplyCheckoutPage;
+export default JobAssistantCheckoutPage;

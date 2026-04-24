@@ -45,7 +45,7 @@ const PublicCvView = () => {
   if (loading) {
     return (
       <Layout>
-        <SEO title="Online CV – Smart Apply" />
+        <SEO title="Online CV – Job Assistant" />
         <div className="min-h-[60vh] flex items-center justify-center">
           <Loader2 className="h-10 w-10 animate-spin text-indigo-600" />
         </div>
@@ -56,7 +56,7 @@ const PublicCvView = () => {
   if (error || !data) {
     return (
       <Layout>
-        <SEO title="CV Not Found – Smart Apply" />
+        <SEO title="CV Not Found – Job Assistant" />
         <div className="min-h-[60vh] flex items-center justify-center p-4">
           <div className="text-center">
             <h1 className="text-xl font-bold text-gray-900">CV Not Found</h1>
@@ -83,7 +83,7 @@ const PublicCvView = () => {
           <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200 p-2 sm:p-4">
             <CvPreviewByTemplate templateId={data.templateId} data={data.cvData} onLinkClick={handleLinkClick} />
           </div>
-          <p className="text-center text-sm text-gray-500 mt-4">Scanned from a printed CV · Smart Apply</p>
+          <p className="text-center text-sm text-gray-500 mt-4">Scanned from a printed CV · Job Assistant</p>
         </div>
       </div>
     </Layout>

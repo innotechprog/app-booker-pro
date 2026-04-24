@@ -131,6 +131,8 @@ function normalizeEmail(email: string): string {
   if (!email) return "";
   const normalized = (email || "")
     .normalize("NFKC")
+    // Strip format / invisible characters from pasted emails (explicit Unicode ranges)
+    // eslint-disable-next-line no-control-regex, no-misleading-character-class -- intentional sanitization
     .replace(/[\u0000-\u001F\u007F-\u009F\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180E\u2000-\u200F\u2028-\u202F\u205F-\u206F\u3000\u3164\uFE00-\uFE0F\uFEFF\uFFA0]/g, "")
     .replace(/\s+/g, "")
     .trim();

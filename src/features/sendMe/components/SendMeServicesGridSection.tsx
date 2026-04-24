@@ -1,4 +1,4 @@
-import { sendMeServices, sendMeServicesIntro } from "@/features/sendMe/constants";
+import { sendMeServices, sendMeServicesIntro, SEND_ME_BRAND_BLUE } from "@/features/sendMe/constants";
 
 const SendMeServicesGridSection = () => {
   return (
@@ -7,7 +7,6 @@ const SendMeServicesGridSection = () => {
       <div className="relative z-10 px-6 py-20">
         <div className="mx-auto max-w-6xl">
           <div className="mb-12 text-center">
-            <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-blue-700">{sendMeServicesIntro.eyebrow}</p>
             <h2 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">{sendMeServicesIntro.title}</h2>
             <p className="mx-auto max-w-3xl text-lg leading-relaxed text-gray-600">{sendMeServicesIntro.description}</p>
           </div>
@@ -21,7 +20,7 @@ const SendMeServicesGridSection = () => {
                 >
                   <div className="mb-3 flex items-center gap-3">
                     <div className="rounded-lg bg-blue-50 p-2 transition-colors group-hover:bg-blue-100">
-                      <IconComponent className="h-6 w-6 text-blue-700" />
+                      <IconComponent className="h-6 w-6" style={{ color: SEND_ME_BRAND_BLUE }} />
                     </div>
                     <h3 className="text-lg font-semibold text-gray-900">{service.name}</h3>
                   </div>

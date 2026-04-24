@@ -1,8 +1,9 @@
 // API Service for Backend Communication
 
+import { getResolvedApiBaseUrl } from "@/config/apiBaseUrl";
+
 // In dev, use relative /api so Vite proxies to backend (avoids CORS). Set VITE_API_URL to override (e.g. direct to backend).
-const RAW_API_BASE_URL = (import.meta.env.DEV && !import.meta.env.VITE_API_URL) ? '/api' : (import.meta.env.VITE_API_URL || 'https://ib-backend.ib-innovativesolutions.com/api/');
-const API_BASE_URL = RAW_API_BASE_URL.replace(/\/+$/, '');
+const API_BASE_URL = getResolvedApiBaseUrl();
 
 // Helper to get auth token
 const getToken = (): string | null => {
@@ -414,12 +415,30 @@ export const clearAuth = () => {
 };
 
 // =============================================
-// SMART APPLY API (standalone – uses smart_apply_candidates, own token)
+// JOB ASSISTANT API (standalone – uses smart_apply_candidates, own token)
 // =============================================
 
 const SMART_APPLY_TOKEN_KEY = 'smart_apply_token';
+const SMART_APPLY_LOCAL_BASE_URL = (import.meta.env.VITE_LOCAL_API_URL || API_BASE_URL).replace(/\/+$/, '');
 
 const getSmartApplyToken = (): string | null => localStorage.getItem(SMART_APPLY_TOKEN_KEY);
+
+/** Resolve jobs array from common API envelope shapes (`jobs`, `data.jobs`, `results`, etc.). */
+function extractJobsFromListPayload(data: unknown): unknown[] {
+  if (!data || typeof data !== 'object') return [];
+  const o = data as Record<string, unknown>;
+  if (Array.isArray(o.jobs)) return o.jobs;
+  if (Array.isArray(o.results)) return o.results;
+  if (Array.isArray(o.items)) return o.items;
+  if (Array.isArray(o.data)) return o.data;
+  const nested = o.data;
+  if (nested && typeof nested === 'object' && !Array.isArray(nested)) {
+    const d = nested as Record<string, unknown>;
+    if (Array.isArray(d.jobs)) return d.jobs;
+    if (Array.isArray(d.data)) return d.data;
+  }
+  return [];
+}
 
 const fetchWithSmartApplyAuth = async (url: string, options: RequestInit = {}) => {
   const token = getSmartApplyToken();
@@ -431,7 +450,7 @@ const fetchWithSmartApplyAuth = async (url: string, options: RequestInit = {}) =
   const path = url.startsWith('/') ? url : `/${url}`;
   const fullUrl = `${API_BASE_URL}${path}`;
   if (import.meta.env.DEV) {
-    console.log('[Smart Apply API]', options.method || 'GET', fullUrl);
+    console.log('[Job Assistant API]', options.method || 'GET', fullUrl);
   }
   let response: Response;
   try {
@@ -467,6 +486,20 @@ const fetchWithSmartApplyAuthBlob = async (url: string): Promise<Blob> => {
 };
 
 export const smartApplyAPI = {
+  generateInterviewQuestions: async (payload: {
+    jobDescription: string;
+    jobTitle?: string;
+    overview?: string;
+    keySkills?: string[];
+    targetSkills?: string[];
+    count?: number;
+  }): Promise<{ success: boolean; questions: Array<{ question: string; category?: string; tags?: string[] }> }> => {
+    return await fetchWithSmartApplyAuth('/smart-apply/interview-questions', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
   sendEmails: async (payload: {
     emails: { to: string; subject: string; body: string }[];
     userEmail: string;
@@ -491,6 +524,46 @@ export const smartApplyAPI = {
 
   getDashboard: async () => {
     return await fetchWithSmartApplyAuth('/smart-apply/dashboard');
+  },
+
+  getJobs: async (params?: {
+    q?: string;
+    category?: "general" | "professional";
+    workMethod?: string;
+    postType?: string;
+    limit?: number;
+  }): Promise<{ success: boolean; jobs: Record<string, unknown>[] }> => {
+    const searchParams = new URLSearchParams();
+    if (params?.q) searchParams.set('q', params.q);
+    if (params?.category) searchParams.set('category', params.category);
+    if (params?.workMethod) searchParams.set('workMethod', params.workMethod);
+    if (params?.postType) searchParams.set('postType', params.postType);
+    if (typeof params?.limit === 'number' && Number.isFinite(params.limit)) {
+      searchParams.set('limit', String(Math.max(1, Math.min(100, Math.floor(params.limit)))));
+    }
+    const query = searchParams.toString();
+    const fetchJobsFrom = async (baseUrl: string) => {
+      const res = await fetch(`${baseUrl}/smart-apply/jobs${query ? `?${query}` : ''}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || data.message || `Server error: ${res.status}`);
+      const list = extractJobsFromListPayload(data);
+      return {
+        success: !!(data as Record<string, unknown>).success,
+        jobs: list as Record<string, unknown>[],
+      };
+    };
+
+    try {
+      return await fetchJobsFrom(API_BASE_URL);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message.toLowerCase() : '';
+      const shouldFallbackToLocal =
+        SMART_APPLY_LOCAL_BASE_URL !== API_BASE_URL &&
+        (msg.includes('router not found') || msg.includes('not found') || msg.includes('server error: 404'));
+
+      if (!shouldFallbackToLocal) throw err;
+      return await fetchJobsFrom(SMART_APPLY_LOCAL_BASE_URL);
+    }
   },
 
   generateEmails: async (payload: {
@@ -745,6 +818,7 @@ const JOB_ASSIST_BASE_URL = (import.meta.env.VITE_LOCAL_API_URL || API_BASE_URL)
 
 export interface JobAssistCvContent {
   jobTitle?: string;
+  /** Tailored professional summary (API may also send `professional_summary` — normalized in `restructureTailoredCvForEditor`). */
   overview: string;
   keySkills: { name: string; level?: string }[];
   workExperience: {
@@ -754,12 +828,24 @@ export interface JobAssistCvContent {
     endDate?: string;
     description?: string;
     location?: string;
+    /** When present, merged into `description` as line-separated bullets for templates */
+    responsibilities?: string[];
   }[];
   education: {
     qualification?: string;
     institution?: string;
     startDate?: string;
     endDate?: string;
+    dates?: string;
+  }[];
+  /** Optional; mapped to a "Projects" custom section in the CV editor */
+  projects?: {
+    project_name?: string;
+    name?: string;
+    title?: string;
+    description?: string;
+    summary?: string;
+    technologies?: string[];
   }[];
 }
 
@@ -774,7 +860,9 @@ export const jobAssistAPI = {
         overview?: string;
         workExperience?: object[];
         education?: object[];
+        certifications?: object[];
         keySkills?: object[];
+        allSkills?: string[];
       };
     }
   ): Promise<{ success: boolean; cvContent: JobAssistCvContent }> => {

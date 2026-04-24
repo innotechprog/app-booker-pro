@@ -1,5 +1,6 @@
 export { default as RecruiterAuthPage } from "./pages/RecruiterAuthPage";
 export { default as RecruiterJobsPage } from "./pages/RecruiterJobsPage";
+export { default as RecruiterJobCreatePage } from "./pages/RecruiterJobCreatePage";
 export { default as RecruiterJobDetailPage } from "./pages/RecruiterJobDetailPage";
 export { default as RecruiterRecruitmentsPage } from "./pages/RecruiterRecruitmentsPage";
 export { default as RecruiterRecruitmentDetailPage } from "./pages/RecruiterRecruitmentDetailPage";

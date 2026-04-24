@@ -30,8 +30,9 @@ const SmartApplyDashboardPage = () => {
     Promise.all([
       smartApplyAPI.getDashboard(),
       smartApplyAPI.getResumeAnalytics().catch(() => ({ totals: { viewCount: 0, downloadCount: 0, linkClickCount: 0 } })),
+      smartApplyAPI.getJobs({ limit: 100 }).catch(() => ({ success: false, jobs: [] as Record<string, unknown>[] })),
     ])
-      .then(([dashboardRes, analyticsRes]) => {
+      .then(([dashboardRes, analyticsRes, jobsRes]) => {
         const totals = (analyticsRes as { totals?: { viewCount?: number; downloadCount?: number; linkClickCount?: number } })?.totals;
         setResumeAnalytics({
           viewCount: totals?.viewCount ?? 0,
@@ -41,7 +42,11 @@ const SmartApplyDashboardPage = () => {
         const res = dashboardRes as { dashboard?: DashboardData };
         const d = (res?.dashboard ?? res) as DashboardData | Record<string, unknown>;
         const jobs = Number(d?.jobsApplied);
-        const matching = Number(d?.matchingJobs);
+        const matchingFromDashboard = Number(d?.matchingJobs);
+        const jobList = (jobsRes as { jobs?: unknown[] })?.jobs;
+        const matching = Array.isArray(jobList)
+          ? jobList.length
+          : (Number.isFinite(matchingFromDashboard) && matchingFromDashboard >= 0 ? matchingFromDashboard : 0);
         setData({
           jobsApplied: Number.isFinite(jobs) && jobs >= 0 ? jobs : 0,
           matchingJobs: Number.isFinite(matching) && matching >= 0 ? matching : 0,
@@ -207,8 +212,8 @@ const SmartApplyDashboardPage = () => {
 
         <div className="mt-10 flex flex-wrap gap-4">
           <Button asChild className="text-white hover:opacity-90" style={{ backgroundColor: "#1e3a5f" }}>
-            <Link to="/smart-apply/apply" className="inline-flex items-center gap-2">
-              <Mail className="h-4 w-4" /> APPLY TO MULTIPLE EMAILS
+            <Link to="/smart-apply/apply" className="inline-flex items-center gap-2" title="APPLY TO MULTIPLE EMAILS">
+              <Mail className="h-4 w-4" /> SMART APPLY
             </Link>
           </Button>
           <Button asChild variant="outline" className="border-gray-300 text-gray-800 hover:bg-gray-50 bg-white shrink-0">

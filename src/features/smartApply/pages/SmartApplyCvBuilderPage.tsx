@@ -96,7 +96,7 @@ function CvPreviewCard({ templateId, data }: { templateId: number; data?: CvPrev
   );
 }
 
-const SmartApplyCvBuilder = () => {
+const JobAssistantCvBuilder = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -204,7 +204,7 @@ const SmartApplyCvBuilder = () => {
   if (loading) {
     return (
       <Layout>
-        <SEO title="CV Builder – Smart Apply" />
+        <SEO title="CV Builder – Job Assistant" />
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <Loader2 className="h-10 w-10 animate-spin text-gray-600" />
         </div>
@@ -214,7 +214,7 @@ const SmartApplyCvBuilder = () => {
 
   return (
     <Layout>
-      <SEO title="Professional CV Builder – Smart Apply" />
+      <SEO title="Professional CV Builder – Job Assistant" />
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-5xl mx-auto px-4 py-8">
           <Button asChild variant="ghost" size="sm" className="mb-6 text-gray-700 hover:text-gray-900">
@@ -245,7 +245,7 @@ const SmartApplyCvBuilder = () => {
             </CardHeader>
           </Card>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {Array.from({ length: 20 }, (_, i) => i + 1).map((id) => {
               const isPremium = premiumCredits > 0;
               const badge = getTemplateBadge(id, isPremium);
@@ -285,4 +285,4 @@ const SmartApplyCvBuilder = () => {
   );
 };
 
-export default SmartApplyCvBuilder;
+export default JobAssistantCvBuilder;

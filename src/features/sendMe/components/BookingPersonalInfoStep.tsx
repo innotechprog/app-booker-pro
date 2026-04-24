@@ -1,6 +1,7 @@
 import { MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import AddressAutocompleteInput from "@/features/sendMe/components/AddressAutocompleteInput";
 import {
   bookingGlassPanelClass,
   bookingInputClass,
@@ -8,11 +9,13 @@ import {
   bookingInputWithIconClass,
   bookingPanelHeadingClass,
 } from "@/features/sendMe/constants";
-import type { BookingFormData } from "@/features/sendMe/types";
+import type { BookingFormData, BookingFormUpdater } from "@/features/sendMe/types";
+
+const mapsKeyConfigured = Boolean(import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim());
 
 interface BookingPersonalInfoStepProps {
   form: BookingFormData;
-  update: (key: keyof BookingFormData, value: string) => void;
+  update: BookingFormUpdater;
 }
 
 const BookingPersonalInfoStep = ({ form, update }: BookingPersonalInfoStepProps) => {
@@ -40,10 +43,22 @@ const BookingPersonalInfoStep = ({ form, update }: BookingPersonalInfoStepProps)
         </div>
       </div>
       <div>
-        <Label htmlFor="address" className={bookingInputLabelClass}>Address</Label>
+        <Label htmlFor="address" className={bookingInputLabelClass}>
+          Address
+          {mapsKeyConfigured && (
+            <span className="ml-2 font-normal normal-case text-white/60">(search with Google)</span>
+          )}
+        </Label>
         <div className="relative mt-1">
-          <MapPin className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-gray-400" />
-          <Input id="address" placeholder="Street address / area" value={form.address} onChange={(e) => update("address", e.target.value)} className={bookingInputWithIconClass} required />
+          <MapPin className="pointer-events-none absolute left-3 top-3 z-[1] h-4 w-4 text-gray-400" />
+          <AddressAutocompleteInput
+            id="address"
+            placeholder={mapsKeyConfigured ? "Start typing your street address…" : "Street address / area"}
+            value={form.address}
+            onValueChange={(v) => update("address", v)}
+            className={bookingInputWithIconClass}
+            required
+          />
         </div>
       </div>
     </div>

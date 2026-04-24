@@ -649,7 +649,6 @@ Remember: Don't just memorize - understand the 'why' and 'how' behind the concep
     setTimeout(() => {
       const lines = noteBody.split('\n');
       let rewrittenNote = '';
-      let currentSection = '';
       
       // Extract title
       const titleLine = lines.find(line => line.trim().startsWith('#'));
@@ -2897,7 +2896,7 @@ ${aiTopic} is an important topic that builds foundational knowledge for future l
                   </div>
                   {(() => {
                     // Filter and sort notes
-                    let filteredNotes = notes.filter(n => {
+                    const filteredNotes = notes.filter(n => {
                       const matchesCategory = notesFilter === 'all' || n.category === notesFilter;
                       const matchesSearch = !notesSearch.trim() || 
                         n.title.toLowerCase().includes(notesSearch.toLowerCase()) ||

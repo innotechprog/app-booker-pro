@@ -16,6 +16,7 @@ import {
 import { Loader2, ArrowLeft, Briefcase, Plus, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { recruiterApi, type RecruiterRecruitment } from "@/services/recruiterApi";
+import { RECRUITER_BUTTON_OUTLINE_LIGHT, RECRUITER_BUTTON_PRIMARY } from "@/features/recruiter/buttonStyles";
 
 const DEEP_BLUE = "#1e3a5f";
 
@@ -29,14 +30,32 @@ const RecruiterRecruitmentsPage = () => {
   const [createDesc, setCreateDesc] = useState("");
   const [creating, setCreating] = useState(false);
 
+  const loadRecruitments = async () => {
+    const res = await recruiterApi.getRecruitments();
+    const base = res.recruitments || [];
+    const enriched = await Promise.all(
+      base.map(async (r) => {
+        try {
+          const detail = await recruiterApi.getRecruitment(r.id);
+          const detailCount =
+            detail.recruitment?.candidates?.length ??
+            r.candidateCount ??
+            0;
+          return { ...r, candidateCount: detailCount };
+        } catch {
+          return r;
+        }
+      }),
+    );
+    setRecruitments(enriched);
+  };
+
   useEffect(() => {
     if (!recruiterApi.hasToken()) {
       navigate("/recruiter/sign-in");
       return;
     }
-    recruiterApi
-      .getRecruitments()
-      .then((res) => setRecruitments(res.recruitments || []))
+    loadRecruitments()
       .catch((err) => {
         if (err?.message === "Session expired" || !recruiterApi.hasToken()) navigate("/recruiter/sign-in");
         else toast({ title: err?.message || "Failed to load recruitments", variant: "destructive" });
@@ -50,7 +69,7 @@ const RecruiterRecruitmentsPage = () => {
     setCreating(true);
     try {
       const res = await recruiterApi.createRecruitment({ name: createName.trim(), description: createDesc.trim() || undefined });
-      setRecruitments((prev) => [res.recruitment as RecruiterRecruitment, ...prev]);
+      await loadRecruitments();
       setCreateOpen(false);
       setCreateName("");
       setCreateDesc("");
@@ -90,7 +109,7 @@ const RecruiterRecruitmentsPage = () => {
             </div>
             <Button
               onClick={() => setCreateOpen(true)}
-              className="text-white hover:opacity-90 inline-flex items-center gap-2"
+              className={`${RECRUITER_BUTTON_PRIMARY} inline-flex items-center gap-2`}
               style={{ backgroundColor: DEEP_BLUE }}
             >
               <Plus className="h-4 w-4" /> New recruitment
@@ -104,7 +123,7 @@ const RecruiterRecruitmentsPage = () => {
                 <p>No recruitments yet. Create one to start adding candidates.</p>
                 <Button
                   onClick={() => setCreateOpen(true)}
-                  className="mt-4 text-white hover:opacity-90"
+                  className={`mt-4 ${RECRUITER_BUTTON_PRIMARY}`}
                   style={{ backgroundColor: DEEP_BLUE }}
                 >
                   Create recruitment
@@ -131,8 +150,10 @@ const RecruiterRecruitmentsPage = () => {
                         <span className="text-sm text-gray-500 flex items-center gap-1">
                           <Users className="h-4 w-4" /> {r.candidateCount ?? 0} candidates
                         </span>
-                        <Button asChild size="sm" variant="outline" className="border-gray-300">
-                          <Link to={`/recruiter/recruitments/${r.id}`}>Open</Link>
+                        <Button asChild size="sm" variant="outlineLight" className={RECRUITER_BUTTON_OUTLINE_LIGHT}>
+                          <Link to={`/recruiter/recruitments/${r.id}`} className="text-gray-900 hover:text-gray-900">
+                            Open
+                          </Link>
                         </Button>
                       </div>
                     </div>
@@ -174,7 +195,7 @@ const RecruiterRecruitmentsPage = () => {
               <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={creating} className="text-white" style={{ backgroundColor: DEEP_BLUE }}>
+              <Button type="submit" disabled={creating} className={RECRUITER_BUTTON_PRIMARY} style={{ backgroundColor: DEEP_BLUE }}>
                 {creating ? "Creating..." : "Create"}
               </Button>
             </div>

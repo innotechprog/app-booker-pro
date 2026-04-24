@@ -1,5 +1,5 @@
 /**
- * Smart Apply onboarding tour – shows new candidates what they can do on the site.
+ * Job Assistant onboarding tour – shows new candidates what they can do on the site.
  * Runs after first CV upload. Uses driver.js for the guided tour.
  */
 import { driver, type DriveStep } from "driver.js";
@@ -20,7 +20,7 @@ const TOUR_STEPS: DriveStep[] = [
   {
     element: undefined,
     popover: {
-      title: "Welcome to Smart Apply!",
+      title: "Welcome to Job Assistant!",
       description: "Your CV is uploaded. Here's a quick tour of what you can do on the site.",
       side: "bottom",
       align: "center",
@@ -91,8 +91,8 @@ const TOUR_STEPS: DriveStep[] = [
   },
 ];
 
-/** Run the Smart Apply tour. Calls onComplete when the tour is finished or dismissed. */
-export function runSmartApplyTour(onComplete?: () => void): void {
+/** Run the Job Assistant tour. Calls onComplete when the tour is finished or dismissed. */
+export function runJobAssistantTour(onComplete?: () => void): void {
   let completed = false;
   const runComplete = () => {
     if (!completed) {
@@ -120,4 +120,4 @@ export function runSmartApplyTour(onComplete?: () => void): void {
   });
 }
 
-export default { runSmartApplyTour };
+export default { runJobAssistantTour };

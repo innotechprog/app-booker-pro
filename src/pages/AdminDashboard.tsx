@@ -1224,7 +1224,7 @@ const AdminDashboard = () => {
 
       {/* Booking Details Modal */}
       <Dialog open={isBookingModalOpen} onOpenChange={setIsBookingModalOpen}>
-        <DialogContent className="bg-white/10 backdrop-blur-sm border-white/20 shadow-xl max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-white text-2xl font-bold flex items-center">
               {getStatusIcon(selectedBooking?.status || "")}
@@ -1379,7 +1379,7 @@ const AdminDashboard = () => {
 
        {/* User Profile Modal */}
        <Dialog open={isUserModalOpen} onOpenChange={setIsUserModalOpen}>
-         <DialogContent className="bg-white/10 backdrop-blur-sm border-white/20 shadow-xl max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
            <DialogHeader>
              <DialogTitle className="text-white text-2xl font-bold flex items-center">
                <Users className="mr-2 h-6 w-6 text-blue-400" />
@@ -1624,7 +1624,7 @@ const AdminDashboard = () => {
 
        {/* Task Details Modal */}
        <Dialog open={isTaskModalOpen} onOpenChange={setIsTaskModalOpen}>
-         <DialogContent className="bg-white/10 backdrop-blur-sm border-white/20 shadow-xl max-w-2xl">
+        <DialogContent className="max-w-2xl">
            <DialogHeader>
              <DialogTitle className="text-white text-2xl font-bold flex items-center">
                <Package className="mr-2 h-6 w-6 text-yellow-400" />
@@ -1768,7 +1768,7 @@ const AdminDashboard = () => {
 
        {/* Add User Modal */}
        <Dialog open={isNewUserModalOpen} onOpenChange={setIsNewUserModalOpen}>
-         <DialogContent className="bg-white/10 backdrop-blur-sm border-white/20 shadow-xl max-w-md">
+        <DialogContent className="max-w-md">
            <DialogHeader>
              <DialogTitle className="text-white text-2xl font-bold flex items-center">
                <UserPlus className="mr-2 h-6 w-6 text-blue-400" />

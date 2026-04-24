@@ -2,11 +2,15 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import { smartApplyAPI } from "@/services/api";
-import { Users, Mail, Phone, Briefcase, GraduationCap, Loader2 } from "lucide-react";
+import { Users, Mail, Phone, Briefcase, GraduationCap, Loader2, ArrowRight, Calendar } from "lucide-react";
+import { RECRUITER_BUTTON_OUTLINE_LIGHT, RECRUITER_BUTTON_PRIMARY } from "@/features/recruiter/buttonStyles";
+
+const DEEP_BLUE = "#1e3a5f";
 
 interface Candidate {
   id: number;
@@ -16,6 +20,13 @@ interface Candidate {
   category: string;
   createdAt: string;
 }
+
+const getInitials = (name: string) => {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "NA";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+};
 
 const RecruitersPage = () => {
   const [filter, setFilter] = useState<"all" | "general" | "professional">("all");
@@ -47,20 +58,46 @@ const RecruitersPage = () => {
           <div className="mb-10 text-center">
             <h1 className="mb-2 text-4xl font-bold text-gray-900">Candidate pool</h1>
             <p className="text-lg text-gray-600">
-              Smart Apply candidates. Filter by <strong>General</strong> (Grade 12 / matric) or <strong>Professional</strong> (higher qualifications).
+              Job Assistant candidates. Filter by <strong>General</strong> (Grade 12 / matric) or <strong>Professional</strong> (higher qualifications).
             </p>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <Button asChild className={RECRUITER_BUTTON_PRIMARY} style={{ backgroundColor: DEEP_BLUE }}>
+                <Link to="/recruiter/sign-in" className="inline-flex items-center gap-2">
+                  Recruiter sign in
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button asChild variant="outlineLight" className={RECRUITER_BUTTON_OUTLINE_LIGHT}>
+                <Link to="/recruiter/sign-in?mode=sign-up">Create recruiter account</Link>
+              </Button>
+            </div>
           </div>
 
           <div className="mb-8 flex flex-wrap justify-center gap-2">
-            <Button variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")} className={filter === "all" ? "bg-indigo-600 text-white hover:bg-indigo-700" : "border-gray-300 bg-white text-gray-800 hover:bg-gray-50"}>
+            <Button
+              variant={filter === "all" ? "default" : "outlineLight"}
+              onClick={() => setFilter("all")}
+              className={filter === "all" ? RECRUITER_BUTTON_PRIMARY : RECRUITER_BUTTON_OUTLINE_LIGHT}
+              style={filter === "all" ? { backgroundColor: DEEP_BLUE } : undefined}
+            >
               <Users className="mr-2 h-4 w-4" />
               All
             </Button>
-            <Button variant={filter === "general" ? "default" : "outline"} onClick={() => setFilter("general")} className={filter === "general" ? "bg-indigo-600 text-white hover:bg-indigo-700" : "border-gray-300 bg-white text-gray-800 hover:bg-gray-50"}>
+            <Button
+              variant={filter === "general" ? "default" : "outlineLight"}
+              onClick={() => setFilter("general")}
+              className={filter === "general" ? RECRUITER_BUTTON_PRIMARY : RECRUITER_BUTTON_OUTLINE_LIGHT}
+              style={filter === "general" ? { backgroundColor: DEEP_BLUE } : undefined}
+            >
               <GraduationCap className="mr-2 h-4 w-4" />
               General
             </Button>
-            <Button variant={filter === "professional" ? "default" : "outline"} onClick={() => setFilter("professional")} className={filter === "professional" ? "bg-indigo-600 text-white hover:bg-indigo-700" : "border-gray-300 bg-white text-gray-800 hover:bg-gray-50"}>
+            <Button
+              variant={filter === "professional" ? "default" : "outlineLight"}
+              onClick={() => setFilter("professional")}
+              className={filter === "professional" ? RECRUITER_BUTTON_PRIMARY : RECRUITER_BUTTON_OUTLINE_LIGHT}
+              style={filter === "professional" ? { backgroundColor: DEEP_BLUE } : undefined}
+            >
               <Briefcase className="mr-2 h-4 w-4" />
               Professional
             </Button>
@@ -77,7 +114,7 @@ const RecruitersPage = () => {
           ) : candidates.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center text-gray-600">
-                No candidates found{filter !== "all" ? ` for ${filter}` : ""} yet. Candidates appear here after they complete Smart Apply and upload their CV.
+                No candidates found{filter !== "all" ? ` for ${filter}` : ""} yet. Candidates appear here after they complete Job Assistant and upload their CV.
               </CardContent>
             </Card>
           ) : (
@@ -85,43 +122,63 @@ const RecruitersPage = () => {
               <p className="text-sm text-gray-600">
                 {candidates.length} candidate{candidates.length !== 1 ? "s" : ""} found
               </p>
-              {candidates.map((c) => (
-                <Card key={c.id} className="transition-shadow hover:shadow-md">
-                  <CardHeader className="pb-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <CardTitle className="text-lg">{c.fullName}</CardTitle>
-                      <Badge variant={c.category === "professional" ? "default" : "secondary"} className="capitalize">
-                        {c.category === "professional" ? (
-                          <><Briefcase className="mr-1 h-3 w-3" /> Professional</>
-                        ) : (
-                          <><GraduationCap className="mr-1 h-3 w-3" /> General</>
-                        )}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-1 text-sm text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 shrink-0 text-gray-400" />
-                      <a href={`mailto:${c.email}`} className="text-indigo-600 hover:underline">
-                        {c.email}
-                      </a>
-                    </div>
-                    {c.phone && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 shrink-0 text-gray-400" />
-                        <a href={`tel:${c.phone}`} className="text-gray-700">
-                          {c.phone}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {candidates.map((c) => (
+                  <Card key={c.id} className="h-full border-gray-200 bg-white transition-all hover:-translate-y-0.5 hover:shadow-lg">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-11 w-11 shrink-0 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-semibold">
+                            {getInitials(c.fullName || "Candidate")}
+                          </div>
+                          <div className="min-w-0">
+                            <CardTitle className="truncate text-lg text-gray-900">{c.fullName || "Candidate"}</CardTitle>
+                            {c.createdAt && (
+                              <p className="mt-1 inline-flex items-center gap-1 text-xs text-gray-500">
+                                <Calendar className="h-3.5 w-3.5" />
+                                Joined {new Date(c.createdAt).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Badge
+                          variant={c.category === "professional" ? "default" : "secondary"}
+                          className="capitalize shrink-0"
+                        >
+                          {c.category === "professional" ? (
+                            <><Briefcase className="mr-1 h-3 w-3" /> Professional</>
+                          ) : (
+                            <><GraduationCap className="mr-1 h-3 w-3" /> General</>
+                          )}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3 text-sm text-gray-700">
+                      <div className="flex items-center gap-2 rounded-md bg-gray-50 px-3 py-2">
+                        <Mail className="h-4 w-4 shrink-0 text-gray-400" />
+                        <a href={`mailto:${c.email}`} className="truncate text-indigo-600 hover:underline">
+                          {c.email}
                         </a>
                       </div>
-                    )}
-                    {c.createdAt && (
-                      <p className="pt-1 text-xs text-gray-500">
-                        Joined {new Date(c.createdAt).toLocaleDateString()}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                      <div className="flex items-center gap-2 rounded-md bg-gray-50 px-3 py-2">
+                        <Phone className="h-4 w-4 shrink-0 text-gray-400" />
+                        {c.phone ? (
+                          <a href={`tel:${c.phone}`} className="text-gray-700 hover:underline">
+                            {c.phone}
+                          </a>
+                        ) : (
+                          <span className="text-gray-500">Phone not provided</span>
+                        )}
+                      </div>
+                      <div className="pt-1">
+                        <Button asChild size="sm" className={`w-full ${RECRUITER_BUTTON_PRIMARY}`} style={{ backgroundColor: DEEP_BLUE }}>
+                          <Link to="/recruiter/sign-in">Sign in to view full profile</Link>
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           )}
         </div>

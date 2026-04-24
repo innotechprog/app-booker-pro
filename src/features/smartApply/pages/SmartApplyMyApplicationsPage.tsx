@@ -18,7 +18,7 @@ interface AppliedJob {
   status?: string;
 }
 
-const SmartApplyMyApplicationsPage = () => {
+const JobAssistantMyApplicationsPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [applications, setApplications] = useState<AppliedJob[]>([]);
@@ -41,7 +41,7 @@ const SmartApplyMyApplicationsPage = () => {
   if (loading) {
     return (
       <Layout>
-        <SEO title="My applications - Smart Apply" />
+        <SEO title="My applications - Job Assistant" />
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <Loader2 className="h-10 w-10 animate-spin text-gray-600" />
         </div>
@@ -51,7 +51,7 @@ const SmartApplyMyApplicationsPage = () => {
 
   return (
     <Layout>
-      <SEO title="My applications - Smart Apply" />
+      <SEO title="My applications - Job Assistant" />
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-3xl mx-auto px-4 py-8">
           <Button asChild variant="ghost" size="sm" className="mb-6 text-gray-700 hover:text-gray-900">
@@ -62,7 +62,7 @@ const SmartApplyMyApplicationsPage = () => {
 
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-gray-900">Jobs I applied for</h1>
-            <p className="text-gray-600 mt-1">Applications you sent via Smart Apply or accepted from matching jobs.</p>
+            <p className="text-gray-600 mt-1">Applications you sent via Job Assistant or accepted from matching jobs.</p>
           </div>
 
           <Card className="border-2 border-gray-200 bg-white shadow-sm">
@@ -123,4 +123,4 @@ const SmartApplyMyApplicationsPage = () => {
   );
 };
 
-export default SmartApplyMyApplicationsPage;
+export default JobAssistantMyApplicationsPage;

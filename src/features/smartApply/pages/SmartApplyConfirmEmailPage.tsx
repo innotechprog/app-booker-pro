@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { smartApplyAPI } from "@/services/api";
 
-const SmartApplyConfirmEmailPage = () => {
+const JobAssistantConfirmEmailPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get("token");
@@ -35,7 +35,7 @@ const SmartApplyConfirmEmailPage = () => {
 
   return (
     <Layout>
-      <SEO title="Confirm Email - Smart Apply" />
+      <SEO title="Confirm Email - Job Assistant" />
       <div className="min-h-[60vh] flex items-center justify-center px-4">
         <Card className="max-w-md w-full border border-gray-200 shadow-sm">
           <CardHeader>
@@ -74,4 +74,4 @@ const SmartApplyConfirmEmailPage = () => {
   );
 };
 
-export default SmartApplyConfirmEmailPage;
+export default JobAssistantConfirmEmailPage;

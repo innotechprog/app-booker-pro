@@ -13,8 +13,14 @@ export const bookingSpecificServiceOptions = [
   { value: "household-tasks", label: "Household Tasks" },
   { value: "event-assistance", label: "Event Assistance" },
   { value: "childcare-support", label: "Childcare Support" },
+  { value: "trip", label: "Trip" },
   { value: "other", label: "Other" },
 ] as const;
+
+export function getBookingSpecificServiceLabel(value: string): string {
+  const opt = bookingSpecificServiceOptions.find((o) => o.value === value);
+  return opt?.label ?? value;
+}
 
 export const bookingUrgencyOptions = [
   { value: "low", label: "Low" },

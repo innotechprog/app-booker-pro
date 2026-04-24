@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -22,9 +22,11 @@ import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
 import Footer from "@/components/Footer";
+import { cn } from "@/lib/utils";
 
 const ITSolutionsPage = () => {
   const navigate = useNavigate();
+  const servicesSectionRef = React.useRef<HTMLDivElement | null>(null);
 
   const itServices = [
     {
@@ -33,7 +35,7 @@ const ITSolutionsPage = () => {
       category: "development",
       description: "Custom website and web application development using modern technologies and best practices",
       features: ["Responsive Design", "E-commerce Solutions", "CMS Development", "API Integration"],
-      duration: "2-8 weeks",
+      duration: "2 days to 2 months",
       price: "R1500",
       rating: 4.9,
       reviews: 127,
@@ -124,6 +126,8 @@ const ITSolutionsPage = () => {
   const [selectedCategory, setSelectedCategory] = React.useState("all");
 
   const filteredServices = selectedCategory === "all" ? itServices : itServices.filter((service) => service.category === selectedCategory);
+  const ctaButtonBaseClass = "rounded-xl px-8 py-3 text-base font-semibold shadow-lg transition-all duration-200";
+  const categoryButtonBaseClass = "flex items-center space-x-2 rounded-xl px-6 py-3 transition-all duration-300";
 
   return (
     <Layout>
@@ -149,7 +153,10 @@ const ITSolutionsPage = () => {
               </div>
             ))}
           </div>
-          <Button className="rounded-xl bg-yellow-400 px-8 py-3 text-lg font-bold text-blue-900 shadow-lg transition-all duration-200 hover:bg-yellow-300" onClick={() => window.scrollTo({ top: 600, behavior: "smooth" })}>
+          <Button
+            className={cn(buttonVariants({ variant: "default" }), ctaButtonBaseClass, "bg-yellow-400 text-blue-900 hover:bg-yellow-300")}
+            onClick={() => servicesSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          >
             Explore Our Services
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
@@ -176,7 +183,7 @@ const ITSolutionsPage = () => {
         </div>
       </div>
 
-      <div className="relative">
+      <div ref={servicesSectionRef} className="relative">
         <div className="absolute inset-0 bg-gradient-to-b from-white to-gray-50"></div>
         <div className="relative z-10 px-6 py-16">
           <div className="mx-auto max-w-6xl">
@@ -188,7 +195,17 @@ const ITSolutionsPage = () => {
               {categories.map((category) => {
                 const IconComponent = category.icon;
                 return (
-                  <Button key={category.id} variant={selectedCategory === category.id ? "default" : "outline"} onClick={() => setSelectedCategory(category.id)} className={`flex items-center space-x-2 rounded-xl px-6 py-3 transition-all duration-300 ${selectedCategory === category.id ? "bg-blue-600 text-white shadow-lg" : "hover:!border-blue-400 hover:!bg-blue-100 hover:!text-blue-700"}`}>
+                  <Button
+                    key={category.id}
+                    variant={selectedCategory === category.id ? "default" : "outline"}
+                    onClick={() => setSelectedCategory(category.id)}
+                    className={cn(
+                      categoryButtonBaseClass,
+                      selectedCategory === category.id
+                        ? "bg-blue-600 text-white shadow-lg hover:bg-blue-700"
+                        : "hover:!border-blue-400 hover:!bg-blue-100 hover:!text-blue-700",
+                    )}
+                  >
                     <IconComponent className="h-4 w-4" />
                     <span>{category.name}</span>
                   </Button>
@@ -291,11 +308,18 @@ const ITSolutionsPage = () => {
               Contact our IT specialists to discuss your needs and find the perfect technology solution for your business.
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Button className="rounded-xl bg-blue-600 px-8 py-3 text-white hover:bg-blue-700" onClick={() => navigate("/contact")}>
+              <Button
+                className={cn(buttonVariants({ variant: "default" }), ctaButtonBaseClass, "bg-blue-600 text-white hover:bg-blue-700")}
+                onClick={() => navigate("/contact")}
+              >
                 <Users className="mr-2 h-4 w-4" />
                 Contact Us
               </Button>
-              <Button variant="outline" className="rounded-xl border-gray-300 bg-gray-900 px-8 py-3 text-white transition-colors duration-200 hover:bg-gray-800 hover:text-white">
+              <Button
+                variant="outline"
+                className={cn(buttonVariants({ variant: "outline" }), ctaButtonBaseClass, "border-gray-300 bg-gray-900 text-white hover:bg-gray-800 hover:text-white")}
+                onClick={() => navigate("/contact")}
+              >
                 <FileText className="mr-2 h-4 w-4" />
                 Request Quote
               </Button>

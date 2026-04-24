@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, Link, useParams } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -28,8 +29,7 @@ import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import type { WorkExperienceItem, EducationItem, CertificationItem, SkillItem, AddressItem } from "@/features/smartApply/pages/SmartApplyProfilePage";
 import { CvPreviewByTemplate, type CvPreviewData, type CustomSection } from "@/components/cv-templates/CvTemplatePreviews";
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { expandSkillRowsFromName } from "@/features/smartApply/utils/cvSkillParsing";
 
 const DEEP_BLUE = "#1e3a5f";
 const PROFILE_PIC_KEY = "smart_apply_profile_picture";
@@ -54,6 +54,46 @@ function estimatePages(overview: string, skills: string): number {
   const total = (overview || "").length + (skills || "").length;
   if (total < 800) return 1;
   return 2;
+}
+
+function normalizeEmail(email: string): string {
+  if (!email) return "";
+  const normalized = (email || "")
+    .normalize("NFKC")
+    .replace(/\s+/g, "")
+    .trim();
+
+  const [localPart, ...domainParts] = normalized.split("@");
+  const cleanLocal = (localPart || "").replace(/[^A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]/g, "");
+  const cleanDomain = domainParts
+    .join("@")
+    .replace(/[^A-Za-z0-9.-]/g, "")
+    .replace(/\.{2,}/g, ".")
+    .replace(/^-+|-+$/g, "");
+
+  return cleanLocal && cleanDomain ? `${cleanLocal}@${cleanDomain}` : "";
+}
+
+function deriveLocation(personalLocation: string, addresses: AddressItem[]): string {
+  const direct = (personalLocation || "").trim();
+  if (direct) return direct;
+  const list = Array.isArray(addresses) ? addresses : [];
+  if (!list.length) return "";
+  const primary = list.find((a) => a?.isPrimary) ?? list[0];
+  if (!primary) return "";
+  const parts = [
+    primary.city,
+    primary.stateRegion,
+    primary.country,
+  ]
+    .map((p) => (p || "").trim())
+    .filter(Boolean);
+  if (parts.length) return parts.join(", ");
+  const street = [primary.addressLine1, primary.addressLine2]
+    .map((p) => (p || "").trim())
+    .filter(Boolean)
+    .join(", ");
+  return street;
 }
 
 /** True if user can download (free template, has paid, or is premium with credits) */
@@ -140,9 +180,23 @@ function normalizeSkill(item: unknown): SkillItem {
   return { name: (item as { text?: string })?.text || "", level: "" };
 }
 
-const SmartApplyCvEditor = () => {
+type JobAssistCvEditorState = {
+  jobAssistData?: {
+    personal?: { jobTitle?: string };
+    overview?: string;
+    keySkills?: SkillItem[];
+    workExperience?: WorkExperienceItem[];
+    education?: EducationItem[];
+    /** e.g. Projects from Job Assist */
+    customSections?: CustomSection[];
+  };
+};
+
+const JobAssistantCvEditor = () => {
   const { templateId: templateIdParam } = useParams<{ templateId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const jobAssistData = (location.state as JobAssistCvEditorState | null)?.jobAssistData;
   const { toast } = useToast();
   const templateId = Math.max(1, Math.min(20, parseInt(templateIdParam || "1", 10) || 1));
   const [loading, setLoading] = useState(true);
@@ -179,6 +233,24 @@ const SmartApplyCvEditor = () => {
   const initialDataRef = useRef<string>("");
   const previewCaptureRef = useRef<HTMLDivElement | null>(null);
 
+  const buildCvData = (): CvPreviewData => ({
+    personal: {
+      ...personal,
+      email: normalizeEmail(personal.email),
+      currentLocation: deriveLocation(personal.currentLocation, addresses),
+      profilePictureUrl: personal.profilePictureBase64 ?? undefined,
+      showProfilePictureOnCv: personal.showProfilePictureOnCv,
+    },
+    overview,
+    workExperience,
+    education,
+    certifications,
+    keySkills,
+    accentColor,
+    customSections: templateId >= 6 ? customSections : undefined,
+    cvOnlineUrl: cvOnlineUrl ?? undefined,
+  });
+
   useEffect(() => {
     const token = localStorage.getItem("smart_apply_token");
     if (!token) {
@@ -208,7 +280,7 @@ const SmartApplyCvEditor = () => {
                   })();
             setPersonal({
               fullName: p.fullName ?? "",
-              email: p.email ?? "",
+              email: normalizeEmail(p.email ?? ""),
               phone: p.phone ?? "",
               dateOfBirth: p.dateOfBirth ?? "",
               gender: p.gender ?? "",
@@ -225,7 +297,12 @@ const SmartApplyCvEditor = () => {
             setWorkExperience(ensureArray(p.workExperience).flatMap(parseMaybeJsonBlocks).map(normalizeWorkExp));
             setEducation(ensureArray(p.education).flatMap(parseMaybeJsonBlocks).map(normalizeEducation));
             setCertifications(ensureArray(p.certifications).flatMap(parseMaybeJsonBlocks).map(normalizeCert));
-            setKeySkills(ensureArray(p.keySkills).flatMap(parseMaybeJsonBlocks).map(normalizeSkill));
+            setKeySkills(
+              ensureArray(p.keySkills)
+                .flatMap(parseMaybeJsonBlocks)
+                .map(normalizeSkill)
+                .flatMap((sk) => expandSkillRowsFromName(sk.name || "", sk.level || "")),
+            );
             setAddresses(Array.isArray(p.addresses) ? p.addresses : []);
           }
         } catch (err) {
@@ -234,16 +311,29 @@ const SmartApplyCvEditor = () => {
         // If navigated from Job Assist, overlay AI-tailored content on top of profile data
         if (jobAssistData) {
           if (jobAssistData.overview) setOverview(jobAssistData.overview);
-          if (jobAssistData.keySkills?.length) setKeySkills(jobAssistData.keySkills);
+          if (jobAssistData.keySkills?.length) {
+            setKeySkills(
+              jobAssistData.keySkills.flatMap((s) => expandSkillRowsFromName(s.name || "", s.level || "")),
+            );
+          }
           if (jobAssistData.workExperience?.length) setWorkExperience(jobAssistData.workExperience);
           if (jobAssistData.education?.length) setEducation(jobAssistData.education);
           if (jobAssistData.personal?.jobTitle) setPersonal((prev) => ({ ...prev, jobTitle: jobAssistData.personal.jobTitle }));
+          if (jobAssistData.customSections?.length) {
+            setCustomSections((prev) => {
+              const incoming = jobAssistData.customSections!;
+              const dropIds = new Set(incoming.map((s) => s.id));
+              return [...incoming, ...prev.filter((s) => !dropIds.has(s.id))];
+            });
+          }
         }
       })
       .catch((err) => {
         console.error("Profile load error:", err);
       })
       .finally(() => setLoading(false));
+  // Job assist state is intentionally read on initial page load only.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate, templateId]);
 
   // Snapshot initial data for "has changes" comparison (after load)
@@ -258,6 +348,8 @@ const SmartApplyCvEditor = () => {
       certifications,
       keySkills,
     });
+  // Take an initial snapshot only after first profile load.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
 
   const hasChanges = () => {
@@ -274,7 +366,8 @@ const SmartApplyCvEditor = () => {
   };
 
   const updatePersonal = (field: keyof typeof personal, value: string) => {
-    setPersonal((prev) => ({ ...prev, [field]: value }));
+    const nextValue = field === "email" ? normalizeEmail(value) : value;
+    setPersonal((prev) => ({ ...prev, [field]: nextValue }));
   };
 
   const addWork = () => setWorkExperience((prev) => [...prev, {}]);
@@ -306,20 +399,7 @@ const SmartApplyCvEditor = () => {
   const handleCreatePublicLink = async () => {
     setCreatingPublicLink(true);
     try {
-      const cvData = {
-        personal: {
-          ...personal,
-          profilePictureUrl: personal.profilePictureBase64 ?? undefined,
-          showProfilePictureOnCv: personal.showProfilePictureOnCv,
-        },
-        overview,
-        workExperience,
-        education,
-        certifications,
-        keySkills,
-        accentColor,
-        customSections: templateId >= 6 ? customSections : undefined,
-      };
+      const cvData: Record<string, unknown> = buildCvData() as unknown as Record<string, unknown>;
       const res = await smartApplyAPI.createPublicCV(cvData, templateId);
       if (res?.url) {
         setCvOnlineUrl(res.url);
@@ -347,7 +427,7 @@ const SmartApplyCvEditor = () => {
       setDownloadingPdf(true);
       try {
         const sourceNode = previewCaptureRef.current;
-        const a4PxWidth = 794; // Approx A4 width at 96 DPI for cleaner export
+        const a4PxWidth = 794;
         const exportHost = document.createElement("div");
         exportHost.style.position = "fixed";
         exportHost.style.left = "-100000px";
@@ -392,6 +472,7 @@ const SmartApplyCvEditor = () => {
         });
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
+
         const margin = 24;
         const imgWidth = pageWidth - margin * 2;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
@@ -437,9 +518,10 @@ const SmartApplyCvEditor = () => {
   const handleUpdateProfile = async () => {
     setSavingProfile(true);
     try {
-      await smartApplyAPI.saveProfile({
+      const payload = {
         category,
         fullName: personal.fullName?.trim() || null,
+        email: normalizeEmail(personal.email) || null,
         phone: personal.phone?.trim() || null,
         dateOfBirth: personal.dateOfBirth?.trim() || null,
         gender: personal.gender?.trim() || null,
@@ -451,12 +533,21 @@ const SmartApplyCvEditor = () => {
         overview: overview.trim() || null,
         profilePicture: personal.profilePictureBase64 ? (personal.profilePictureBase64.includes(",") ? personal.profilePictureBase64.split(",")[1] : personal.profilePictureBase64) : null,
         showProfilePictureOnCv: personal.showProfilePictureOnCv,
-        workExperience: workExperience.length ? workExperience : null,
-        education: education.length ? education : null,
-        certifications: certifications.length ? certifications : null,
-        keySkills: keySkills.length ? keySkills : null,
+        workExperience: workExperience.length
+          ? (workExperience.map((w) => ({ ...w })) as Record<string, unknown>[])
+          : null,
+        education: education.length
+          ? (education.map((e) => ({ ...e })) as Record<string, unknown>[])
+          : null,
+        certifications: certifications.length
+          ? (certifications.map((c) => ({ ...c })) as Record<string, unknown>[])
+          : null,
+        keySkills: keySkills.length
+          ? keySkills.map((s) => ({ name: s.name ?? "", level: s.level ?? "" }))
+          : null,
         addresses: addresses.length ? addresses : null,
-      });
+      };
+      await smartApplyAPI.saveProfile(payload as any);
       if (personal.fullName) localStorage.setItem("smart_apply_full_name", personal.fullName);
       initialDataRef.current = JSON.stringify({
         personal,
@@ -467,7 +558,7 @@ const SmartApplyCvEditor = () => {
         certifications,
         keySkills,
       });
-      toast({ title: "Profile updated", description: "Your Smart Apply profile has been updated with the CV information." });
+      toast({ title: "Profile updated", description: "Your Job Assistant profile has been updated with the CV information." });
     } catch (err: any) {
       toast({ title: "Could not update profile", description: err?.message ?? "Please try again.", variant: "destructive" });
     } finally {
@@ -478,7 +569,7 @@ const SmartApplyCvEditor = () => {
   if (loading) {
     return (
       <Layout>
-        <SEO title="Edit CV – Smart Apply" />
+        <SEO title="Edit CV – Job Assistant" />
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <Loader2 className="h-10 w-10 animate-spin text-gray-600" />
         </div>
@@ -488,7 +579,7 @@ const SmartApplyCvEditor = () => {
 
   return (
     <Layout>
-      <SEO title={`Edit CV – Template ${templateId} – Smart Apply`} />
+      <SEO title={`Edit CV – Template ${templateId} – Job Assistant`} />
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -661,11 +752,11 @@ const SmartApplyCvEditor = () => {
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <Label className="text-xs">Start date</Label>
-                          <Input type="month" value={w.startDate ?? ""} onChange={(e) => updateWork(i, "startDate", e.target.value)} className="mt-1 bg-white border-gray-300" />
+                          <Input type="month" value={(w.startDate ?? "").slice(0, 7)} onChange={(e) => updateWork(i, "startDate", e.target.value)} className="mt-1 bg-white border-gray-300" />
                         </div>
                         <div>
                           <Label className="text-xs">End date</Label>
-                          <Input type="month" value={w.endDate ?? ""} onChange={(e) => updateWork(i, "endDate", e.target.value)} className="mt-1 bg-white border-gray-300" />
+                          <Input type="month" value={(w.endDate ?? "").slice(0, 7)} onChange={(e) => updateWork(i, "endDate", e.target.value)} className="mt-1 bg-white border-gray-300" />
                         </div>
                       </div>
                       <div>
@@ -706,11 +797,11 @@ const SmartApplyCvEditor = () => {
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <Label className="text-xs">Start</Label>
-                          <Input type="month" value={e.startDate ?? ""} onChange={(e) => updateEdu(i, "startDate", e.target.value)} className="mt-1 bg-white border-gray-300" />
+                          <Input type="month" value={(e.startDate ?? "").slice(0, 7)} onChange={(e) => updateEdu(i, "startDate", e.target.value)} className="mt-1 bg-white border-gray-300" />
                         </div>
                         <div>
                           <Label className="text-xs">End</Label>
-                          <Input type="month" value={e.endDate ?? ""} onChange={(e) => updateEdu(i, "endDate", e.target.value)} className="mt-1 bg-white border-gray-300" />
+                          <Input type="month" value={(e.endDate ?? "").slice(0, 7)} onChange={(e) => updateEdu(i, "endDate", e.target.value)} className="mt-1 bg-white border-gray-300" />
                         </div>
                       </div>
                     </div>
@@ -851,21 +942,7 @@ const SmartApplyCvEditor = () => {
                   <div ref={previewCaptureRef} className="w-full max-w-full min-w-0" style={{ maxWidth: "min(100%, 340px)" }}>
                     <CvPreviewByTemplate
                       templateId={templateId}
-                      data={{
-                        personal: {
-                          ...personal,
-                          profilePictureUrl: personal.profilePictureBase64 ?? undefined,
-                          showProfilePictureOnCv: personal.showProfilePictureOnCv,
-                        },
-                        overview,
-                        workExperience,
-                        education,
-                        certifications,
-                        keySkills,
-                        accentColor,
-                        customSections: templateId >= 6 ? customSections : undefined,
-                        cvOnlineUrl: cvOnlineUrl ?? undefined,
-                      } as CvPreviewData}
+                      data={buildCvData()}
                     />
                   </div>
                 </CardContent>
@@ -900,7 +977,7 @@ const SmartApplyCvEditor = () => {
       </div>
 
       <Dialog open={payModalOpen} onOpenChange={setPayModalOpen}>
-        <DialogContent className="max-w-md bg-white border-2 border-gray-200">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-gray-900">Pay ZAR 10 to download</DialogTitle>
             <DialogDescription className="text-gray-700">
@@ -928,4 +1005,4 @@ const SmartApplyCvEditor = () => {
   );
 };
 
-export default SmartApplyCvEditor;
+export default JobAssistantCvEditor;

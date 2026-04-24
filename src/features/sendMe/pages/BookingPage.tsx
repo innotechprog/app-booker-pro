@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import Layout from "@/components/Layout";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
@@ -14,14 +14,20 @@ import {
   BookingServiceInfoStep,
   BookingStepIndicator,
 } from "@/features/sendMe/components";
+import { formatTripBookingDetails, submitSendMeBooking } from "@/features/sendMe/api/sendMeBooking";
+import { SEND_ME_BTN_GHOST_ON_DARK } from "@/features/sendMe/buttonStyles";
+import { getBookingSpecificServiceLabel } from "@/features/sendMe/constants";
+import { sendMeDarkPageShell } from "@/features/sendMe/constants/layout";
+import { validateBookingStep1, validateBookingStep2 } from "@/features/sendMe/utils/bookingValidation";
 import type { BookingFormData, BookingStep } from "@/features/sendMe/types";
-
-const DEEP_BLUE = "#1e3a5f";
 
 const BookingPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const serviceType = searchParams.get("service") || "Send Me";
+  const location = useLocation();
+  const serviceFromQuery = searchParams.get("service")?.trim();
+  const serviceFromNavState = (location.state as { service?: string } | null)?.service?.trim();
+  const serviceType = serviceFromQuery || serviceFromNavState || "Send Me";
 
   const [form, setForm] = useState<BookingFormData>({
     fullName: "",
@@ -33,6 +39,9 @@ const BookingPage = () => {
     time: "",
     specificService: "",
     customService: "",
+    tripPickup: "",
+    tripDropoff: "",
+    tripStops: [],
     urgency: "normal",
     contactMethod: "phone",
     description: "",
@@ -41,37 +50,31 @@ const BookingPage = () => {
   const [step, setStep] = useState<BookingStep>(1);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
-  const update = (key: keyof typeof form, value: string) => {
+  const update = <K extends keyof BookingFormData>(key: K, value: BookingFormData[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleSpecificServiceChange = (v: string) => {
+    setForm((prev) => ({
+      ...prev,
+      specificService: v,
+      ...(v !== "trip" ? { tripPickup: "", tripDropoff: "", tripStops: [] as string[] } : {}),
+    }));
+  };
+
   const validateStep1 = () => {
-    if (!form.fullName.trim() || !form.cellphone.trim() || !form.email.trim() || !form.address.trim()) {
-      toast.error("Please complete the required fields.");
-      return false;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      toast.error("Please enter a valid email address.");
-      return false;
-    }
-    if (!/^\d{7,15}$/.test(form.cellphone.trim())) {
-      toast.error("Please enter a valid cellphone number (digits only).");
-      return false;
-    }
-    if (form.alternativeNumber.trim() && !/^\d{7,15}$/.test(form.alternativeNumber.trim())) {
-      toast.error("Alternative number must contain digits only.");
+    const msg = validateBookingStep1(form);
+    if (msg) {
+      toast.error(msg);
       return false;
     }
     return true;
   };
 
   const validateStep2 = () => {
-    if (!form.date || !form.time || !form.specificService) {
-      toast.error("Please complete service information.");
-      return false;
-    }
-    if (form.specificService === "other" && !form.customService.trim()) {
-      toast.error("Please specify the service you need.");
+    const msg = validateBookingStep2(form);
+    if (msg) {
+      toast.error(msg);
       return false;
     }
     return true;
@@ -96,39 +99,54 @@ const BookingPage = () => {
     }
     setSubmitting(true);
     try {
-      const apiBaseRaw = import.meta.env.VITE_API_URL || "https://ib-backend.ib-innovativesolutions.com/api/";
-      const apiBase = apiBaseRaw.replace(/\/+$/, "");
-      const chosenService = form.specificService === "other" ? form.customService.trim() : form.specificService;
+      const chosenService =
+        form.specificService === "other"
+          ? form.customService.trim()
+          : getBookingSpecificServiceLabel(form.specificService);
 
-      const res = await fetch(`${apiBase}/contact/send-send-me-booking`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: form.fullName.trim(),
-          email: form.email.trim(),
-          cellphone: form.cellphone.trim(),
-          alternativeNumber: form.alternativeNumber.trim() || null,
-          address: form.address.trim(),
-          bookingType: serviceType,
-          specificService: chosenService || "-",
-          preferredDate: form.date,
-          preferredTime: form.time,
-          urgency: form.urgency,
-          preferredContact: form.contactMethod,
-          acceptedTerms,
-          additionalDetails: form.description?.trim() || null,
-        }),
-      });
+      const userNotes = form.description?.trim() ?? "";
+      const tripStopsFiltered =
+        form.specificService === "trip" ? form.tripStops.map((s) => s.trim()).filter(Boolean) : [];
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error || "Failed to send booking email.");
+      let additionalDetails: string | null;
+      if (form.specificService === "trip") {
+        const tripBlock = formatTripBookingDetails(form.tripPickup, form.tripDropoff, tripStopsFiltered);
+        additionalDetails = userNotes ? `${tripBlock}\n\n${userNotes}` : tripBlock;
+      } else {
+        additionalDetails = userNotes || null;
       }
 
-      toast.success("Booking request captured. Our team will contact you shortly.");
-      navigate("/contact");
-    } catch (err: any) {
-      toast.error(err?.message || "Could not submit booking right now. Please try again.");
+      // Optional trip* fields for APIs that support them; trip routing is always in additionalDetails above.
+      const tripPayload =
+        form.specificService === "trip"
+          ? {
+              tripPickup: form.tripPickup.trim(),
+              tripDropoff: form.tripDropoff.trim(),
+              ...(tripStopsFiltered.length > 0 ? { tripStops: tripStopsFiltered } : {}),
+            }
+          : {};
+
+      await submitSendMeBooking({
+        fullName: form.fullName.trim(),
+        email: form.email.trim(),
+        cellphone: form.cellphone.trim(),
+        alternativeNumber: form.alternativeNumber.trim() || null,
+        address: form.address.trim(),
+        bookingType: serviceType,
+        specificService: chosenService || "-",
+        preferredDate: form.date,
+        preferredTime: form.time,
+        urgency: form.urgency,
+        preferredContact: form.contactMethod,
+        acceptedTerms,
+        additionalDetails,
+        ...tripPayload,
+      });
+
+      navigate("/booking/success", { replace: true });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Could not submit booking right now. Please try again.";
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -137,13 +155,13 @@ const BookingPage = () => {
   return (
     <Layout>
       <SEO page="booking" />
-      <div className="min-h-screen bg-gradient-to-b from-[#0a183d] via-[#183a7a] to-[#07122c]">
+      <div className={sendMeDarkPageShell}>
         <div className="mx-auto max-w-3xl px-4 py-10">
           <Button
             type="button"
             variant="ghost"
             onClick={() => navigate("/book-service")}
-            className="mb-6 text-white/90 hover:bg-white/10 hover:text-white"
+            className={`mb-6 ${SEND_ME_BTN_GHOST_ON_DARK}`}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Send Me
@@ -160,7 +178,9 @@ const BookingPage = () => {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-5">
                 {step === 1 && <BookingPersonalInfoStep form={form} update={update} />}
-                {step === 2 && <BookingServiceInfoStep form={form} update={update} />}
+                {step === 2 && (
+                  <BookingServiceInfoStep form={form} update={update} onSpecificServiceChange={handleSpecificServiceChange} />
+                )}
                 {step === 3 && (
                   <BookingReviewStep
                     form={form}
@@ -174,7 +194,6 @@ const BookingPage = () => {
                   submitting={submitting}
                   onBack={handleBack}
                   onNext={handleNext}
-                  submitColor={DEEP_BLUE}
                 />
               </form>
             </CardContent>

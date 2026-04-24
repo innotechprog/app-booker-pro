@@ -5,15 +5,54 @@ import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { smartApplyAPI, jobAssistAPI, type JobAssistCvContent } from "@/services/api";
 import { Sparkles, ArrowRight, Briefcase, Loader2, Upload, FileText, CheckCircle2, AlertTriangle } from "lucide-react";
+import { createWorker } from "tesseract.js";
 
 type GapAnalysis = {
+  matchPercentage: number;
+  totalTargetSkills: number;
+  totalMatchedSkills: number;
+  experienceMatchPercentage: number;
+  totalExperienceMatchedSkills: number;
   matchedSkills: string[];
   missingSkills: string[];
   suggestions: string[];
+};
+
+type JobAssistProfileData = {
+  jobTitle: string;
+  overview: string;
+  workExperience: Array<{
+    jobTitle: string;
+    company: string;
+    location: string;
+    startDate: string;
+    endDate: string;
+    description: string;
+  }>;
+  education: Array<{
+    qualification: string;
+    institution: string;
+    startDate: string;
+    endDate: string;
+  }>;
+  certifications: Array<{
+    name: string;
+    issuer: string;
+    date: string;
+  }>;
+  keySkills: Array<{ name: string; level: string }>;
+  allSkills: string[];
 };
 
 const normalizeSkill = (value: unknown): string => {
@@ -26,11 +65,158 @@ const normalizeSkill = (value: unknown): string => {
   return "";
 };
 
-const getProfileSkills = (profile: unknown): string[] => {
-  if (!profile || typeof profile !== "object") return [];
-  const keySkills = (profile as { keySkills?: unknown[] }).keySkills;
-  if (!Array.isArray(keySkills)) return [];
-  return keySkills.map(normalizeSkill).filter(Boolean);
+const normalizeText = (value: string): string => {
+  return (value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s+#./-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
+const asString = (value: unknown): string => (typeof value === "string" ? value.trim() : "");
+
+function ensureArray<T>(val: T[] | T | null | undefined): T[] {
+  if (Array.isArray(val)) return val;
+  if (val == null || val === "") return [];
+  return [val as T];
+}
+
+function parseMaybeJsonBlocks(value: unknown): unknown[] {
+  if (typeof value !== "string") return [value];
+  const text = value.trim();
+  if (!text) return [];
+  const blocks = text.split(/\n\s*\n+/).map((b) => b.trim()).filter(Boolean);
+  return blocks.map((block) => {
+    try {
+      return JSON.parse(block);
+    } catch {
+      return { text: block };
+    }
+  });
+}
+
+const redactPersonalData = (input: string): string => {
+  return (input || "")
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[redacted-email]")
+    .replace(/(?:\+?\d[\d\s().-]{7,}\d)/g, "[redacted-phone]")
+    .replace(/https?:\/\/\S+/gi, "[redacted-url]")
+    .trim();
+};
+
+const splitSkillCandidates = (value: string): string[] => {
+  return (value || "")
+    .split(/[\n,;|/•·]+/g)
+    .map((v) => v.trim())
+    .filter(Boolean);
+};
+
+const canonicalSkillKey = (value: string): string => value.trim().toLowerCase();
+
+const collectAllSkills = (
+  keySkills: Array<{ name: string; level: string }>,
+  workExperience: Array<{ jobTitle: string; company: string; location: string; startDate: string; endDate: string; description: string }>,
+  education: Array<{ qualification: string; institution: string; startDate: string; endDate: string }>,
+  certifications: Array<{ name: string; issuer: string; date: string }>,
+): string[] => {
+  const seen = new Set<string>();
+  const ordered: string[] = [];
+
+  const push = (candidate: string) => {
+    const clean = candidate.trim();
+    if (!clean) return;
+    const key = canonicalSkillKey(clean);
+    if (!key) return;
+    if (seen.has(key)) return;
+    seen.add(key);
+    ordered.push(clean);
+  };
+
+  keySkills.forEach((s) => push(s.name));
+
+  workExperience.forEach((w) => {
+    splitSkillCandidates(w.jobTitle).forEach(push);
+    splitSkillCandidates(w.description).forEach(push);
+  });
+
+  education.forEach((e) => splitSkillCandidates(e.qualification).forEach(push));
+
+  certifications.forEach((c) => {
+    splitSkillCandidates(c.name).forEach(push);
+    splitSkillCandidates(c.issuer).forEach(push);
+  });
+
+  return ordered;
+};
+
+const buildProfileData = (profile: unknown): JobAssistProfileData => {
+  const p = (profile && typeof profile === "object" ? profile : {}) as Record<string, unknown>;
+
+  const workExperience = ensureArray(p.workExperience)
+    .flatMap(parseMaybeJsonBlocks)
+    .map((item) => {
+      const obj = (item && typeof item === "object" ? item : {}) as Record<string, unknown>;
+      return {
+        jobTitle: asString(obj.jobTitle) || asString(obj.position),
+        company: redactPersonalData(asString(obj.company)),
+        location: redactPersonalData(asString(obj.location)),
+        startDate: asString(obj.startDate) || asString(obj.start_date),
+        endDate: asString(obj.endDate) || asString(obj.end_date),
+        description: redactPersonalData(asString(obj.description) || asString(obj.text)),
+      };
+    })
+    .filter((w) => Object.values(w).some(Boolean));
+
+  const education = ensureArray(p.education)
+    .flatMap(parseMaybeJsonBlocks)
+    .map((item) => {
+      const obj = (item && typeof item === "object" ? item : {}) as Record<string, unknown>;
+      return {
+        qualification: redactPersonalData(asString(obj.qualification) || asString(obj.degree) || asString(obj.text)),
+        institution: redactPersonalData(asString(obj.institution)),
+        startDate: asString(obj.startDate) || asString(obj.start_date),
+        endDate: asString(obj.endDate) || asString(obj.end_date),
+      };
+    })
+    .filter((e) => Object.values(e).some(Boolean));
+
+  const certifications = ensureArray(p.certifications)
+    .flatMap(parseMaybeJsonBlocks)
+    .map((item) => {
+      const obj = (item && typeof item === "object" ? item : {}) as Record<string, unknown>;
+      return {
+        name: redactPersonalData(asString(obj.name) || asString(obj.text)),
+        issuer: redactPersonalData(asString(obj.issuer)),
+        date: asString(obj.date),
+      };
+    })
+    .filter((c) => Object.values(c).some(Boolean));
+
+  const keySkills = ensureArray(p.keySkills)
+    .flatMap(parseMaybeJsonBlocks)
+    .map((item) => {
+      const obj = (item && typeof item === "object" ? item : {}) as Record<string, unknown>;
+      return {
+        name: redactPersonalData(asString(obj.name) || asString(obj.text)),
+        level: asString(obj.level),
+      };
+    })
+    .filter((s) => !!s.name);
+
+  const allSkills = collectAllSkills(keySkills, workExperience, education, certifications);
+
+  return {
+    jobTitle: asString(p.jobTitle),
+    overview: redactPersonalData(asString(p.overview)),
+    workExperience,
+    education,
+    certifications,
+    keySkills,
+    allSkills,
+  };
+};
+
+const getProfileSkills = (profileData: JobAssistProfileData): string[] => {
+  return profileData.keySkills.map((s) => normalizeSkill(s.name)).filter(Boolean);
 };
 
 const getTargetSkills = (cvContent: JobAssistCvContent | null): string[] => {
@@ -38,11 +224,25 @@ const getTargetSkills = (cvContent: JobAssistCvContent | null): string[] => {
   return cvContent.keySkills.map((s) => normalizeSkill(s.name)).filter(Boolean);
 };
 
-const createGapAnalysis = (profileSkills: string[], targetSkills: string[]): GapAnalysis => {
+const createGapAnalysis = (profileSkills: string[], targetSkills: string[], experienceCorpus: string): GapAnalysis => {
   const profileSet = new Set(profileSkills);
   const targetSet = Array.from(new Set(targetSkills));
   const matchedSkills = targetSet.filter((skill) => profileSet.has(skill));
   const missingSkills = targetSet.filter((skill) => !profileSet.has(skill));
+  const totalTargetSkills = targetSet.length;
+  const totalMatchedSkills = matchedSkills.length;
+  const matchPercentage = totalTargetSkills > 0
+    ? Math.round((totalMatchedSkills / totalTargetSkills) * 100)
+    : 0;
+  const normalizedCorpus = normalizeText(experienceCorpus);
+  const totalExperienceMatchedSkills = targetSet.filter((skill) => {
+    const normalizedSkill = normalizeText(skill);
+    if (!normalizedSkill) return false;
+    return normalizedCorpus.includes(normalizedSkill);
+  }).length;
+  const experienceMatchPercentage = totalTargetSkills > 0
+    ? Math.round((totalExperienceMatchedSkills / totalTargetSkills) * 100)
+    : 0;
 
   const suggestions: string[] = [];
   if (missingSkills.length) {
@@ -52,7 +252,34 @@ const createGapAnalysis = (profileSkills: string[], targetSkills: string[]): Gap
   suggestions.push("Prioritize job-relevant achievements in the first two experience entries.");
   suggestions.push("Adjust skill ordering so role-critical tools appear first.");
 
-  return { matchedSkills, missingSkills, suggestions };
+  return {
+    matchPercentage,
+    totalTargetSkills,
+    totalMatchedSkills,
+    experienceMatchPercentage,
+    totalExperienceMatchedSkills,
+    matchedSkills,
+    missingSkills,
+    suggestions,
+  };
+};
+
+const IMAGE_EXT_RE = /\.(png|jpe?g|webp|bmp|gif|tiff?)$/i;
+
+const isImageFile = (file: File): boolean => {
+  const mime = (file.type || "").toLowerCase();
+  if (mime.startsWith("image/")) return true;
+  return IMAGE_EXT_RE.test(file.name || "");
+};
+
+const extractTextFromImage = async (file: File): Promise<string> => {
+  const worker = await createWorker("eng");
+  try {
+    const result = await worker.recognize(file);
+    return (result.data?.text || "").trim();
+  } finally {
+    await worker.terminate();
+  }
 };
 
 const SmartApplyJobAssistPage = () => {
@@ -63,6 +290,8 @@ const SmartApplyJobAssistPage = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<JobAssistCvContent | null>(null);
   const [profileSkills, setProfileSkills] = useState<string[]>([]);
+  const [profileExperienceCorpus, setProfileExperienceCorpus] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState("1");
 
   const fileLabel = useMemo(() => {
     if (!jobFile) return "Upload Job Description (PDF/Image)";
@@ -82,39 +311,45 @@ const SmartApplyJobAssistPage = () => {
     try {
       const profileRes = await smartApplyAPI.getProfile().catch(() => ({ profile: null }));
       const profile = (profileRes as { profile?: unknown })?.profile;
-      const extractedProfileSkills = getProfileSkills(profile);
+      const profileData = buildProfileData(profile);
+      const extractedProfileSkills = getProfileSkills(profileData);
       setProfileSkills(extractedProfileSkills);
+      setProfileExperienceCorpus(
+        [
+          profileData.jobTitle,
+          profileData.overview,
+          ...profileData.workExperience.map((w) => [w.jobTitle, w.company, w.location, w.description].filter(Boolean).join(" ")),
+          ...profileData.education.map((e) => [e.qualification, e.institution].filter(Boolean).join(" ")),
+          ...profileData.certifications.map((c) => [c.name, c.issuer].filter(Boolean).join(" ")),
+        ]
+          .filter(Boolean)
+          .join(" "),
+      );
 
-      const payload = jobFile
+      const currentJobText = jobText.trim();
+      const uploadedIsImage = !!jobFile && isImageFile(jobFile);
+      let textForAnalysis = currentJobText;
+
+      if (uploadedIsImage && jobFile) {
+        toast({
+          title: "Reading image",
+          description: "Extracting text from your image before analysis...",
+        });
+        const ocrText = await extractTextFromImage(jobFile);
+        if (!ocrText) {
+          throw new Error("No readable text was found in the image. Please upload a clearer image or paste the job text.");
+        }
+        textForAnalysis = [currentJobText, ocrText].filter(Boolean).join("\n\n");
+      }
+
+      const payload = jobFile && !uploadedIsImage
         ? {
             file: jobFile,
-            profileData: {
-              overview: (profile as { overview?: string | null })?.overview ?? "",
-              workExperience: Array.isArray((profile as { workExperience?: unknown[] })?.workExperience)
-                ? ((profile as { workExperience?: unknown[] }).workExperience as object[])
-                : [],
-              education: Array.isArray((profile as { education?: unknown[] })?.education)
-                ? ((profile as { education?: unknown[] }).education as object[])
-                : [],
-              keySkills: Array.isArray((profile as { keySkills?: unknown[] })?.keySkills)
-                ? ((profile as { keySkills?: unknown[] }).keySkills as object[])
-                : [],
-            },
+            profileData,
           }
         : {
-            jobText: jobText.trim(),
-            profileData: {
-              overview: (profile as { overview?: string | null })?.overview ?? "",
-              workExperience: Array.isArray((profile as { workExperience?: unknown[] })?.workExperience)
-                ? ((profile as { workExperience?: unknown[] }).workExperience as object[])
-                : [],
-              education: Array.isArray((profile as { education?: unknown[] })?.education)
-                ? ((profile as { education?: unknown[] }).education as object[])
-                : [],
-              keySkills: Array.isArray((profile as { keySkills?: unknown[] })?.keySkills)
-                ? ((profile as { keySkills?: unknown[] }).keySkills as object[])
-                : [],
-            },
+            jobText: textForAnalysis,
+            profileData,
           };
 
       const data = await jobAssistAPI.generate(payload);
@@ -131,11 +366,11 @@ const SmartApplyJobAssistPage = () => {
     }
   };
 
-  const gap = useMemo(() => createGapAnalysis(profileSkills, getTargetSkills(result)), [profileSkills, result]);
+  const gap = useMemo(() => createGapAnalysis(profileSkills, getTargetSkills(result), profileExperienceCorpus), [profileSkills, result, profileExperienceCorpus]);
 
   const openCvEditor = () => {
     if (!result) return;
-    navigate("/smart-apply/cv-editor/1", {
+    navigate(`/smart-apply/cv-builder/edit/${selectedTemplate}`, {
       state: {
         jobAssistData: {
           personal: { jobTitle: result.jobTitle ?? "" },
@@ -143,6 +378,8 @@ const SmartApplyJobAssistPage = () => {
           keySkills: result.keySkills ?? [],
           workExperience: result.workExperience ?? [],
           education: result.education ?? [],
+          suggestedSkills: gap.missingSkills.map((skill) => ({ name: skill, level: "Suggested" })),
+          suggestions: gap.suggestions,
         },
       },
     });
@@ -152,7 +389,7 @@ const SmartApplyJobAssistPage = () => {
     <Layout>
       <SEO title="Smart Apply Job Assist" />
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 py-10 space-y-6">
+        <div className="max-w-4xl mx-auto px-4 py-6 sm:py-10 space-y-6">
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-bold text-gray-900">Smart Apply Job Assist</h1>
             <p className="text-gray-600">
@@ -182,15 +419,16 @@ const SmartApplyJobAssistPage = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="job-file">Or upload JD file (PDF/JPG/PNG)</Label>
+                <Label htmlFor="job-file">Or upload JD file</Label>
                 <input
                   id="job-file"
                   type="file"
-                  accept=".pdf,.png,.jpg,.jpeg,.webp"
+                  accept=".pdf,.docx,.txt,.png,.jpg,.jpeg,.webp,.bmp,.gif,.tif,.tiff"
                   className="block w-full text-sm text-gray-700 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-indigo-700 hover:file:bg-indigo-100"
                   onChange={(e) => setJobFile(e.target.files?.[0] ?? null)}
                 />
                 <p className="text-xs text-gray-500">{fileLabel}</p>
+                <p className="text-xs text-gray-500">Images are read with OCR before analysis. PDF, DOCX, and TXT are uploaded directly.</p>
               </div>
 
               <div className="flex flex-wrap gap-3">
@@ -219,7 +457,41 @@ const SmartApplyJobAssistPage = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-indigo-900">Profile-to-job skill match</p>
+                      <p className="text-lg font-bold text-indigo-900">{gap.matchPercentage}%</p>
+                    </div>
+                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-indigo-100">
+                      <div
+                        className="h-full rounded-full bg-indigo-600 transition-all"
+                        style={{ width: `${Math.max(0, Math.min(100, gap.matchPercentage))}%` }}
+                      />
+                    </div>
+                    <p className="mt-2 text-xs text-indigo-800">
+                      {gap.totalMatchedSkills} of {gap.totalTargetSkills || 0} required skills currently match your profile.
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border border-sky-200 bg-sky-50 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-sky-900">Experience relevance match</p>
+                      <p className="text-lg font-bold text-sky-900">{gap.experienceMatchPercentage}%</p>
+                    </div>
+                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-sky-100">
+                      <div
+                        className="h-full rounded-full bg-sky-600 transition-all"
+                        style={{ width: `${Math.max(0, Math.min(100, gap.experienceMatchPercentage))}%` }}
+                      />
+                    </div>
+                    <p className="mt-2 text-xs text-sky-800">
+                      {gap.totalExperienceMatchedSkills} of {gap.totalTargetSkills || 0} required skills appear in your experience and background details.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
                     <p className="text-sm font-semibold text-emerald-800 flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4" />
@@ -253,7 +525,27 @@ const SmartApplyJobAssistPage = () => {
                   </ul>
                 </div>
 
-                <div className="flex flex-wrap gap-3 pt-1">
+                <div className="space-y-3 pt-1">
+                  <div className="max-w-xs">
+                    <Label htmlFor="job-assist-template">Choose CV template</Label>
+                    <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                      <SelectTrigger id="job-assist-template" className="mt-2 bg-white">
+                        <SelectValue placeholder="Select a template" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 20 }, (_, index) => {
+                          const templateId = String(index + 1);
+                          return (
+                            <SelectItem key={templateId} value={templateId}>
+                              Template {templateId}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
                   <Button onClick={openCvEditor} className="bg-indigo-600 hover:bg-indigo-700 text-white">
                     Open tailored CV editor <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
@@ -262,6 +554,7 @@ const SmartApplyJobAssistPage = () => {
                       Browse jobs <Briefcase className="h-4 w-4 ml-2" />
                     </Link>
                   </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

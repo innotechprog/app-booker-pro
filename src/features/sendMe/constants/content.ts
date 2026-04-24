@@ -11,13 +11,12 @@ export const sendMeHeroContent = {
   eyebrow: "On-Demand Personal Assistance",
   title: "Send Me",
   description:
-    "Personal errand running, delivery services, and on-demand assistance. We handle the tasks so you can focus on what matters-across Gauteng and South Africa.",
-  ctaLabel: "Book Send Me Service",
+    "Personal errand running, delivery services, and on-demand assistance. We handle the tasks so you can focus on what matters—across Gauteng and South Africa.",
+  ctaLabel: "Book Service",
   highlights: ["Errands & Delivery", "Personal Assistance", "Gauteng & SA"],
 } as const;
 
 export const sendMeServicesIntro = {
-  eyebrow: "Core Services",
   title: "Our Send Me Services",
   description:
     "We go beyond basic errands. Need us to source car parts, buy items on your behalf, collect documents, or handle custom requests? Tell us what you need and we will handle it end-to-end.",
@@ -76,6 +75,42 @@ export const sendMeReasons: SendMeReason[] = [
 export const sendMeFinalCta = {
   title: "Ready to Send Me?",
   description: "Book your errand, delivery, or personal assistance task in a few clicks. We will take it from there.",
-  ctaLabel: "Book Send Me Service",
+  ctaLabel: "Book Service",
   footnote: "Prefer WhatsApp or call-back? Submit the booking form and choose your preferred contact method.",
 } as const;
+
+/** Booking flow — Terms & Conditions sections (review step). */
+export const sendMeBookingTermsClauses = [
+  {
+    heading: "1. Service Agreement",
+    body: 'By submitting this booking request, you authorise IB Innovative Solutions ("IB Send Me") to act on your behalf to fulfil the errand or task described. All services are subject to availability and operational hours.',
+  },
+  {
+    heading: "2. Accurate Information",
+    body: "You agree to provide accurate, complete, and truthful information in this form. IB Send Me reserves the right to decline or cancel a booking if the information provided is found to be inaccurate or misleading.",
+  },
+  {
+    heading: "3. Payment & Pricing",
+    body: "A quote will be provided before service commencement. Payment is due upon confirmation of the quote. IB Send Me reserves the right to adjust the final price if the scope of the task changes after confirmation.",
+  },
+  {
+    heading: "4. Cancellation Policy",
+    body: "Cancellations made more than 24 hours before the scheduled service date are free of charge. Cancellations within 24 hours may incur a cancellation fee of up to 50% of the agreed service cost.",
+  },
+  {
+    heading: "5. Liability",
+    body: "IB Send Me will handle all items and tasks with reasonable care. We are not liable for pre-existing damage, loss due to third-party delays, or circumstances beyond our reasonable control (force majeure). Maximum liability is limited to the value of the service fee paid.",
+  },
+  {
+    heading: "6. Privacy",
+    body: "Your personal information is collected solely to process and fulfil your booking. We do not sell or share your data with third parties, except where necessary to deliver the service (e.g., delivery partners). View our full Privacy Policy on request.",
+  },
+  {
+    heading: "7. Communication",
+    body: "By accepting these terms, you consent to being contacted by IB Send Me via the contact method you selected, regarding this booking and related service updates.",
+  },
+  {
+    heading: "8. Governing Law",
+    body: "These terms are governed by the laws of the Republic of South Africa. Any disputes will be resolved in the courts of South Africa.",
+  },
+] as const;

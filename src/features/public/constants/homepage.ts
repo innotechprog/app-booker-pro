@@ -45,9 +45,9 @@ export const publicServices: PublicServiceItem[] = [
     description: "Professional IT services including web development, system maintenance, and technical support",
   },
   {
-    name: "Smart Apply",
+    name: "Job Assistant",
     icon: Sparkles,
     route: "/smart-apply",
-    description: "Apply to many companies at once. AI generates tailored email subjects and bodies-view and edit before sending",
+    description: "Browse available jobs and apply to many companies at once. AI generates tailored email subjects and bodies—view and edit before sending",
   },
 ];

@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
 import Footer from "@/components/Footer";
@@ -13,9 +13,12 @@ import {
 
 const BookServicePage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const serviceFromLanding = searchParams.get("service")?.trim();
 
   const handleBookNow = () => {
-    navigate("/booking?service=Send%20Me");
+    const service = serviceFromLanding || "Send Me";
+    navigate(`/booking?service=${encodeURIComponent(service)}`);
   };
 
   return (

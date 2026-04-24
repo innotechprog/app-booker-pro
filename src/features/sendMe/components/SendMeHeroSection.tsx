@@ -1,6 +1,8 @@
 import { ArrowRight, CheckCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { sendMeHeroContent } from "@/features/sendMe/constants";
+import { sendMeDarkGradient } from "@/features/sendMe/constants/layout";
+import { SEND_ME_BRAND_BLUE, SEND_ME_BTN_PRIMARY_LG } from "@/features/sendMe/buttonStyles";
 
 interface SendMeHeroSectionProps {
   onBookNow: () => void;
@@ -8,7 +10,7 @@ interface SendMeHeroSectionProps {
 
 const SendMeHeroSection = ({ onBookNow }: SendMeHeroSectionProps) => {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#081736] via-[#14356f] to-[#07122c]">
+    <section className={`relative overflow-hidden ${sendMeDarkGradient}`}>
       <div className="pointer-events-none absolute inset-0 select-none opacity-30">
         <svg width="100%" height="100%" viewBox="0 0 1440 480" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
           <circle cx="1200" cy="100" r="180" fill="#fff" fillOpacity="0.07" />
@@ -32,12 +34,9 @@ const SendMeHeroSection = ({ onBookNow }: SendMeHeroSectionProps) => {
               </div>
             ))}
           </div>
-          <Button
-            className="h-12 rounded-xl bg-blue-600 px-8 text-lg font-semibold text-white shadow-lg transition-all duration-200 hover:bg-blue-700 hover:shadow-xl"
-            onClick={onBookNow}
-          >
+          <Button className={SEND_ME_BTN_PRIMARY_LG} style={{ backgroundColor: SEND_ME_BRAND_BLUE }} onClick={onBookNow}>
             {sendMeHeroContent.ctaLabel}
-            <ArrowRight className="ml-2 h-5 w-5" />
+            <ArrowRight className="h-5 w-5" />
           </Button>
         </div>
       </div>

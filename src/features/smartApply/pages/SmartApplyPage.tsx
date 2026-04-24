@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -64,7 +64,10 @@ interface UserDetails {
 }
 
 const inputClass =
-  "h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg transition-all duration-300 bg-gray-50 focus:bg-white text-gray-900 text-sm";
+  "rounded-md border border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 text-sm";
+
+const textareaClass =
+  "rounded-md border border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 text-sm";
 
 const PRIMARY_COLOR = "#1e3a5f";
 
@@ -215,8 +218,6 @@ const SmartApply = () => {
     open: boolean;
     email: GeneratedEmail | null;
   }>({ open: false, email: null });
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [profileLoaded, setProfileLoaded] = useState(false);
   const [candidateCategory, setCandidateCategory] = useState<"general" | "professional" | null>(null);
   const [cvExtract, setCvExtract] = useState<CvExtract>({ overview: "", workExperience: "", education: "", certifications: "", keySkills: "" });
   const [activeProfileSection, setActiveProfileSection] = useState<keyof CvExtract>("overview");
@@ -332,7 +333,13 @@ const SmartApply = () => {
             if (c.fullName) localStorage.setItem("smart_apply_full_name", c.fullName);
           }
           toast({ title: "Signed in with Google", description: "Welcome to Smart Apply." });
-          navigate("/smart-apply", { replace: true });
+          const pendingJobId = sessionStorage.getItem("smart_apply_pending_job_id");
+          if (pendingJobId) {
+            sessionStorage.removeItem("smart_apply_pending_job_id");
+            navigate(`/smart-apply/jobs?jobId=${encodeURIComponent(pendingJobId)}`, { replace: true });
+          } else {
+            navigate("/smart-apply", { replace: true });
+          }
         } catch (err: any) {
           setAuthError(err?.message || "Google sign-in failed.");
           toast({ title: "Google sign-in failed", description: err?.message, variant: "destructive" });
@@ -382,7 +389,13 @@ const SmartApply = () => {
       setHasToken(true);
       if (data?.candidate?.fullName) localStorage.setItem("smart_apply_full_name", data.candidate.fullName);
       toast({ title: "Signed in", description: "Welcome back to Smart Apply." });
-      navigate("/smart-apply/profile", { replace: true });
+      const pendingJobId = sessionStorage.getItem("smart_apply_pending_job_id");
+      if (pendingJobId) {
+        sessionStorage.removeItem("smart_apply_pending_job_id");
+        navigate(`/smart-apply/jobs?jobId=${encodeURIComponent(pendingJobId)}`, { replace: true });
+      } else {
+        navigate("/smart-apply/profile", { replace: true });
+      }
     } catch (err: any) {
       setAuthError(err?.message || "Invalid email or password.");
     } finally {
@@ -444,32 +457,6 @@ const SmartApply = () => {
     }
   };
 
-  // Pre-fill user details when logged in
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setProfileLoaded(true);
-      return;
-    }
-    authAPI.getCurrentUser()
-      .then((res: { user?: { fullName?: string; email?: string; phone?: string } }) => {
-        const user = res?.user;
-        if (!user) return;
-        const parts = (user.fullName || "").trim().split(/\s+/);
-        const name = parts[0] || "";
-        const surname = parts.slice(1).join(" ") || "";
-        setUserDetails({
-          name,
-          surname,
-          email: user.email || "",
-          contactNumber: user.phone || "",
-        });
-        setIsLoggedIn(true);
-      })
-      .catch(() => { /* invalid token or network */ })
-      .finally(() => setProfileLoaded(true));
-  }, []);
-
   const handleStep1Next = async () => {
     if (!cvFile) {
       toast({ title: "CV required", description: "Please upload your CV.", variant: "destructive" });
@@ -522,6 +509,19 @@ const SmartApply = () => {
         education = extract.education || null;
         certifications = extract.certifications || null;
         keySkills = extract.keySkills || null;
+        // Also store the .txt file so it can be attached to emails
+        try {
+          const txtBase64 = await fileToBase64(cvFile);
+          if (txtBase64 && txtBase64.length > 0) {
+            await smartApplyAPI.uploadCV({
+              label: "Main CV",
+              fileName: cvFile.name,
+              fileBase64: txtBase64,
+            });
+          }
+        } catch {
+          // Non-fatal: txt CV still saves profile data; attachment will not be available
+        }
       }
 
       setCandidateCategory(category);
@@ -548,6 +548,10 @@ const SmartApply = () => {
     } finally {
       setSavingProfile(false);
     }
+  };
+
+  const handleSkipCvForNow = () => {
+    navigate("/smart-apply/profile?tour_prompt=1");
   };
 
   const addRow = () => {
@@ -751,9 +755,18 @@ const SmartApply = () => {
       } else if (selectedCvId != null) {
         const cv = userCvs.find((c) => c.id === selectedCvId);
         if (cv) {
-          const blob = await smartApplyAPI.getCVBlob(selectedCvId, false);
-          cvBase64 = await blobToBase64(blob);
-          cvFileName = cv.fileName || cv.label || "CV.pdf";
+          try {
+            const blob = await smartApplyAPI.getCVBlob(selectedCvId, false);
+            cvBase64 = await blobToBase64(blob);
+            cvFileName = cv.fileName || cv.label || "CV.pdf";
+            if (!cvBase64) {
+              toast({ title: "CV could not be read", description: "Emails will be sent without the CV attachment.", variant: "destructive" });
+              cvBase64 = undefined;
+              cvFileName = undefined;
+            }
+          } catch {
+            toast({ title: "CV attachment failed", description: "Could not retrieve your CV. Emails will be sent without the CV attached.", variant: "destructive" });
+          }
         }
       }
 
@@ -914,7 +927,7 @@ const SmartApply = () => {
                       value={loginForm.email}
                       onChange={(e) => setLoginForm((f) => ({ ...f, email: e.target.value }))}
                       required
-                      className="h-12 text-gray-900 placeholder:text-gray-500 bg-white"
+                      className={inputClass}
                     />
                     <Input
                       type="password"
@@ -922,7 +935,7 @@ const SmartApply = () => {
                       value={loginForm.password}
                       onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))}
                       required
-                      className="h-12 text-gray-900 placeholder:text-gray-500 bg-white"
+                      className={inputClass}
                     />
                     {authError && <p className="text-sm text-red-600">{authError}</p>}
                     {!isRecruiterMode && /confirm your email/i.test(authError) && (
@@ -992,18 +1005,18 @@ const SmartApply = () => {
                   </>
                   )}
                   <form className="space-y-4" onSubmit={handleAuthSignup}>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <Input
                         placeholder="Name"
                         value={signupForm.name}
                         onChange={(e) => setSignupForm((f) => ({ ...f, name: e.target.value }))}
-                        className="h-12 text-gray-900 placeholder:text-gray-500 bg-white"
+                        className={inputClass}
                       />
                       <Input
                         placeholder="Surname"
                         value={signupForm.surname}
                         onChange={(e) => setSignupForm((f) => ({ ...f, surname: e.target.value }))}
-                        className="h-12 text-gray-900 placeholder:text-gray-500 bg-white"
+                        className={inputClass}
                       />
                     </div>
                     <Input
@@ -1013,14 +1026,14 @@ const SmartApply = () => {
                       value={signupForm.contactNumber}
                       onChange={(e) => setSignupForm((f) => ({ ...f, contactNumber: e.target.value.replace(/\D/g, "") }))}
                       maxLength={15}
-                      className="h-12 text-gray-900 placeholder:text-gray-500 bg-white"
+                      className={inputClass}
                     />
                     {isRecruiterMode && (
                     <Input
                       placeholder="Company (optional)"
                       value={recruiterCompany}
                       onChange={(e) => setRecruiterCompany(e.target.value)}
-                      className="h-12 text-gray-900 placeholder:text-gray-500 bg-white"
+                      className={inputClass}
                     />
                     )}
                     <Input
@@ -1029,7 +1042,7 @@ const SmartApply = () => {
                       value={signupForm.email}
                       onChange={(e) => setSignupForm((f) => ({ ...f, email: e.target.value }))}
                       required
-                      className="h-12 text-gray-900 placeholder:text-gray-500 bg-white"
+                      className={inputClass}
                     />
                     <Input
                       type="password"
@@ -1037,7 +1050,7 @@ const SmartApply = () => {
                       value={signupForm.password}
                       onChange={(e) => setSignupForm((f) => ({ ...f, password: e.target.value }))}
                       required
-                      className="h-12 text-gray-900 placeholder:text-gray-500 bg-white"
+                      className={inputClass}
                     />
                     <Input
                       type="password"
@@ -1045,7 +1058,7 @@ const SmartApply = () => {
                       value={signupForm.confirmPassword}
                       onChange={(e) => setSignupForm((f) => ({ ...f, confirmPassword: e.target.value }))}
                       required
-                      className="h-12 text-gray-900 placeholder:text-gray-500 bg-white"
+                      className={inputClass}
                     />
                     {authError && <p className="text-sm text-red-600">{authError}</p>}
                     <Button type="submit" className="w-full h-12 bg-blue-600 hover:bg-blue-700" disabled={authLoading}>
@@ -1105,7 +1118,7 @@ const SmartApply = () => {
       <SEO page="smartApply" />
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-900 relative overflow-hidden py-16">
+      <div className="bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-900 relative overflow-hidden py-12 sm:py-16">
         <div className="absolute inset-0 opacity-20">
           <div
             className="absolute inset-0"
@@ -1114,11 +1127,11 @@ const SmartApply = () => {
             }}
           />
         </div>
-        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center relative z-10">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
             Smart Apply
           </h1>
-          <p className="text-xl text-slate-300 max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg md:text-xl text-slate-300 max-w-2xl mx-auto">
             Send applications to multiple companies effortlessly. Add each company's
             email and the position or topic, and let AI craft tailored subject
             lines and personalized email content. Review and customize each email
@@ -1129,34 +1142,11 @@ const SmartApply = () => {
 
       {/* Body - whole section white */}
       <div className="bg-white min-h-screen">
-        <div className="max-w-4xl mx-auto px-6 py-12">
+        <div className="w-full px-3 sm:px-4 py-4 sm:py-6">
           <Card className="border-0 shadow-xl bg-[#f5f5f5] text-gray-900">
-          <CardHeader>
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-black">
-                  <Sparkles className="h-5 w-5 text-indigo-600" />
-                  {showCvUploadOnly ? "Upload your CV to get started" : "Setup your bulk application"}
-                </CardTitle>
-                <CardDescription className="text-gray-800 mt-1">
-                  {showCvUploadOnly && "We'll extract your experience, skills, and education from your CV to prefill your profile."}
-                  {isApplyFlow && step === 3 && "Companies to apply to"}
-                  {isApplyFlow && step === 4 && "Review generated emails"}
-                  {isApplyFlow && step === 5 && "Sending results"}
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-4 flex-wrap">
-                {!showCvUploadOnly && (
-                <Link
-                  to="/smart-apply/apply"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
-                >
-                  <Mail className="h-4 w-4" />
-                  APPLY TO MULTIPLE EMAILS
-                </Link>
-                )}
-              {/* Step indicator: only in apply flow (3 steps) */}
-              {isApplyFlow && (
+          {isApplyFlow && (
+          <CardHeader className="p-4 sm:p-5 pb-3">
+            <div className="flex items-center justify-start flex-wrap gap-4">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${step >= 3 ? "bg-indigo-100 text-indigo-700" : "bg-gray-200 text-gray-500"}`}>
                   <Building2 className="h-4 w-4" /> 1
@@ -1170,11 +1160,10 @@ const SmartApply = () => {
                   <Send className="h-4 w-4" /> 3
                 </span>
               </div>
-              )}
-              </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-6">
+          )}
+          <CardContent className="space-y-4 p-4 sm:p-5 pt-0">
             {/* CV upload screen: only when logged in on /smart-apply and no profile yet */}
             {showCvUploadOnly && (
             <div className="space-y-6">
@@ -1216,7 +1205,15 @@ const SmartApply = () => {
                 </p>
               </div>
             </div>
-            <div className="flex justify-end">
+            <div className="flex flex-wrap items-center justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outlineLight"
+                  onClick={handleSkipCvForNow}
+                  disabled={savingProfile}
+                >
+                  Skip CV for now
+                </Button>
                 <Button onClick={handleStep1Next} disabled={!cvFile || savingProfile} className="bg-indigo-600 hover:bg-indigo-700">
                   {savingProfile ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…</> : <>Continue to profile <ChevronRight className="ml-2 h-4 w-4" /></>}
               </Button>
@@ -1272,7 +1269,7 @@ const SmartApply = () => {
             <div className="space-y-6">
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-gray-900">{isApplyFlow ? "Step 1: " : "Step 3: "}Companies applying to</h3>
-              <div className="grid grid-cols-[1fr_1fr_auto] gap-4 items-end text-sm font-medium text-gray-600">
+              <div className="hidden sm:grid sm:grid-cols-[1fr_1fr_auto] gap-4 items-end text-sm font-medium text-gray-600">
                 <Label>Company email</Label>
                 <Label>Topic / Job applying for</Label>
                 <span className="w-10" />
@@ -1280,25 +1277,31 @@ const SmartApply = () => {
               {rows.map((row) => (
                 <div
                   key={row.id}
-                  className="grid grid-cols-[1fr_1fr_auto] gap-4 items-center"
+                  className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-3 sm:gap-4 items-center"
                 >
-                  <Input
-                    type="email"
-                    placeholder="hr@company.com"
-                    value={row.email}
-                    onChange={(e) => updateRow(row.id, "email", e.target.value)}
-                    className={`${inputClass} font-mono`}
-                  />
-                  <Input
-                    placeholder="e.g. software developer, marketing intern"
-                    value={row.topic}
-                    onChange={(e) => updateRow(row.id, "topic", e.target.value)}
-                    className={inputClass}
-                  />
+                  <div className="space-y-1">
+                    <Label className="sm:hidden text-xs font-medium text-gray-600">Company email</Label>
+                    <Input
+                      type="email"
+                      placeholder="hr@company.com"
+                      value={row.email}
+                      onChange={(e) => updateRow(row.id, "email", e.target.value)}
+                      className={`${inputClass} font-mono`}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="sm:hidden text-xs font-medium text-gray-600">Topic / Job applying for</Label>
+                    <Input
+                      placeholder="e.g. software developer, marketing intern"
+                      value={row.topic}
+                      onChange={(e) => updateRow(row.id, "topic", e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-9 w-9 text-red-600 hover:text-red-700 hover:bg-red-50 shrink-0"
+                    className="h-9 w-9 text-red-600 hover:text-red-700 hover:bg-red-50 shrink-0 justify-self-start sm:justify-self-auto"
                     onClick={() => removeRow(row.id)}
                     disabled={rows.length === 1}
                   >
@@ -1318,7 +1321,7 @@ const SmartApply = () => {
             </div>
 
             {isApplyFlow && (
-              <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 space-y-2">
+              <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 space-y-3">
                 <Label className="text-sm font-medium text-gray-900 flex items-center gap-2">
                   <FileText className="h-4 w-4" />
                   CV to attach to emails
@@ -1334,11 +1337,11 @@ const SmartApply = () => {
                   </p>
                 )}
                 {userCvs.length > 1 && (
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-2">
                     <select
                       value={selectedCvId ?? ""}
                       onChange={(e) => setSelectedCvId(e.target.value === "" ? null : Number(e.target.value))}
-                      className="w-full max-w-sm rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+                      className="w-full sm:max-w-sm rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
                     >
                       <option value="">Choose a CV to attach…</option>
                       {userCvs.map((cv) => (
@@ -1351,17 +1354,17 @@ const SmartApply = () => {
               </div>
             )}
 
-            <div className="flex justify-between">
+            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 sm:justify-between">
               <Button
                 type="button"
                 variant="outlineLight"
                 onClick={() => isApplyFlow ? navigate("/smart-apply/profile") : setStep(2)}
-                className="gap-2"
+                className="gap-2 w-full sm:w-auto"
               >
                 <ChevronLeft className="h-4 w-4" />
                 Back
               </Button>
-              <Button onClick={handleGenerate} disabled={isGenerating} className="text-white hover:opacity-90" style={{ backgroundColor: PRIMARY_COLOR }}>
+              <Button onClick={handleGenerate} disabled={isGenerating} className="text-white hover:opacity-90 w-full sm:w-auto" style={{ backgroundColor: PRIMARY_COLOR }}>
                 {isGenerating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</> : <><Sparkles className="mr-2 h-4 w-4" /> Generate emails</>}
               </Button>
             </div>
@@ -1603,7 +1606,7 @@ const SmartApply = () => {
                         : prev
                     )
                   }
-                  className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg transition-all duration-300 bg-gray-50 focus:bg-white text-gray-900"
+                  className={inputClass}
                 />
               </div>
               <div className="space-y-2">
@@ -1623,7 +1626,7 @@ const SmartApply = () => {
                         : prev
                     )
                   }
-                  className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg transition-all duration-300 bg-gray-50 focus:bg-white text-gray-900"
+                  className={inputClass}
                 />
               </div>
               <div className="space-y-2">
@@ -1644,7 +1647,7 @@ const SmartApply = () => {
                     )
                   }
                   rows={10}
-                  className="border-2 border-gray-200 focus:border-blue-500 rounded-lg transition-all duration-300 bg-gray-50 focus:bg-white text-gray-900 font-mono text-sm"
+                  className={`${textareaClass} font-mono`}
                 />
               </div>
               <div className="flex justify-end gap-2">

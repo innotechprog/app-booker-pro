@@ -1,21 +1,26 @@
 import { Button } from "@/components/ui/button";
 import type { BookingStep } from "@/features/sendMe/types";
+import {
+  SEND_ME_BRAND_BLUE,
+  SEND_ME_BTN_PRIMARY_FORM,
+  SEND_ME_BTN_SECONDARY_ON_DARK,
+  SEND_ME_BTN_SUBMIT_FORM,
+} from "@/features/sendMe/buttonStyles";
 
 interface BookingFormActionsProps {
   step: BookingStep;
   submitting: boolean;
   onBack: () => void;
   onNext: () => void;
-  submitColor: string;
 }
 
-const BookingFormActions = ({ step, submitting, onBack, onNext, submitColor }: BookingFormActionsProps) => {
+const BookingFormActions = ({ step, submitting, onBack, onNext }: BookingFormActionsProps) => {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
       <Button
         type="button"
-        variant="outlineLight"
-        className="sm:min-w-[120px]"
+        variant="outline"
+        className={`${SEND_ME_BTN_SECONDARY_ON_DARK} sm:min-w-[120px]`}
         onClick={onBack}
         disabled={step === 1 || submitting}
       >
@@ -26,8 +31,8 @@ const BookingFormActions = ({ step, submitting, onBack, onNext, submitColor }: B
         <Button
           type="button"
           onClick={onNext}
-          className="text-white hover:opacity-90 sm:min-w-[140px]"
-          style={{ backgroundColor: submitColor }}
+          className={SEND_ME_BTN_PRIMARY_FORM}
+          style={{ backgroundColor: SEND_ME_BRAND_BLUE }}
           disabled={submitting}
         >
           Next
@@ -36,8 +41,8 @@ const BookingFormActions = ({ step, submitting, onBack, onNext, submitColor }: B
         <Button
           type="submit"
           disabled={submitting}
-          className="text-white hover:opacity-90 sm:min-w-[180px]"
-          style={{ backgroundColor: submitColor }}
+          className={SEND_ME_BTN_SUBMIT_FORM}
+          style={{ backgroundColor: SEND_ME_BRAND_BLUE }}
         >
           {submitting ? "Submitting..." : "Submit Booking"}
         </Button>

@@ -4,6 +4,10 @@ import { publicServices } from "@/features/public/constants";
 
 const ServicesOverviewSection = () => {
   const navigate = useNavigate();
+  const hasSmartApplyToken = !!localStorage.getItem("smart_apply_token");
+  const visibleServices = hasSmartApplyToken
+    ? publicServices
+    : publicServices.filter((service) => service.route !== "/smart-apply");
 
   return (
     <section className="relative px-6 py-20">
@@ -16,7 +20,7 @@ const ServicesOverviewSection = () => {
         </div>
 
         <div className="mb-16 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-          {publicServices.map((service, index) => {
+          {visibleServices.map((service, index) => {
             const IconComponent = service.icon;
             return (
               <div key={index} className="group relative" style={{ animationDelay: `${index * 100}ms` }}>

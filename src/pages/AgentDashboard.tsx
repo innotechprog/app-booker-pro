@@ -600,7 +600,7 @@ const AgentDashboard = () => {
 
       {/* Task Details Modal */}
       <Dialog open={isTaskModalOpen} onOpenChange={setIsTaskModalOpen}>
-        <DialogContent className="bg-white/95 backdrop-blur-sm border-white/20 max-w-2xl">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-gray-900">Task Details</DialogTitle>
           </DialogHeader>

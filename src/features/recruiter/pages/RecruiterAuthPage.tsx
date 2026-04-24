@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { recruiterApi } from "@/services/recruiterApi";
+import { RECRUITER_BUTTON_PRIMARY } from "@/features/recruiter/buttonStyles";
 
 const DEEP_BLUE = "#1e3a5f";
 
@@ -15,8 +16,10 @@ type Mode = "sign-in" | "sign-up";
 
 const RecruiterAuthPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const [mode, setMode] = useState<Mode>("sign-in");
+  const initialMode = searchParams.get("mode") === "sign-up" ? "sign-up" : "sign-in";
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [loading, setLoading] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -46,7 +49,7 @@ const RecruiterAuthPage = () => {
 
   return (
     <Layout>
-      <SEO title="Recruiter - Smart Apply" />
+      <SEO title="Recruiter - Job Assistant" />
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
         <Card className="w-full max-w-md border border-gray-200 bg-white shadow-sm">
           <CardHeader>
@@ -122,7 +125,7 @@ const RecruiterAuthPage = () => {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full text-white hover:opacity-90"
+                className={`w-full ${RECRUITER_BUTTON_PRIMARY}`}
                 style={{ backgroundColor: DEEP_BLUE }}
               >
                 {loading ? "Please wait..." : mode === "sign-in" ? "Sign in" : "Create account"}

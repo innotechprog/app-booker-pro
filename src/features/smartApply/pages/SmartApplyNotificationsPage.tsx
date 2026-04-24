@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
@@ -19,7 +19,7 @@ interface AutoApplyMatch {
   status?: "pending" | "accepted" | "declined";
 }
 
-const SmartApplyNotificationsPage = () => {
+const JobAssistantNotificationsPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -27,7 +27,7 @@ const SmartApplyNotificationsPage = () => {
   const [matches, setMatches] = useState<AutoApplyMatch[]>([]);
   const [actingMatchId, setActingMatchId] = useState<string | null>(null);
 
-  const loadData = () => {
+  const loadData = useCallback(() => {
     const token = localStorage.getItem("smart_apply_token");
     if (!token) {
       navigate("/smart-apply/sign-in");
@@ -43,11 +43,11 @@ const SmartApplyNotificationsPage = () => {
         setMatches([]);
       })
       .finally(() => setLoading(false));
-  };
+  }, [navigate]);
 
   useEffect(() => {
     loadData();
-  }, [navigate]);
+  }, [loadData]);
 
   const handleAccept = async (matchId: string) => {
     setActingMatchId(matchId);
@@ -86,7 +86,7 @@ const SmartApplyNotificationsPage = () => {
   if (loading) {
     return (
       <Layout>
-        <SEO title="Notifications - Smart Apply" />
+        <SEO title="Notifications - Job Assistant" />
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <Loader2 className="h-10 w-10 animate-spin text-gray-600" />
         </div>
@@ -96,7 +96,7 @@ const SmartApplyNotificationsPage = () => {
 
   return (
     <Layout>
-      <SEO title="Notifications - Smart Apply" />
+      <SEO title="Notifications - Job Assistant" />
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-3xl mx-auto px-4 py-8">
           <Button asChild variant="ghost" size="sm" className="mb-6 text-gray-700 hover:text-gray-900">
@@ -198,4 +198,4 @@ const SmartApplyNotificationsPage = () => {
   );
 };
 
-export default SmartApplyNotificationsPage;
+export default JobAssistantNotificationsPage;

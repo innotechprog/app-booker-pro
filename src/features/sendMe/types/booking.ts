@@ -10,7 +10,12 @@ export interface BookingFormData {
   time: string;
   specificService: string;
   customService: string;
+  tripPickup: string;
+  tripDropoff: string;
+  tripStops: string[];
   urgency: string;
   contactMethod: string;
   description: string;
 }
+
+export type BookingFormUpdater = <K extends keyof BookingFormData>(key: K, value: BookingFormData[K]) => void;

@@ -11,8 +11,11 @@ import {
 } from "@/components/ui/dialog";
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
-import { Briefcase, MapPin, Building2, ExternalLink, Loader2, Calendar, Clock, Monitor } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Briefcase, MapPin, Building2, ExternalLink, Loader2, Calendar, Clock, Monitor, Search } from "lucide-react";
+import { Link, useNavigate, useSearchParams, useParams } from "react-router-dom";
+import { smartApplyAPI } from "@/services/api";
+import { recruiterApi } from "@/services/recruiterApi";
+import { useToast } from "@/hooks/use-toast";
 
 const DEEP_BLUE = "#1e3a5f";
 
@@ -77,116 +80,231 @@ function formatWorkMethod(method?: string): string {
   return method;
 }
 
-const now = new Date();
-const inTwoWeeks = new Date(now);
-inTwoWeeks.setDate(inTwoWeeks.getDate() + 14);
-const fiveDaysAgo = new Date(now);
-fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-const twoWeeksAgo = new Date(now);
-twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+function inferCategoryFromJob(job: Record<string, unknown>): "general" | "professional" {
+  const text = [
+    typeof job.title === "string" ? job.title : "",
+    typeof job.job_title === "string" ? job.job_title : "",
+    typeof job.description === "string" ? job.description : "",
+    typeof job.job_desc === "string" ? job.job_desc : "",
+    typeof job.qualification === "string" ? job.qualification : "",
+    typeof job.experience === "string" ? job.experience : "",
+  ]
+    .join(" ")
+    .toLowerCase();
 
-// Placeholder: replace with API when backend has jobs (align with jobs table)
-const MOCK_JOBS: JobItem[] = [
-  {
-    id: "1",
-    title: "Junior Admin Assistant",
-    company: "IB Innovative Solutions",
-    location: "Gauteng, South Africa",
-    type: "Full-time",
-    category: "general",
-    description: "Entry-level role for candidates with Grade 12. General office support and administration.",
-    postedAt: new Date().toISOString(),
-    closingDate: inTwoWeeks.toISOString().slice(0, 10),
-    workMethod: "onsite",
-    jobIntro: "We are looking for a motivated Junior Admin Assistant to support our office operations.",
-    jobTitle: "Junior Admin Assistant",
-    jobDesc: "Entry-level role for candidates with Grade 12. General office support, filing, reception, and administration. You will report to the Office Manager and work with the broader admin team.",
-    reportingTo: "Office Manager",
-    minSalary: 120000,
-    maxSalary: 180000,
-    currency: "ZAR",
-    salInterval: "yearly",
-    postType: "Full-time",
-    startDate: now.toISOString().slice(0, 10),
-    qualification: "Grade 12 / Matric. Computer literacy essential.",
-    experience: "0-1 years",
-    positionLevel: "Entry",
-    numPos: 1,
-    datePosted: now.toISOString().slice(0, 10),
-  },
-  {
-    id: "2",
-    title: "Software Developer",
-    company: "Tech Solutions SA",
-    location: "Johannesburg / Remote",
-    type: "Full-time",
-    category: "professional",
-    description: "Degree or diploma in IT/Computer Science. Experience with web or mobile development preferred.",
-    postedAt: fiveDaysAgo.toISOString(),
-    closingDate: inTwoWeeks.toISOString().slice(0, 10),
-    workMethod: "remote",
-    jobIntro: "Join our product engineering team to build and maintain web and mobile applications.",
-    jobTitle: "Software Developer",
-    jobDesc: "Degree or diploma in IT/Computer Science. Experience with web or mobile development preferred. You will work in an agile team, contribute to code reviews, and help shape our tech stack.",
-    reportingTo: "Tech Lead",
-    jobSalary: "Market related",
-    currency: "ZAR",
-    salInterval: "yearly",
-    postType: "Full-time",
-    startDate: fiveDaysAgo.toISOString().slice(0, 10),
-    qualification: "BSc/BTech in Computer Science or equivalent.",
-    experience: "2-5 years",
-    positionLevel: "Mid",
-    numPos: 2,
-    datePosted: fiveDaysAgo.toISOString().slice(0, 10),
-    applyUrl: "https://example.com/apply",
-  },
-  {
-    id: "3",
-    title: "Marketing Intern",
-    company: "Growth Agency",
-    location: "Pretoria",
-    type: "Internship",
-    category: "general",
-    description: "Ideal for matriculants or recent graduates. Support marketing and social media.",
-    postedAt: twoWeeksAgo.toISOString(),
-    closingDate: inTwoWeeks.toISOString().slice(0, 10),
-    workMethod: "hybrid",
-    jobIntro: "Six-month internship for someone eager to learn digital marketing and content creation.",
-    jobTitle: "Marketing Intern",
-    jobDesc: "Ideal for matriculants or recent graduates. Support marketing and social media. Create content, assist with campaigns, and learn from our marketing team. Hybrid: 2 days in office.",
-    reportingTo: "Marketing Manager",
-    jobSalary: "Stipend",
-    postType: "Internship",
-    qualification: "Grade 12. Interest in marketing or communications.",
-    experience: "0-1 years",
-    positionLevel: "Entry",
-    numPos: 1,
-    datePosted: twoWeeksAgo.toISOString().slice(0, 10),
-  },
-];
+  const professionalPattern = /\b(degree|diploma|bsc|btech|bcom|postgraduate|masters|mba|phd|engineer|developer|analyst|specialist|manager|3\+\s*years|5\+\s*years)\b/i;
+  return professionalPattern.test(text) ? "professional" : "general";
+}
+
+function mapJobFromApi(raw: Record<string, unknown>, fallbackIndex = 0): JobItem {
+  const postedAt =
+    (typeof raw.date_posted === "string" && raw.date_posted) ||
+    (typeof raw.created_at === "string" && raw.created_at) ||
+    new Date().toISOString();
+
+  const resolvedId =
+    raw.job_id ||
+    raw.id ||
+    raw.recruiter_job_id ||
+    raw.jobId ||
+    raw.recruiterJobId ||
+    `job-${fallbackIndex + 1}-${postedAt}`;
+
+  const location = [
+    typeof raw.city === "string" ? raw.city : "",
+    typeof raw.state_region === "string" ? raw.state_region : "",
+    typeof raw.country === "string" ? raw.country : "",
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  const rawCategory =
+    typeof raw.category === "string"
+      ? raw.category.trim().toLowerCase()
+      : typeof raw.candidate_category === "string"
+        ? raw.candidate_category.trim().toLowerCase()
+        : "";
+
+  const category: "general" | "professional" =
+    rawCategory === "general" || rawCategory === "professional"
+      ? rawCategory
+      : inferCategoryFromJob(raw);
+
+  return {
+    id: String(resolvedId),
+    title: String(raw.job_title || raw.title || "Untitled role"),
+    company: String(raw.company || "Company"),
+    location: location || "Location not specified",
+    type: String(raw.post_type || "Not specified"),
+    category,
+    description: String(raw.job_desc || raw.description || "No job description provided."),
+    postedAt,
+    closingDate: typeof raw.closing_date === "string" ? raw.closing_date : undefined,
+    workMethod: typeof raw.work_method === "string" ? raw.work_method : undefined,
+    applyUrl: typeof raw.application_link === "string" ? raw.application_link : undefined,
+    jobIntro: typeof raw.job_intro === "string" ? raw.job_intro : undefined,
+    jobTitle: typeof raw.job_title === "string" ? raw.job_title : undefined,
+    jobDesc: typeof raw.job_desc === "string" ? raw.job_desc : undefined,
+    reportingTo: typeof raw.reporting_to === "string" ? raw.reporting_to : undefined,
+    minSalary: typeof raw.min_salary === "number" ? raw.min_salary : undefined,
+    maxSalary: typeof raw.max_salary === "number" ? raw.max_salary : undefined,
+    jobSalary: typeof raw.job_salary === "string" ? raw.job_salary : undefined,
+    currency: typeof raw.currency === "string" ? raw.currency : undefined,
+    salInterval: typeof raw.sal_interval === "string" ? raw.sal_interval : undefined,
+    postType: typeof raw.post_type === "string" ? raw.post_type : undefined,
+    startDate: typeof raw.start_date === "string" ? raw.start_date : undefined,
+    qualification: typeof raw.qualification === "string" ? raw.qualification : undefined,
+    experience: typeof raw.experience === "string" ? raw.experience : undefined,
+    positionLevel: typeof raw.position_level === "string" ? raw.position_level : undefined,
+    numPos: typeof raw.num_pos === "number" ? raw.num_pos : undefined,
+    datePosted: typeof raw.date_posted === "string" ? raw.date_posted : undefined,
+  };
+}
+
+function tokenize(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((token) => token.length > 2);
+}
+
+function getRelatedJobs(pool: JobItem[], target: JobItem, count = 3): JobItem[] {
+  const targetTokens = new Set(tokenize(`${target.title} ${target.description} ${target.company}`));
+
+  const scored = pool
+    .filter((job) => job.id !== target.id)
+    .map((job) => {
+      let score = 0;
+      if (job.category === target.category) score += 3;
+      if (job.company.toLowerCase() === target.company.toLowerCase()) score += 3;
+      if ((job.workMethod || "").toLowerCase() === (target.workMethod || "").toLowerCase()) score += 1;
+
+      const overlap = tokenize(`${job.title} ${job.description}`).reduce((acc, token) => {
+        return acc + (targetTokens.has(token) ? 1 : 0);
+      }, 0);
+      score += Math.min(overlap, 4);
+
+      return { job, score };
+    })
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return new Date(b.job.postedAt).getTime() - new Date(a.job.postedAt).getTime();
+    });
+
+  const meaningful = scored.filter((s) => s.score > 0).slice(0, count).map((s) => s.job);
+  if (meaningful.length > 0) return meaningful;
+
+  return scored.slice(0, count).map((s) => s.job);
+}
 
 const PAGE_SIZE = 10;
 
+const SMART_APPLY_TOKEN_KEY = "smart_apply_token";
+
 const Jobs = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { jobId: jobIdFromPath } = useParams<{ jobId?: string }>();
+  const { toast } = useToast();
+  const [allJobs, setAllJobs] = useState<JobItem[]>([]);
   const [jobs, setJobs] = useState<JobItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "general" | "professional">("all");
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedJob, setSelectedJob] = useState<JobItem | null>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const autoOpenedRef = useRef(false);
+  const pendingJobIdFromUrl = searchParams.get("jobId") || jobIdFromPath || null;
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setSearchQuery(searchInput.trim());
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [searchInput]);
 
   useEffect(() => {
     setLoading(true);
-    const filtered = filter === "all" ? MOCK_JOBS : MOCK_JOBS.filter((j) => j.category === filter);
+    smartApplyAPI
+      .getJobs({
+        // Fetch all posted jobs and filter/search client-side to avoid backend param mismatch hiding rows.
+        limit: 100,
+      })
+      .then((res) => {
+        const mapped = (res.jobs || [])
+          .map((r, index) => {
+            let row: Record<string, unknown>;
+            if (typeof r === "string") {
+              try {
+                row = JSON.parse(r) as Record<string, unknown>;
+              } catch {
+                return null;
+              }
+            } else if (r && typeof r === "object" && !Array.isArray(r)) {
+              row = r as Record<string, unknown>;
+            } else {
+              return null;
+            }
+            return mapJobFromApi(row, index);
+          })
+          .filter((j): j is JobItem => j != null && !!j.id);
+        setAllJobs(mapped);
+      })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : "Could not load jobs.";
+        setAllJobs([]);
+        toast({ title: "Could not load jobs", description: message, variant: "destructive" });
+      })
+      .finally(() => setLoading(false));
+    // Load once; search/filter are applied client-side (see effects below).
+  }, [toast]);
+
+  useEffect(() => {
+    const normalizedQuery = searchQuery.toLowerCase();
+    const searched = !normalizedQuery
+      ? allJobs
+      : allJobs.filter((j) => {
+          const haystack = [j.title, j.company, j.location, j.description, j.qualification, j.experience]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          return haystack.includes(normalizedQuery);
+        });
+
+    const filtered = filter === "all" ? searched : searched.filter((j) => j.category === filter);
     setJobs(filtered);
     setVisibleCount(PAGE_SIZE);
-    setLoading(false);
-  }, [filter]);
+  }, [filter, allJobs, searchQuery]);
+
+  // Auto-open a job when redirected back after login (jobId in URL param)
+  useEffect(() => {
+    if (!pendingJobIdFromUrl || loading || allJobs.length === 0 || autoOpenedRef.current) return;
+    const found = allJobs.find((j) => j.id === pendingJobIdFromUrl);
+    if (found) {
+      if (!localStorage.getItem(SMART_APPLY_TOKEN_KEY) && !recruiterApi.hasToken()) {
+        sessionStorage.setItem("smart_apply_pending_job_id", found.id);
+        navigate("/smart-apply/sign-in", { replace: true });
+        return;
+      }
+      autoOpenedRef.current = true;
+      setSelectedJob(found);
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete("jobId");
+          return next;
+        },
+        { replace: true }
+      );
+    }
+  }, [pendingJobIdFromUrl, loading, allJobs, setSearchParams, navigate]);
 
   const hasMore = jobs.length > PAGE_SIZE && visibleCount < jobs.length;
   const jobsToShow = jobs.length <= PAGE_SIZE ? jobs : jobs.slice(0, visibleCount);
+  const relatedJobs = selectedJob ? getRelatedJobs(allJobs, selectedJob) : [];
 
   useEffect(() => {
     if (!hasMore || !loadMoreRef.current) return;
@@ -203,6 +321,17 @@ const Jobs = () => {
     return () => observer.disconnect();
   }, [hasMore, jobs.length]);
 
+  const openJobDetails = (job: JobItem) => {
+    const hasCandidate = !!localStorage.getItem(SMART_APPLY_TOKEN_KEY);
+    const hasRecruiter = recruiterApi.hasToken();
+    if (!hasCandidate && !hasRecruiter) {
+      sessionStorage.setItem("smart_apply_pending_job_id", job.id);
+      navigate("/smart-apply/sign-in");
+      return;
+    }
+    setSelectedJob(job);
+  };
+
   return (
     <Layout>
       <SEO page="smartApply" />
@@ -213,6 +342,21 @@ const Jobs = () => {
             <p className="text-gray-600 mt-1">
               Browse openings. Use <strong>Apply to multiple emails</strong> in the header to send applications from your profile.
             </p>
+          </div>
+
+          <div className="mb-5">
+            <label htmlFor="job-search" className="sr-only">Search jobs</label>
+            <div className="relative">
+              <Search className="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                id="job-search"
+                type="text"
+                placeholder="Search by title, company, location, skills..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="w-full h-11 rounded-lg border border-gray-300 bg-white pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] focus:border-[#1e3a5f]"
+              />
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-2 mb-8">
@@ -252,7 +396,7 @@ const Jobs = () => {
           ) : jobs.length === 0 ? (
             <Card className="border border-gray-200 bg-white shadow-sm">
               <CardContent className="py-12 text-center text-gray-600">
-                No jobs found for this filter. Check back later or try another category.
+                No job posted.
               </CardContent>
             </Card>
           ) : (
@@ -263,8 +407,11 @@ const Jobs = () => {
                   role="button"
                   tabIndex={0}
                   className="border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer text-left focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1e3a5f]"
-                  onClick={() => setSelectedJob(job)}
-                  onKeyDown={(e) => e.key === "Enter" && setSelectedJob(job)}
+                  onClick={() => openJobDetails(job)}
+                  onKeyDown={(e) => {
+                    if (e.key !== "Enter") return;
+                    openJobDetails(job);
+                  }}
                 >
                   <CardHeader className="pb-2">
                     <div className="flex flex-wrap items-start justify-between gap-2">
@@ -309,14 +456,29 @@ const Jobs = () => {
                       </span>
                     </div>
                     <p className="text-gray-700 line-clamp-2">{job.description}</p>
-                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
-                      <p className="text-xs text-gray-500">Click to view full details and apply</p>
-                      {job.closingDate && (
-                        <p className="text-xs text-gray-600 shrink-0 flex items-center gap-1">
-                          <Calendar className="h-3.5 w-3.5" />
-                          Closes {new Date(job.closingDate).toLocaleDateString()}
-                        </p>
-                      )}
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pt-2 border-t border-gray-100">
+                      <p className="text-xs text-gray-500">Open full details and apply options.</p>
+                      <div className="flex flex-wrap items-center gap-2 justify-end">
+                        {job.closingDate && (
+                          <p className="text-xs text-gray-600 shrink-0 flex items-center gap-1">
+                            <Calendar className="h-3.5 w-3.5" />
+                            Closes {new Date(job.closingDate).toLocaleDateString()}
+                          </p>
+                        )}
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="shrink-0 border-0 text-white hover:opacity-90 hover:text-white focus-visible:text-white"
+                          style={{ backgroundColor: DEEP_BLUE }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openJobDetails(job);
+                          }}
+                        >
+                          View job
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -341,7 +503,7 @@ const Jobs = () => {
 
           {/* Job detail dialog – all fields from jobs table */}
           <Dialog open={!!selectedJob} onOpenChange={(open) => !open && setSelectedJob(null)}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white border-2 border-gray-200 shadow-xl text-left">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto text-left">
               {selectedJob && (
                 <div className="bg-white text-gray-900">
                   <DialogHeader className="text-left pb-3 border-b border-gray-200">
@@ -479,7 +641,27 @@ const Jobs = () => {
                       </div>
                     )}
 
+                    {relatedJobs.length > 0 && (
+                      <div className="rounded-lg bg-gray-50 p-3 border border-gray-100">
+                        <h4 className="text-sm font-semibold text-gray-900 mb-2">Related jobs</h4>
+                        <div className="space-y-2">
+                          {relatedJobs.map((job) => (
+                            <button
+                              key={job.id}
+                              type="button"
+                              className="w-full rounded-md border border-gray-200 bg-white p-2 text-left hover:bg-gray-100"
+                              onClick={() => setSelectedJob(job)}
+                            >
+                              <div className="font-medium text-gray-900 line-clamp-1">{job.title}</div>
+                              <div className="text-xs text-gray-600 mt-0.5">{job.company} • {job.location}</div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex flex-wrap gap-3 pt-4 border-t-2 border-gray-200 bg-white">
+                      {localStorage.getItem(SMART_APPLY_TOKEN_KEY) ? (
                       <Button
                         className="text-white hover:opacity-90"
                         style={{ backgroundColor: DEEP_BLUE }}
@@ -489,8 +671,13 @@ const Jobs = () => {
                         }}
                       >
                         <ExternalLink className="h-4 w-4 mr-2" />
-                        Apply with Smart Apply
+                        Multi Apply
                       </Button>
+                      ) : recruiterApi.hasToken() ? (
+                        <p className="text-sm text-gray-600 w-full sm:w-auto sm:flex-1 min-w-0">
+                          You are signed in as a recruiter. Open Job Assistant with a candidate account to apply, or use the company apply link if available.
+                        </p>
+                      ) : null}
                       {selectedJob.applyUrl && (
                         <Button variant="outline" className="border-gray-300" asChild>
                           <a href={selectedJob.applyUrl} target="_blank" rel="noopener noreferrer">

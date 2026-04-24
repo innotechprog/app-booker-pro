@@ -594,7 +594,7 @@ const Dashboard = () => {
 
        {/* Booking Details Modal */}
        <Dialog open={isBookingModalOpen} onOpenChange={setIsBookingModalOpen}>
-         <DialogContent className="bg-white/10 backdrop-blur-sm border-white/20 shadow-xl max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
            <DialogHeader>
              <DialogTitle className="text-white text-2xl font-bold flex items-center">
                {getStatusIcon(selectedBooking?.status || "")}
@@ -736,7 +736,7 @@ const Dashboard = () => {
 
        {/* Profile Completion Dialog */}
        <Dialog open={isProfileCompletionOpen} onOpenChange={setIsProfileCompletionOpen}>
-         <DialogContent className="bg-white/10 backdrop-blur-sm border-white/20 shadow-xl max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
            <DialogHeader>
              <DialogTitle className="text-2xl font-bold text-white">
                Complete Your Profile

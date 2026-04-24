@@ -32,7 +32,7 @@ interface ProfileAddress {
   isPrimary?: boolean;
 }
 
-const SmartApplyBillingPage = () => {
+const JobAssistantBillingPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state || {}) as LocationState;
@@ -110,7 +110,7 @@ const SmartApplyBillingPage = () => {
 
   return (
     <Layout>
-      <SEO title="Billing - Smart Apply credits" />
+      <SEO title="Billing - Job Assistant credits" />
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 py-8">
           <Button asChild variant="ghost" size="sm" className="mb-6 text-gray-700 hover:text-gray-900">
@@ -251,7 +251,7 @@ const SmartApplyBillingPage = () => {
                   <p className="text-gray-500 text-xs mt-1">{selected.description}</p>
                 )}
                 <div className="mt-4 border-t border-gray-200 pt-3 text-xs text-gray-500">
-                  Credits do not expire and are only used when you accept a matched job from Smart Apply.
+                  Credits do not expire and are only used when you accept a matched job from Job Assistant.
                 </div>
               </CardContent>
             </Card>
@@ -262,4 +262,4 @@ const SmartApplyBillingPage = () => {
   );
 };
 
-export default SmartApplyBillingPage;
+export default JobAssistantBillingPage;

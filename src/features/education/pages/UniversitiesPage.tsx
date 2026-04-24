@@ -10,32 +10,38 @@ import SEO from "@/components/SEO";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 
+/** 2027 admissions window (indicative). Confirm on each institution’s site. */
 const southAfricanUniversities = [
-  { id: 1, name: "University of Cape Town (UCT)", location: "Cape Town, Western Cape", website: "https://www.uct.ac.za", applicationUrl: "https://applyonline.uct.ac.za/", type: "Public", established: 1829, programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science"], icon: Building2, lateApplication: true },
-  { id: 2, name: "University of the Witwatersrand (Wits)", location: "Johannesburg, Gauteng", website: "https://www.wits.ac.za", applicationUrl: "https://www.wits.ac.za/applications/", type: "Public", established: 1896, programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science"], icon: Building2, lateApplication: true },
-  { id: 3, name: "Stellenbosch University", location: "Stellenbosch, Western Cape", website: "https://www.sun.ac.za", applicationUrl: "https://student.sun.ac.za//signup", type: "Public", established: 1866, programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science", "Theology"], icon: Building2, lateApplication: true },
-  { id: 4, name: "University of Pretoria (UP)", location: "Pretoria, Gauteng", website: "https://www.up.ac.za", applicationUrl: "https://www.up.ac.za/online-application", type: "Public", established: 1908, programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science", "Education"], icon: Building2, lateApplication: true },
-  { id: 5, name: "University of Johannesburg (UJ)", location: "Johannesburg, Gauteng", website: "https://www.uj.ac.za", applicationUrl: "https://registration.uj.ac.za/pls/prodi41/gen.gw1pkg.gw1startup?x_processcode=ITS_OAP", type: "Public", established: 2005, programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science", "Education"], icon: Building2, lateApplication: true },
-  { id: 6, name: "University of KwaZulu-Natal (UKZN)", location: "Durban, KwaZulu-Natal", website: "https://www.ukzn.ac.za", applicationUrl: "https://www.cao.ac.za/Apply.aspx?content=Apply", type: "Public", established: 2004, programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science", "Agriculture"], icon: Building2, lateApplication: true },
-  { id: 7, name: "Rhodes University", location: "Grahamstown, Eastern Cape", website: "https://www.ru.ac.za", applicationUrl: "https://ross.ru.ac.za/", type: "Public", established: 1904, programs: ["Arts", "Commerce", "Education", "Law", "Pharmacy", "Science"], icon: Building2, lateApplication: true },
-  { id: 8, name: "University of the Free State (UFS)", location: "Bloemfontein, Free State", website: "https://www.ufs.ac.za", applicationUrl: "https://apply.ufs.ac.za/", type: "Public", established: 1904, programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Natural Sciences"], icon: Building2, lateApplication: true },
-  { id: 9, name: "North-West University (NWU)", location: "Potchefstroom, North West", website: "https://www.nwu.ac.za", applicationUrl: "https://studies.nwu.ac.za/undergraduate-studies/application", type: "Public", established: 2004, programs: ["Arts", "Commerce", "Education", "Engineering", "Health Sciences", "Law", "Natural Sciences"], icon: Building2, lateApplication: true },
-  { id: 10, name: "University of Limpopo", location: "Polokwane, Limpopo", website: "https://www.ul.ac.za", applicationUrl: "https://ulc-prod-webserver.ul.ac.za/pls/prodi41/gen.gw1pkg.gw1view", type: "Public", established: 2005, programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Science"], icon: Building2, lateApplication: true },
-  { id: 11, name: "University of Venda", location: "Thohoyandou, Limpopo", website: "https://www.univen.ac.za", applicationUrl: "https://univenierp01.univen.ac.za/pls/prodi41/gen.gw1pkg.gw1startup?x_processcode=ITS_OAP", type: "Public", established: 1982, programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Science"], icon: Building2, lateApplication: true },
-  { id: 12, name: "University of Fort Hare", location: "Alice, Eastern Cape", website: "https://www.ufh.ac.za", applicationUrl: "https://ienabler.ufh.ac.za/pls/prodi41/w99pkg.mi_login", type: "Public", established: 1916, programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Science"], icon: Building2, lateApplication: true },
-  { id: 13, name: "University of the Western Cape (UWC)", location: "Cape Town, Western Cape", website: "https://www.uwc.ac.za", applicationUrl: "https://www.uwc.ac.za/admission-and-financial-aid/apply", type: "Public", established: 1959, programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Natural Sciences"], icon: Building2, lateApplication: true },
-  { id: 14, name: "University of Zululand", location: "KwaDlangezwa, KwaZulu-Natal", website: "https://www.unizulu.ac.za", applicationUrl: "https://www.cao.ac.za/Apply.aspx?content=Apply", type: "Public", established: 1960, programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Science"], icon: Building2, lateApplication: true },
-  { id: 15, name: "Walter Sisulu University", location: "Mthatha, Eastern Cape", website: "https://www.wsu.ac.za", applicationUrl: "https://wsu.ac.za/index.php/en/undergraduate-programmes/new-students/admission-requirement", type: "Public", established: 2005, programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Science"], icon: Building2, lateApplication: true },
-  { id: 16, name: "Cape Peninsula University of Technology (CPUT)", location: "Cape Town, Western Cape", website: "https://www.cput.ac.za", applicationUrl: "https://alecto.cput.ac.za/pls/prodi41/gen.gw1pkg.gw1startup?x_processcode=ITS_OAP", type: "Public", established: 2005, programs: ["Applied Sciences", "Business", "Education", "Engineering", "Health Sciences"], icon: Building2 },
-  { id: 17, name: "Central University of Technology (CUT)", location: "Bloemfontein, Free State", website: "https://www.cut.ac.za", applicationUrl: "https://www.cut.ac.za/apply", type: "Public", established: 1981, programs: ["Applied Sciences", "Business", "Engineering", "Health Sciences"], icon: Building2 },
-  { id: 18, name: "Durban University of Technology (DUT)", location: "Durban, KwaZulu-Natal", website: "https://www.dut.ac.za", applicationUrl: "https://www.cao.ac.za/Apply.aspx?content=Apply", type: "Public", established: 2002, programs: ["Applied Sciences", "Business", "Engineering", "Health Sciences"], icon: Building2 },
-  { id: 19, name: "Mangosuthu University of Technology (MUT)", location: "Durban, KwaZulu-Natal", website: "https://www.mut.ac.za", applicationUrl: "https://www.cao.ac.za/Apply.aspx?content=Apply", type: "Public", established: 1979, programs: ["Applied Sciences", "Business", "Engineering"], icon: Building2 },
-  { id: 20, name: "Tshwane University of Technology (TUT)", location: "Pretoria, Gauteng", website: "https://www.tut.ac.za", applicationUrl: "https://applications-prod.tut.ac.za/", type: "Public", established: 2004, programs: ["Applied Sciences", "Business", "Engineering", "Health Sciences"], icon: Building2, lateApplication: true },
-  { id: 21, name: "Vaal University of Technology (VUT)", location: "Vanderbijlpark, Gauteng", website: "https://www.vut.ac.za", applicationUrl: "https://www.vut.ac.za/apply", type: "Public", established: 1966, programs: ["Applied Sciences", "Business", "Engineering", "Health Sciences"], icon: Building2, lateApplication: true },
-  { id: 22, name: "University of South Africa (UNISA)", location: "Pretoria, Gauteng", website: "https://www.unisa.ac.za", applicationUrl: "https://www.unisa.ac.za/apply", type: "Public", established: 1873, programs: ["Arts", "Commerce", "Education", "Law", "Science"], icon: Building2, lateApplication: true },
-  { id: 23, name: "Sol Plaatje University", location: "Kimberley, Northern Cape", website: "https://www.spu.ac.za", applicationUrl: "https://applications-prod.spu.ac.za/", type: "Public", established: 2014, programs: ["Arts", "Commerce", "Education", "Natural Sciences"], icon: Building2, lateApplication: true },
-  { id: 24, name: "University of Mpumalanga", location: "Mbombela, Mpumalanga", website: "https://www.ump.ac.za", applicationUrl: "https://www.ump.ac.za/Study-with-us/Application-Process/Online-Applications.aspx", type: "Public", established: 2014, programs: ["Agriculture", "Arts", "Commerce", "Education"], icon: Building2, lateApplication: true },
+  { id: 1, name: "University of Cape Town (UCT)", location: "Cape Town, Western Cape", website: "https://www.uct.ac.za", applicationUrl: "https://applyonline.uct.ac.za/", type: "Public", established: 1829, applicationsOpen: "1 April 2026", typicalClosing: "31 July 2026", programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science"], icon: Building2 },
+  { id: 2, name: "University of the Witwatersrand (Wits)", location: "Johannesburg, Gauteng", website: "https://www.wits.ac.za", applicationUrl: "https://www.wits.ac.za/applications/", type: "Public", established: 1896, applicationsOpen: "1 March 2026", typicalClosing: "30 June / 30 Sept 2026", programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science"], icon: Building2 },
+  { id: 3, name: "Stellenbosch University", location: "Stellenbosch, Western Cape", website: "https://www.sun.ac.za", applicationUrl: "https://student.sun.ac.za//signup", type: "Public", established: 1866, applicationsOpen: "1 April 2026", typicalClosing: "31 July 2026", programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science", "Theology"], icon: Building2 },
+  { id: 4, name: "University of Pretoria (UP)", location: "Pretoria, Gauteng", website: "https://www.up.ac.za", applicationUrl: "https://www.up.ac.za/online-application", type: "Public", established: 1908, applicationsOpen: "1 April 2026", typicalClosing: "30 June 2026", programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science", "Education"], icon: Building2 },
+  { id: 5, name: "University of Johannesburg (UJ)", location: "Johannesburg, Gauteng", website: "https://www.uj.ac.za", applicationUrl: "https://registration.uj.ac.za/pls/prodi41/gen.gw1pkg.gw1startup?x_processcode=ITS_OAP", type: "Public", established: 2005, applicationsOpen: "1 April 2026", typicalClosing: "30 September 2026", programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science", "Education"], icon: Building2 },
+  { id: 6, name: "University of KwaZulu-Natal (UKZN)", location: "Durban, KwaZulu-Natal", website: "https://www.ukzn.ac.za", applicationUrl: "https://www.cao.ac.za/Apply.aspx?content=Apply", type: "Public", established: 2004, applicationsOpen: "March / April 2026", typicalClosing: "30 September 2026", programs: ["Arts", "Commerce", "Engineering", "Health Sciences", "Law", "Science", "Agriculture"], icon: Building2 },
+  { id: 7, name: "Rhodes University", location: "Grahamstown, Eastern Cape", website: "https://www.ru.ac.za", applicationUrl: "https://ross.ru.ac.za/", type: "Public", established: 1904, applicationsOpen: "1 April 2026", typicalClosing: "30 September 2026", programs: ["Arts", "Commerce", "Education", "Law", "Pharmacy", "Science"], icon: Building2 },
+  { id: 8, name: "University of the Free State (UFS)", location: "Bloemfontein, Free State", website: "https://www.ufs.ac.za", applicationUrl: "https://apply.ufs.ac.za/", type: "Public", established: 1904, applicationsOpen: "1 April 2026", typicalClosing: "30 September 2026", programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Natural Sciences"], icon: Building2 },
+  { id: 9, name: "North-West University (NWU)", location: "Potchefstroom, North West", website: "https://www.nwu.ac.za", applicationUrl: "https://studies.nwu.ac.za/undergraduate-studies/application", type: "Public", established: 2004, applicationsOpen: "1 March 2026", typicalClosing: "31 August 2026", programs: ["Arts", "Commerce", "Education", "Engineering", "Health Sciences", "Law", "Natural Sciences"], icon: Building2 },
+  { id: 10, name: "University of Limpopo", location: "Polokwane, Limpopo", website: "https://www.ul.ac.za", applicationUrl: "https://ulc-prod-webserver.ul.ac.za/pls/prodi41/gen.gw1pkg.gw1view", type: "Public", established: 2005, applicationsOpen: "1 April 2026", typicalClosing: "30 September 2026", programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Science"], icon: Building2 },
+  { id: 11, name: "University of Venda", location: "Thohoyandou, Limpopo", website: "https://www.univen.ac.za", applicationUrl: "https://univenierp01.univen.ac.za/pls/prodi41/gen.gw1pkg.gw1startup?x_processcode=ITS_OAP", type: "Public", established: 1982, applicationsOpen: "1 April 2026", typicalClosing: "30 September 2026", programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Science"], icon: Building2 },
+  { id: 12, name: "University of Fort Hare", location: "Alice, Eastern Cape", website: "https://www.ufh.ac.za", applicationUrl: "https://ienabler.ufh.ac.za/pls/prodi41/w99pkg.mi_login", type: "Public", established: 1916, applicationsOpen: "1 April 2026", typicalClosing: "30 September 2026", programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Science"], icon: Building2 },
+  { id: 13, name: "University of the Western Cape (UWC)", location: "Cape Town, Western Cape", website: "https://www.uwc.ac.za", applicationUrl: "https://www.uwc.ac.za/admission-and-financial-aid/apply", type: "Public", established: 1959, applicationsOpen: "1 April 2026", typicalClosing: "30 September 2026", programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Natural Sciences"], icon: Building2 },
+  { id: 14, name: "University of Zululand", location: "KwaDlangezwa, KwaZulu-Natal", website: "https://www.unizulu.ac.za", applicationUrl: "https://www.cao.ac.za/Apply.aspx?content=Apply", type: "Public", established: 1960, applicationsOpen: "1 April 2026", typicalClosing: "30 September 2026", programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Science"], icon: Building2 },
+  { id: 15, name: "Walter Sisulu University", location: "Mthatha, Eastern Cape", website: "https://www.wsu.ac.za", applicationUrl: "https://wsu.ac.za/index.php/en/undergraduate-programmes/new-students/admission-requirement", type: "Public", established: 2005, applicationsOpen: "1 April 2026", typicalClosing: "30 September 2026", programs: ["Arts", "Commerce", "Education", "Health Sciences", "Law", "Science"], icon: Building2 },
+  { id: 16, name: "Cape Peninsula University of Technology (CPUT)", location: "Cape Town, Western Cape", website: "https://www.cput.ac.za", applicationUrl: "https://alecto.cput.ac.za/pls/prodi41/gen.gw1pkg.gw1startup?x_processcode=ITS_OAP", type: "Public", established: 2005, applicationsOpen: "May 2026", typicalClosing: "30 September 2026", programs: ["Applied Sciences", "Business", "Education", "Engineering", "Health Sciences"], icon: Building2 },
+  { id: 17, name: "Central University of Technology (CUT)", location: "Bloemfontein, Free State", website: "https://www.cut.ac.za", applicationUrl: "https://www.cut.ac.za/apply", type: "Public", established: 1981, applicationsOpen: "April / May 2026", typicalClosing: "30 September 2026", programs: ["Applied Sciences", "Business", "Engineering", "Health Sciences"], icon: Building2 },
+  { id: 18, name: "Durban University of Technology (DUT)", location: "Durban, KwaZulu-Natal", website: "https://www.dut.ac.za", applicationUrl: "https://www.cao.ac.za/Apply.aspx?content=Apply", type: "Public", established: 2002, applicationsOpen: "1 April 2026", typicalClosing: "30 September 2026", programs: ["Applied Sciences", "Business", "Engineering", "Health Sciences"], icon: Building2 },
+  { id: 19, name: "Mangosuthu University of Technology (MUT)", location: "Durban, KwaZulu-Natal", website: "https://www.mut.ac.za", applicationUrl: "https://www.cao.ac.za/Apply.aspx?content=Apply", type: "Public", established: 1979, applicationsOpen: "1 April 2026", typicalClosing: "30 September 2026", programs: ["Applied Sciences", "Business", "Engineering"], icon: Building2 },
+  { id: 20, name: "Tshwane University of Technology (TUT)", location: "Pretoria, Gauteng", website: "https://www.tut.ac.za", applicationUrl: "https://applications-prod.tut.ac.za/", type: "Public", established: 2004, applicationsOpen: "March / April 2026", typicalClosing: "30 September 2026", programs: ["Applied Sciences", "Business", "Engineering", "Health Sciences"], icon: Building2 },
+  { id: 21, name: "Vaal University of Technology (VUT)", location: "Vanderbijlpark, Gauteng", website: "https://www.vut.ac.za", applicationUrl: "https://www.vut.ac.za/apply", type: "Public", established: 1966, applicationsOpen: "1 April 2026", typicalClosing: "30 September 2026", programs: ["Applied Sciences", "Business", "Engineering", "Health Sciences"], icon: Building2 },
+  { id: 22, name: "University of South Africa (UNISA)", location: "Pretoria, Gauteng", website: "https://www.unisa.ac.za", applicationUrl: "https://www.unisa.ac.za/apply", type: "Public", established: 1873, applicationsOpen: "1 September 2026", typicalClosing: "Varies (late in year)", programs: ["Arts", "Commerce", "Education", "Law", "Science"], icon: Building2 },
+  { id: 23, name: "Sol Plaatje University", location: "Kimberley, Northern Cape", website: "https://www.spu.ac.za", applicationUrl: "https://applications-prod.spu.ac.za/", type: "Public", established: 2014, applicationsOpen: "1 April 2026", typicalClosing: "30 September 2026", programs: ["Arts", "Commerce", "Education", "Natural Sciences"], icon: Building2 },
+  { id: 24, name: "University of Mpumalanga", location: "Mbombela, Mpumalanga", website: "https://www.ump.ac.za", applicationUrl: "https://www.ump.ac.za/Study-with-us/Application-Process/Online-Applications.aspx", type: "Public", established: 2014, applicationsOpen: "1 April 2026", typicalClosing: "30 September 2026", programs: ["Agriculture", "Arts", "Commerce", "Education"], icon: Building2 },
 ];
+
+/**
+ * Future late-application messaging: add e.g. `lateApplication?: boolean` on entries above,
+ * or a `Set` of ids, when you want badges or filters again (previously shown on cards).
+ */
 
 const UniversitiesPage = () => {
   React.useEffect(() => {
@@ -55,7 +61,7 @@ const UniversitiesPage = () => {
         page="universities"
         title="South African Universities | IB Innovative Solutions"
         description="IBIS - Innovative Business Solutions"
-        keywords="universities, south africa, university applications, late application, university assistance, IB Innovative Solutions, education, public universities, apply online, university help"
+        keywords="universities, south africa, university applications, application deadlines, 2027 admissions, university assistance, IB Innovative Solutions, education, public universities, apply online, university help"
       />
       <div className="relative bg-white">
         <div className="absolute inset-0"></div>
@@ -63,7 +69,10 @@ const UniversitiesPage = () => {
           <div className="mb-16 text-center">
             <h2 className="mb-6 text-4xl font-bold text-gray-900 md:text-5xl">South African Universities</h2>
             <p className="mx-auto max-w-3xl text-xl leading-relaxed text-gray-700">
-              Explore all public universities in South Africa and apply directly through their official websites
+              Explore all public universities in South Africa and apply directly through their official websites.
+            </p>
+            <p className="mx-auto mt-3 max-w-3xl text-sm text-gray-600">
+              Application open and typical closing dates are indicative for 2027 undergraduate intakes—confirm on each university’s admissions page.
             </p>
           </div>
 
@@ -92,32 +101,74 @@ const UniversitiesPage = () => {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredUniversities.map((university) => {
               const IconComponent = university.icon;
+              const maxProgramTags = 4;
+              const visiblePrograms = university.programs.slice(0, maxProgramTags);
+              const morePrograms = university.programs.length - maxProgramTags;
               return (
-                <Card key={university.id} className="group flex h-full flex-col border-0 bg-white shadow-xl transition-all duration-300 hover:shadow-2xl">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-purple-600">
+                <Card
+                  key={university.id}
+                  className="group flex h-full flex-col rounded-xl border-0 bg-white shadow-xl transition-all duration-300 hover:shadow-2xl"
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 flex-1 items-start space-x-3">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-purple-600">
                           <IconComponent className="h-6 w-6 text-white" />
                         </div>
-                        <div className="flex-1">
-                          <CardTitle className="text-lg font-bold text-gray-900 transition-colors group-hover:text-blue-600">{university.name}</CardTitle>
-                          <div className="mt-1 flex items-center space-x-2">
-                            <MapPinIcon className="h-4 w-4 text-gray-500" />
+                        <div className="min-w-0 flex-1">
+                          <CardTitle className="text-lg font-bold leading-snug text-blue-600 transition-colors group-hover:text-blue-700">
+                            {university.name}
+                          </CardTitle>
+                          <div className="mt-1.5 flex items-start gap-2">
+                            <MapPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-gray-500" />
                             <span className="text-sm text-gray-600">{university.location}</span>
                           </div>
                         </div>
                       </div>
-                      <Badge className={university.type === "Public" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}>
+                      <Badge
+                        className={`shrink-0 rounded-full px-2.5 py-0.5 ${
+                          university.type === "Public" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"
+                        }`}
+                      >
                         {university.type}
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent className="flex flex-1 flex-col">
-                    <div className="flex-1 space-y-2">
-                      <div className="flex justify-between text-sm">
+                  <CardContent className="flex flex-1 flex-col pt-0">
+                    <div className="flex-1 space-y-3">
+                      <div className="flex justify-between gap-3 text-sm">
                         <span className="text-gray-600">Established:</span>
-                        <span className="font-medium text-gray-900">{university.established}</span>
+                        <span className="font-semibold text-gray-900">{university.established}</span>
+                      </div>
+                      <div className="flex justify-between gap-3 text-sm">
+                        <span className="shrink-0 text-gray-600">Applications open:</span>
+                        <span className="text-right font-semibold text-gray-900">{university.applicationsOpen}</span>
+                      </div>
+                      <div className="flex justify-between gap-3 text-sm">
+                        <span className="shrink-0 text-gray-600">Typical closing:</span>
+                        <span className="text-right font-semibold text-gray-900">{university.typicalClosing}</span>
+                      </div>
+                      <div>
+                        <p className="mb-2 text-sm font-medium text-gray-700">Programs:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {visiblePrograms.map((program) => (
+                            <Badge
+                              key={program}
+                              variant="outline"
+                              className="rounded-full border-gray-300 bg-white font-normal text-gray-700 hover:bg-gray-50"
+                            >
+                              {program}
+                            </Badge>
+                          ))}
+                          {morePrograms > 0 && (
+                            <Badge
+                              variant="outline"
+                              className="rounded-full border-gray-300 bg-gray-50 font-normal text-gray-600"
+                            >
+                              +{morePrograms} more
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="mt-auto flex space-x-2 border-t border-gray-200 pt-4">

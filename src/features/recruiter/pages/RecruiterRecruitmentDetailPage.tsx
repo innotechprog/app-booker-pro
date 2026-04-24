@@ -11,9 +11,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, ArrowLeft, UserPlus, Trash2, User } from "lucide-react";
+import { Loader2, ArrowLeft, UserPlus, Trash2, User, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { recruiterApi, type RecruiterRecruitment, type RecruiterCandidateListItem } from "@/services/recruiterApi";
+import { RECRUITER_BUTTON_PRIMARY } from "@/features/recruiter/buttonStyles";
 
 const DEEP_BLUE = "#1e3a5f";
 
@@ -25,6 +26,7 @@ const RecruiterRecruitmentDetailPage = () => {
   const [recruitment, setRecruitment] = useState<RecruiterRecruitment | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [candidatesList, setCandidatesList] = useState<RecruiterCandidateListItem[]>([]);
+  const [addSearch, setAddSearch] = useState("");
   const [addingId, setAddingId] = useState<number | null>(null);
   const [removingId, setRemovingId] = useState<number | null>(null);
 
@@ -56,6 +58,7 @@ const RecruiterRecruitmentDetailPage = () => {
 
   useEffect(() => {
     if (addOpen) {
+      setAddSearch("");
       recruiterApi.getCandidates().then((res) => setCandidatesList(res.candidates || [])).catch(() => setCandidatesList([]));
     }
   }, [addOpen]);
@@ -99,6 +102,13 @@ const RecruiterRecruitmentDetailPage = () => {
 
   const inIds = new Set((recruitment.candidates || []).map((c) => c.id));
   const availableToAdd = candidatesList.filter((c) => !inIds.has(c.id));
+  const filteredAvailableToAdd = availableToAdd.filter((c) => {
+    const q = addSearch.trim().toLowerCase();
+    if (!q) return true;
+    return [c.fullName, c.email, c.jobTitle || "", c.category || ""].some((v) =>
+      String(v).toLowerCase().includes(q),
+    );
+  });
 
   return (
     <Layout>
@@ -125,7 +135,7 @@ const RecruiterRecruitmentDetailPage = () => {
             <Button
               onClick={() => setAddOpen(true)}
               size="sm"
-              className="text-white hover:opacity-90 inline-flex items-center gap-2"
+              className={`${RECRUITER_BUTTON_PRIMARY} inline-flex items-center gap-2`}
               style={{ backgroundColor: DEEP_BLUE }}
             >
               <UserPlus className="h-4 w-4" /> Add candidate
@@ -139,7 +149,7 @@ const RecruiterRecruitmentDetailPage = () => {
                 <p>No candidates yet. Add candidates from the talent pool.</p>
                 <Button
                   onClick={() => setAddOpen(true)}
-                  className="mt-4 text-white hover:opacity-90"
+                  className={`mt-4 ${RECRUITER_BUTTON_PRIMARY}`}
                   style={{ backgroundColor: DEEP_BLUE }}
                 >
                   Add candidate
@@ -158,19 +168,27 @@ const RecruiterRecruitmentDetailPage = () => {
                       <div>
                         <p className="font-medium text-gray-900">{c.fullName}</p>
                         <p className="text-sm text-gray-600">{c.email}</p>
+                        {c.jobTitle && (
+                          <p className="text-xs text-gray-500 mt-0.5">{c.jobTitle}</p>
+                        )}
                       </div>
                       {c.category && (
                         <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 capitalize">{c.category}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button asChild size="sm" variant="outline" className="border-gray-300">
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                      >
                         <Link to={`/recruiter/candidates/${c.id}`}>View profile</Link>
                       </Button>
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="text-red-600 hover:text-red-700"
+                        className="text-red-600 hover:bg-red-50 hover:text-red-700"
                         disabled={removingId === c.id}
                         onClick={() => handleRemoveCandidate(c.id)}
                       >
@@ -186,28 +204,39 @@ const RecruiterRecruitmentDetailPage = () => {
       </div>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[80vh] flex flex-col">
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Add candidate</DialogTitle>
             <DialogDescription>Choose a candidate from the talent pool to add to this recruitment.</DialogDescription>
           </DialogHeader>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              value={addSearch}
+              onChange={(e) => setAddSearch(e.target.value)}
+              placeholder="Search by name, email, title, or category"
+              className="w-full rounded-md border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
           <div className="flex-1 overflow-y-auto space-y-2 pr-2">
-            {availableToAdd.length === 0 ? (
+            {filteredAvailableToAdd.length === 0 ? (
               <p className="text-sm text-gray-500">All candidates are already in this recruitment, or there are no candidates yet.</p>
             ) : (
-              availableToAdd.map((c) => (
+              filteredAvailableToAdd.map((c) => (
                 <div
                   key={c.id}
-                  className="flex items-center justify-between gap-2 py-2 border-b border-gray-100 last:border-0"
+                  className="flex items-center justify-between gap-2 rounded-md border border-gray-200 bg-gray-50 p-2"
                 >
                   <div>
                     <p className="font-medium text-gray-900">{c.fullName}</p>
                     <p className="text-sm text-gray-600">{c.email}</p>
+                    {c.jobTitle && <p className="text-xs text-gray-500">{c.jobTitle}</p>}
                   </div>
                   <Button
                     size="sm"
                     disabled={addingId === c.id}
-                    className="text-white shrink-0"
+                    className={`${RECRUITER_BUTTON_PRIMARY} shrink-0`}
                     style={{ backgroundColor: DEEP_BLUE }}
                     onClick={() => handleAddCandidate(c.id)}
                   >

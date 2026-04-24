@@ -58,6 +58,8 @@ const EducationPage = () => {
     }
   };
 
+  const showComingSoon = () => navigate("/coming-soon");
+
   const categories = [
     { id: "all", name: "All Services", icon: GraduationCap },
     { id: "tutorials", name: "Tutorials", icon: BookOpen },
@@ -359,10 +361,10 @@ const EducationPage = () => {
                         </div>
                         <Button className="mt-auto w-full rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 py-4 text-lg font-semibold text-white shadow-lg transition-all duration-300 hover:!bg-gradient-to-r hover:!from-blue-800 hover:!to-purple-800 hover:!text-white hover:shadow-xl" onClick={() => {
                           if (service.title === "Academic Tutoring") {
-                            navigate("/tutorials");
-                          } else {
-                            navigate("/booking", { state: { service: service.title } });
+                            showComingSoon();
+                            return;
                           }
+                          showComingSoon();
                         }}>
                           <span>{service.title === "Academic Tutoring" ? "Choose Grade & Subject" : "Get Started"}</span>
                           <ArrowRight className="ml-2 h-5 w-5" />
@@ -427,12 +429,14 @@ const EducationPage = () => {
                       </div>
                       <Button className="mt-4 w-full rounded bg-gray-900 py-2 text-sm text-white hover:bg-gray-700" onClick={() => {
                         if (service.title === "Academic Tutoring") {
-                          navigate("/tutorials");
-                        } else if (service.title === "University Application Assistance") {
-                          navigate("/universities");
-                        } else {
-                          navigate("/booking", { state: { service: service.title } });
+                          showComingSoon();
+                          return;
                         }
+                        if (service.title === "University Application Assistance") {
+                          navigate("/universities");
+                          return;
+                        }
+                        showComingSoon();
                       }}>
                         <span>{service.title === "Academic Tutoring" ? "Choose Grade & Subject" : service.title === "University Application Assistance" ? "View Universities" : "Book This Service"}</span>
                       </Button>

@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Settings, Lock, Loader2, UserX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { recruiterApi } from "@/services/recruiterApi";
+import { RECRUITER_BUTTON_PRIMARY } from "@/features/recruiter/buttonStyles";
 
 const DEEP_BLUE = "#1e3a5f";
 
@@ -141,7 +142,7 @@ const RecruiterSettingsPage = () => {
                       setChangingPassword(false);
                     }
                   }}
-                  className="text-white hover:opacity-90"
+                  className={RECRUITER_BUTTON_PRIMARY}
                   style={{ backgroundColor: DEEP_BLUE }}
                 >
                   {changingPassword ? (

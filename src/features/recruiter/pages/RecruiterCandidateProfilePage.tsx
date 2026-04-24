@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Loader2, User, Mail, Phone, MapPin, Briefcase, ArrowLeft, ExternalLink, Download, UserPlus } from "lucide-react";
 import { recruiterApi, type RecruiterCandidateProfile as ProfileType } from "@/services/recruiterApi";
+import { RECRUITER_BUTTON_PRIMARY } from "@/features/recruiter/buttonStyles";
 
 const DEEP_BLUE = "#1e3a5f";
 
@@ -131,7 +132,7 @@ const RecruiterCandidateProfilePage = () => {
                     size="sm"
                     onClick={handleDownloadCv}
                     disabled={downloadingCv}
-                    className="text-white hover:opacity-90"
+                    className={RECRUITER_BUTTON_PRIMARY}
                     style={{ backgroundColor: DEEP_BLUE }}
                   >
                     {downloadingCv ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}

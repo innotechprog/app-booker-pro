@@ -40,7 +40,7 @@ const Register = () => {
     }
 
     // Phone validation (optional but if provided, validate format)
-    if (formData.phone && !/^[\+]?[1-9][\d]{0,15}$/.test(formData.phone.replace(/\s/g, ''))) {
+    if (formData.phone && !/^\+?[1-9][\d]{0,15}$/.test(formData.phone.replace(/\s/g, ""))) {
       newErrors.phone = "Please enter a valid phone number";
     }
 

@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, X, User, Sparkles, LogOut, LayoutDashboard, Settings, Crown, Bell, Wand2 } from "lucide-react";
+import { Menu, X, User, Sparkles, LogOut, LayoutDashboard, Settings, Crown, Bell, Wand2, Mic } from "lucide-react";
 import ibLogoBlack from "@/images/ib-logo-black.png";
 import { smartApplyAPI } from "@/services/api";
 
@@ -31,13 +31,22 @@ const SmartApplyHeader = () => {
   // Read token from localStorage on every render so header updates after login (no stale state)
   const hasToken = !!localStorage.getItem("smart_apply_token");
 
+  const isActivePath = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(`${path}/`);
+
+  const desktopNavClass = (path: string, inactiveClass = "text-gray-500 hover:text-gray-900", activeClass = "text-gray-900") =>
+    `text-sm font-medium transition-colors ${isActivePath(path) ? activeClass : inactiveClass}`;
+
+  const mobileNavClass = (path: string, inactiveClass = "text-gray-600 hover:text-gray-900", activeClass = "text-gray-900") =>
+    `py-2 text-sm font-medium transition-colors ${isActivePath(path) ? activeClass : inactiveClass}`;
+
   const handleLogout = () => {
     localStorage.removeItem("smart_apply_token");
     localStorage.removeItem("smart_apply_full_name");
     localStorage.removeItem(PROFILE_PIC_KEY);
     setInitials("");
     setProfilePictureUrl(null);
-    navigate("/smart-apply");
+    navigate("/smart-apply/sign-in");
   };
 
   const loadProfilePicture = () => {
@@ -104,35 +113,36 @@ const SmartApplyHeader = () => {
           <div className="hidden md:flex items-center gap-6">
             <Link
               to="/smart-apply/dashboard"
-              className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+              className={desktopNavClass("/smart-apply/dashboard")}
               data-tour="nav-dashboard"
             >
               DASHBOARD
             </Link>
             <Link
               to="/smart-apply/apply"
-              className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+              className={desktopNavClass("/smart-apply/apply")}
               data-tour="nav-apply"
+              title="APPLY TO MULTIPLE EMAILS"
             >
-              APPLY TO MULTIPLE EMAILS
+              SMART APPLY
             </Link>
             {!hasToken && (
               <>
                 <Link
                   to="/smart-apply/sign-in"
-                  className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                  className={desktopNavClass("/smart-apply/sign-in", "text-gray-600 hover:text-gray-900")}
                 >
                   Sign in
                 </Link>
                 <Link
                   to="/smart-apply/sign-up"
-                  className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                  className={desktopNavClass("/smart-apply/sign-up", "text-gray-600 hover:text-gray-900")}
                 >
                   Sign up
                 </Link>
                 <Link
                   to="/recruiter/sign-in"
-                  className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+                  className={desktopNavClass("/recruiter/sign-in")}
                 >
                   Are you a recruiter?
                 </Link>
@@ -140,28 +150,36 @@ const SmartApplyHeader = () => {
             )}
             <Link
               to="/smart-apply/jobs"
-              className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors uppercase tracking-wide"
+              className={`${desktopNavClass("/smart-apply/jobs")} uppercase tracking-wide`}
               data-tour="nav-jobs"
             >
               FIND A JOB
             </Link>
             <Link
               to="/smart-apply/cv-builder"
-              className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors uppercase tracking-wide"
+              className={`${desktopNavClass("/smart-apply/cv-builder")} uppercase tracking-wide`}
               data-tour="nav-cv-builder"
             >
               CV Builder
             </Link>
             <Link
               to="/smart-apply/job-assist"
-              className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-1 uppercase tracking-wide"
+              className={`${desktopNavClass("/smart-apply/job-assist")} flex items-center gap-1 uppercase tracking-wide`}
             >
               <Wand2 className="h-4 w-4" />
               Job Assist
             </Link>
             <Link
+              to="/smart-apply/interview-prep"
+              className={`${desktopNavClass("/smart-apply/interview-prep")} flex items-center gap-1 uppercase tracking-wide`}
+              data-tour="nav-interview-prep"
+            >
+              <Mic className="h-4 w-4" />
+              Interview Prep
+            </Link>
+            <Link
               to="/smart-apply/premium"
-              className="text-sm font-medium text-amber-600 hover:text-amber-700 transition-colors flex items-center gap-1 uppercase tracking-wide"
+              className={`${desktopNavClass("/smart-apply/premium", "text-amber-600 hover:text-amber-700", "text-amber-700")} flex items-center gap-1 uppercase tracking-wide`}
             >
               <Crown className="h-4 w-4" />
               Upgrade
@@ -170,7 +188,11 @@ const SmartApplyHeader = () => {
               <>
                 <Link
                   to="/smart-apply/notifications"
-                  className="flex items-center justify-center w-9 h-9 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                  className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${
+                    isActivePath("/smart-apply/notifications")
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  }`}
                   title="Notifications"
                   aria-label="Notifications"
                 >
@@ -238,7 +260,7 @@ const SmartApplyHeader = () => {
           <nav className="flex flex-col gap-3">
             <Link
               to="/smart-apply/dashboard"
-              className="py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+              className={mobileNavClass("/smart-apply/dashboard")}
               data-tour="nav-dashboard"
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -246,31 +268,32 @@ const SmartApplyHeader = () => {
             </Link>
             <Link
               to="/smart-apply/apply"
-              className="py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+              className={mobileNavClass("/smart-apply/apply")}
               data-tour="nav-apply"
+              title="APPLY TO MULTIPLE EMAILS"
               onClick={() => setMobileMenuOpen(false)}
             >
-              APPLY TO MULTIPLE EMAILS
+              SMART APPLY
             </Link>
             {!hasToken && (
               <>
                 <Link
                   to="/smart-apply/sign-in"
-                  className="py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+                  className={mobileNavClass("/smart-apply/sign-in")}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sign in
                 </Link>
                 <Link
                   to="/smart-apply/sign-up"
-                  className="py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+                  className={mobileNavClass("/smart-apply/sign-up")}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sign up
                 </Link>
                 <Link
                   to="/recruiter/sign-in"
-                  className="py-2 text-sm font-medium text-gray-500 hover:text-gray-900"
+                  className={mobileNavClass("/recruiter/sign-in", "text-gray-500 hover:text-gray-900")}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Are you a recruiter?
@@ -279,7 +302,7 @@ const SmartApplyHeader = () => {
             )}
             <Link
               to="/smart-apply/jobs"
-              className="py-2 text-sm font-medium text-gray-600 hover:text-gray-900 uppercase tracking-wide"
+              className={`${mobileNavClass("/smart-apply/jobs")} uppercase tracking-wide`}
               data-tour="nav-jobs"
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -287,7 +310,7 @@ const SmartApplyHeader = () => {
             </Link>
             <Link
               to="/smart-apply/cv-builder"
-              className="py-2 text-sm font-medium text-gray-600 hover:text-gray-900 uppercase tracking-wide"
+              className={`${mobileNavClass("/smart-apply/cv-builder")} uppercase tracking-wide`}
               data-tour="nav-cv-builder"
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -295,14 +318,21 @@ const SmartApplyHeader = () => {
             </Link>
             <Link
               to="/smart-apply/job-assist"
-              className="py-2 text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-2 uppercase tracking-wide"
+              className={`${mobileNavClass("/smart-apply/job-assist")} flex items-center gap-2 uppercase tracking-wide`}
               onClick={() => setMobileMenuOpen(false)}
             >
               <Wand2 className="h-4 w-4" /> Job Assist
             </Link>
             <Link
+              to="/smart-apply/interview-prep"
+              className={`${mobileNavClass("/smart-apply/interview-prep")} flex items-center gap-2 uppercase tracking-wide`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <Mic className="h-4 w-4" /> Interview Prep
+            </Link>
+            <Link
               to="/smart-apply/premium"
-              className="py-2 text-sm font-medium text-amber-600 hover:text-amber-700 flex items-center gap-2 uppercase tracking-wide"
+              className={`${mobileNavClass("/smart-apply/premium", "text-amber-600 hover:text-amber-700", "text-amber-700")} flex items-center gap-2 uppercase tracking-wide`}
               onClick={() => setMobileMenuOpen(false)}
             >
               <Crown className="h-4 w-4" /> Upgrade
@@ -311,21 +341,21 @@ const SmartApplyHeader = () => {
               <>
                 <Link
                   to="/smart-apply/notifications"
-                  className="py-2 text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-2"
+                  className={`${mobileNavClass("/smart-apply/notifications")} flex items-center gap-2`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <Bell className="h-4 w-4" /> Notifications
                 </Link>
                 <Link
                   to="/smart-apply/profile"
-                  className="py-2 text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-2"
+                  className={`${mobileNavClass("/smart-apply/profile")} flex items-center gap-2`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <User className="h-4 w-4" /> Profile
                 </Link>
                 <Link
                   to="/smart-apply/settings"
-                  className="py-2 text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-2"
+                  className={`${mobileNavClass("/smart-apply/settings")} flex items-center gap-2`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <Settings className="h-4 w-4" /> Settings

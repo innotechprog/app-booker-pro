@@ -29,9 +29,9 @@ const SEO = ({
   // SEO data: titles 50–60 chars, descriptions 150–160 chars (Google guidelines)
   const seoData = {
     home: {
-      title: "IB Innovative Solutions | Education, IT & Smart Apply",
-      description: "Trusted professional services: tutoring, university applications, IT solutions, Send Me & Smart Apply bulk job applications. Gauteng & South Africa.",
-      keywords: "IBIS, IB Innovative Solutions, education, tutoring, university applications, IT solutions, Send Me, Smart Apply, bulk job apply, South Africa, Gauteng, Johannesburg, Pretoria",
+      title: "IB Innovative Solutions | Education, IT & Job Assistant",
+      description: "Trusted professional services: tutoring, university applications, IT solutions, Send Me & Job Assistant bulk job applications. Gauteng & South Africa.",
+      keywords: "IBIS, IB Innovative Solutions, education, tutoring, university applications, IT solutions, Send Me, Job Assistant, bulk job apply, South Africa, Gauteng, Johannesburg, Pretoria",
       image: "/ib-logo-white.png",
       url: `${SITE_URL}`,
     },
@@ -64,15 +64,15 @@ const SEO = ({
       url: `${SITE_URL}/it-solutions`,
     },
     smartApply: {
-      title: "Smart Apply | Bulk Job Applications with AI Emails - IBIS",
+      title: "Job Assistant | Bulk Job Applications with AI Emails - IBIS",
       description: "Apply to many companies at once. AI generates email subjects & bodies. Add emails & topics, edit, then send. Bulk job applications made easy.",
-      keywords: "Smart Apply, bulk job applications, AI email generator, job applications, mass apply, job search, South Africa, IBIS",
+      keywords: "Job Assistant, bulk job applications, AI email generator, job applications, mass apply, job search, South Africa, IBIS",
       image: "/og-image-smart-apply.jpg",
       url: `${SITE_URL}/smart-apply`,
     },
     contact: {
       title: "Contact Us | Get in Touch - IB Innovative Solutions",
-      description: "Contact IBIS for education, IT, Send Me or Smart Apply. Phone, email & online enquiries. We respond promptly. Gauteng, South Africa.",
+      description: "Contact IBIS for education, IT, Send Me or Job Assistant. Phone, email & online enquiries. We respond promptly. Gauteng, South Africa.",
       keywords: "contact IBIS, get in touch, customer service, enquiry, South Africa, Gauteng, WhatsApp, support",
       image: "/ib-logo-white.png",
       url: `${SITE_URL}/contact`,
@@ -92,11 +92,19 @@ const SEO = ({
       url: `${SITE_URL}/learner/register`,
     },
     booking: {
-      title: "Book Services - IBIS | Easy Online Booking",
-      description: "Book IBIS services online. Education, IT and personal assistance. Secure payment and flexible scheduling.",
-      keywords: "book services, online booking, IBIS booking, service reservation",
-      image: "/og-image-booking.jpg",
+      title: "Book Send Me | Errands & Personal Assistance - IBIS",
+      description:
+        "Request Send Me online: errands, delivery and on-demand help. Add your address, preferred date and service; our team confirms and quotes. Gauteng & South Africa.",
+      keywords: "Send Me booking, book errand, personal assistant, delivery help, Gauteng, South Africa, IBIS",
+      image: "/og-image-send-me.jpg",
       url: `${SITE_URL}/booking`,
+    },
+    bookingSuccess: {
+      title: "Booking Received | Send Me - IBIS",
+      description: "Your Send Me request was submitted successfully. An IBIS agent will contact you soon using the details you provided.",
+      keywords: "Send Me, booking confirmation, IBIS",
+      image: "/og-image-send-me.jpg",
+      url: `${SITE_URL}/booking/success`,
     },
     dashboard: {
       title: "Dashboard - IBIS | Manage Your Services",
@@ -142,7 +150,7 @@ const SEO = ({
     },
     notFound: {
       title: "Page Not Found (404) - IB Innovative Solutions",
-      description: "This page doesn't exist. Return to IBIS homepage for education, IT, Send Me and Smart Apply services.",
+      description: "This page doesn't exist. Return to IBIS homepage for education, IT, Send Me and Job Assistant services.",
       keywords: "404, page not found, IBIS",
       image: "/og-image-404.jpg",
       url: `${SITE_URL}/404`,
@@ -150,7 +158,16 @@ const SEO = ({
   };
 
   // Pages that should not be indexed (private/account pages)
-  const noindexPages = new Set(['login', 'register', 'dashboard', 'adminDashboard', 'agentDashboard', 'billing', 'invoices']);
+  const noindexPages = new Set([
+    "login",
+    "register",
+    "dashboard",
+    "adminDashboard",
+    "agentDashboard",
+    "billing",
+    "invoices",
+    "bookingSuccess",
+  ]);
   const shouldNoindex = noindex || noindexPages.has(page);
 
   // Get SEO data for current page
@@ -209,7 +226,7 @@ const SEO = ({
           "alternateName": "IBIS",
           "url": SITE_URL,
           "logo": `${SITE_URL}/ib-logo-white.png`,
-          "description": "Solutions you can trust everyday. Education support, IT solutions, Send Me and Smart Apply bulk job applications. South Africa.",
+          "description": "Solutions you can trust everyday. Education support, IT solutions, Send Me and Job Assistant bulk job applications. South Africa.",
           "address": {
             "@type": "PostalAddress",
             "addressRegion": "Gauteng",
@@ -244,7 +261,7 @@ const SEO = ({
               { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Education Services", "description": "Tutoring, university applications, career guidance" } },
               { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Send Me Services", "description": "Personal assistance and errand running" } },
               { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "IT Solutions", "description": "Web development and technical support" } },
-              { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Smart Apply", "description": "Bulk job applications with AI-generated emails" } }
+              { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Job Assistant", "description": "Bulk job applications with AI-generated emails" } }
             ]
           }
         })}
@@ -255,7 +272,7 @@ const SEO = ({
           "@type": "WebSite",
           "name": "IB Innovative Solutions",
           "url": SITE_URL,
-          "description": "Professional services: education, IT solutions, Send Me, Smart Apply. Gauteng & South Africa.",
+          "description": "Professional services: education, IT solutions, Send Me, Job Assistant. Gauteng & South Africa.",
           "publisher": { "@type": "Organization", "name": "IB Innovative Solutions" }
         })}
       </script>

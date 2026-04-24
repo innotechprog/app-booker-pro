@@ -1,6 +1,7 @@
 import { ArrowRight, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { beyondExamples, sendMeCustomRequestContent } from "@/features/sendMe/constants";
+import { SEND_ME_BRAND_BLUE, SEND_ME_BTN_PRIMARY_MD } from "@/features/sendMe/buttonStyles";
 
 interface SendMeCustomRequestsSectionProps {
   onBookNow: () => void;
@@ -23,9 +24,9 @@ const SendMeCustomRequestsSection = ({ onBookNow }: SendMeCustomRequestsSectionP
             ))}
           </ul>
           <div className="mt-6">
-            <Button type="button" onClick={onBookNow} className="h-10 rounded-lg bg-blue-600 px-5 text-white hover:bg-blue-700">
+            <Button type="button" onClick={onBookNow} className={SEND_ME_BTN_PRIMARY_MD} style={{ backgroundColor: SEND_ME_BRAND_BLUE }}>
               {sendMeCustomRequestContent.ctaLabel}
-              <ArrowRight className="ml-2 h-4 w-4" />
+              <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>

@@ -151,7 +151,7 @@ const AgentRegister = () => {
 
     if (!agentFormData.phone) {
       newErrors.phone = "Phone number is required";
-    } else if (!/^[\+]?[1-9][\d]{0,15}$/.test(agentFormData.phone.replace(/\s/g, ''))) {
+    } else if (!/^\+?[1-9][\d]{0,15}$/.test(agentFormData.phone.replace(/\s/g, ""))) {
       newErrors.phone = "Please enter a valid phone number";
     }
 
@@ -222,7 +222,7 @@ const AgentRegister = () => {
 
     if (!providerFormData.phone) {
       newErrors.phone = "Phone number is required";
-    } else if (!/^[\+]?[1-9][\d]{0,15}$/.test(providerFormData.phone.replace(/\s/g, ''))) {
+    } else if (!/^\+?[1-9][\d]{0,15}$/.test(providerFormData.phone.replace(/\s/g, ""))) {
       newErrors.phone = "Please enter a valid phone number";
     }
 

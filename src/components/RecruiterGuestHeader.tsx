@@ -14,15 +14,15 @@ const RecruiterGuestHeader = () => (
           className="h-9 sm:h-10 w-auto"
         />
         <span className="text-lg sm:text-xl font-bold tracking-tight" style={{ color: DEEP_BLUE }}>
-          Smart Apply Recruiter
+          Job Assistant Recruiter
         </span>
       </Link>
       <nav className="flex items-center gap-4">
-        <Link to="/smart-apply/sign-in?mode=recruiter" className="text-sm font-medium text-gray-600 hover:text-gray-900">
+        <Link to="/recruiter/sign-in" className="text-sm font-medium text-gray-600 hover:text-gray-900">
           Sign in
         </Link>
         <Button asChild size="sm" className="text-white" style={{ backgroundColor: DEEP_BLUE }}>
-          <Link to="/smart-apply/sign-up?mode=recruiter">Sign up</Link>
+          <Link to="/recruiter/sign-in?mode=sign-up">Sign up</Link>
         </Button>
       </nav>
     </div>

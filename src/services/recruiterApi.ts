@@ -1,5 +1,5 @@
 /**
- * Recruiter API – auth, profile, recruitments, and Smart Apply candidates from ib-backend.
+ * Recruiter API – auth, profile, recruitments, and Job Assistant candidates from ib-backend.
  */
 const RAW_API_BASE_URL =
   import.meta.env.DEV && !import.meta.env.VITE_API_URL
@@ -47,9 +47,58 @@ export interface RecruiterRecruitment {
   name: string;
   description: string | null;
   candidateCount?: number;
-  candidates?: { id: number; fullName: string; email: string; phone: string | null; category: string | null }[];
+  candidates?: { id: number; fullName: string; email: string; phone: string | null; category: string | null; jobTitle?: string | null }[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+type RecruiterCreateRecruitmentResponse = {
+  success?: boolean;
+  message?: string;
+  recruitment?: RecruiterRecruitment;
+};
+
+function toFiniteNumber(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) return Math.trunc(value);
+  if (typeof value === "string" && /^\d+(\.\d+)?$/.test(value.trim())) {
+    const n = Number(value.trim());
+    return Number.isFinite(n) ? Math.trunc(n) : undefined;
+  }
+  return undefined;
+}
+
+function normalizeRecruitmentRow(row: unknown): RecruiterRecruitment | null {
+  if (row == null || typeof row !== "object" || Array.isArray(row)) return null;
+  const r = row as Record<string, unknown>;
+
+  const id = toFiniteNumber(r.id ?? r.recruitmentId ?? r.recruitment_id ?? r.recruitmentID);
+  if (id === undefined) return null;
+
+  const nameRaw = r.name ?? r.title ?? r.recruitmentName ?? r.recruitment_name;
+  const name = typeof nameRaw === "string" && nameRaw.trim() ? nameRaw.trim() : `Recruitment ${id}`;
+
+  const descriptionRaw = r.description ?? r.desc;
+  const description = typeof descriptionRaw === "string" ? descriptionRaw : null;
+
+  const candidatesRaw =
+    (Array.isArray(r.candidates) ? r.candidates : undefined) ||
+    (Array.isArray(r.candidateList) ? r.candidateList : undefined) ||
+    (Array.isArray(r.candidates_list) ? r.candidates_list : undefined) ||
+    (r.candidates && typeof r.candidates === "object" && !Array.isArray(r.candidates) && Array.isArray((r.candidates as Record<string, unknown>).data)
+      ? ((r.candidates as Record<string, unknown>).data as unknown[])
+      : undefined);
+  const candidateCount =
+    toFiniteNumber(r.candidateCount ?? r.candidate_count ?? r.candidatesCount ?? r.candidates_count ?? r.totalCandidates ?? r.total_candidates) ??
+    (candidatesRaw ? candidatesRaw.length : undefined);
+
+  return {
+    ...(row as RecruiterRecruitment),
+    id,
+    name,
+    description,
+    candidateCount,
+    candidates: candidatesRaw as RecruiterRecruitment["candidates"],
+  };
 }
 
 export interface RecruiterJobApplication {
@@ -63,6 +112,95 @@ export interface RecruiterJobApplication {
   email: string;
   phone: string | null;
   category: string | null;
+}
+
+/** Resolve jobs array from common API envelope shapes (`jobs`, `data.jobs`, `results`, etc.). */
+function extractJobsFromListPayload(data: unknown): unknown[] {
+  if (!data || typeof data !== "object") return [];
+  const o = data as Record<string, unknown>;
+  if (Array.isArray(o.jobs)) return o.jobs;
+  if (Array.isArray(o.results)) return o.results;
+  if (Array.isArray(o.items)) return o.items;
+  if (Array.isArray(o.data)) return o.data;
+  const nested = o.data;
+  if (nested && typeof nested === "object" && !Array.isArray(nested)) {
+    const d = nested as Record<string, unknown>;
+    if (Array.isArray(d.jobs)) return d.jobs;
+    if (Array.isArray(d.data)) return d.data;
+  }
+  return [];
+}
+
+/** Map list/detail payloads that use snake_case or alternate keys to a stable primary key for routing. */
+function normalizeRecruiterJobRow(row: unknown, depth = 0): RecruiterJob | null {
+  if (depth > 2) return null;
+  if (typeof row === "string") {
+    try {
+      return normalizeRecruiterJobRow(JSON.parse(row) as unknown, depth + 1);
+    } catch {
+      return null;
+    }
+  }
+  if (row == null || typeof row !== "object" || Array.isArray(row)) return null;
+  const base = row as RecruiterJob;
+  const r = row as Record<string, unknown>;
+
+  const pk =
+    r.id ??
+    r.jobId ??
+    r.job_id ??
+    r.recruiter_job_id ??
+    r.recruiterJobId ??
+    r.externalJobId ??
+    r.external_job_id ??
+    r.uuid ??
+    r.job_uuid;
+
+  const pkNum =
+    typeof pk === "number" && Number.isFinite(pk)
+      ? Math.trunc(pk)
+      : typeof pk === "string" && /^\d+$/.test(pk.trim())
+        ? Number(pk.trim())
+        : undefined;
+
+  let id: number | undefined =
+    typeof r.id === "number" && Number.isFinite(r.id)
+      ? Math.trunc(r.id)
+      : typeof base.id === "number" && Number.isFinite(base.id)
+        ? Math.trunc(base.id)
+        : undefined;
+
+  if (id === undefined && typeof r.id === "string" && /^\d+$/.test(r.id.trim())) {
+    id = Number(r.id.trim());
+  }
+  if (id === undefined && pkNum !== undefined) {
+    id = pkNum;
+  }
+
+  let jobId: string | undefined =
+    typeof r.jobId === "string" && r.jobId.trim()
+      ? r.jobId.trim()
+      : typeof base.jobId === "string" && base.jobId.trim()
+        ? base.jobId.trim()
+        : undefined;
+
+  if (jobId === undefined && typeof pk === "string" && pk.trim() && pkNum === undefined) {
+    jobId = pk.trim();
+  }
+  if (jobId === undefined && id !== undefined) {
+    jobId = String(id);
+  }
+  if (jobId === undefined && typeof r.id === "string" && r.id.trim()) {
+    const t = r.id.trim();
+    if (!/^\d+$/.test(t)) jobId = t;
+  }
+
+  const hasRouteKey = id !== undefined || (jobId !== undefined && jobId.length > 0);
+  if (!hasRouteKey) {
+    return base;
+  }
+
+  return { ...base, id, jobId };
 }
 
 export interface RecruiterJob {
@@ -97,6 +235,69 @@ export interface RecruiterJob {
   externalJobId?: string | null;
   compId?: number | null;
   companyId?: number | null;
+}
+
+/** Route segment for `/recruiter/jobs/:id` from list/detail job objects. */
+export function recruiterJobRouteId(job: RecruiterJob): string | undefined {
+  const r = job as unknown as Record<string, unknown>;
+
+  const toKey = (v: unknown): string | undefined => {
+    if (typeof v === "number") {
+      if (!Number.isFinite(v)) return undefined;
+      return String(Math.trunc(v));
+    }
+    if (typeof v === "string") {
+      const t = v.trim();
+      if (!t) return undefined;
+      if (/^\d+(\.\d+)?$/.test(t)) {
+        const n = Number(t);
+        if (Number.isFinite(n)) return String(Math.trunc(n));
+      }
+      return t;
+    }
+    return undefined;
+  };
+
+  const nestedJob =
+    (r.job && typeof r.job === "object" ? (r.job as Record<string, unknown>) : undefined) ||
+    (r.job_details && typeof r.job_details === "object" ? (r.job_details as Record<string, unknown>) : undefined) ||
+    (r.recruitment_job && typeof r.recruitment_job === "object" ? (r.recruitment_job as Record<string, unknown>) : undefined) ||
+    undefined;
+
+  const findJobIdLike = (obj: Record<string, unknown> | undefined): string | undefined => {
+    if (!obj) return undefined;
+    for (const key of Object.keys(obj)) {
+      const lk = key.toLowerCase();
+      const val = obj[key];
+      if (lk === "id" || lk === "uuid") {
+        const k = toKey(val);
+        if (k) return k;
+      }
+      if (lk.includes("job") && (lk.endsWith("_id") || lk.endsWith("id") || lk.includes("jobid"))) {
+        const k = toKey(val);
+        if (k) return k;
+      }
+    }
+    return undefined;
+  };
+
+  return (
+    toKey(r.id) ??
+    toKey(r.jobId) ??
+    toKey(r.job_id) ??
+    toKey(r.recruiter_job_id) ??
+    toKey(r.recruiterJobId) ??
+    toKey(r.externalJobId) ??
+    toKey(r.external_job_id) ??
+    toKey(r.uuid) ??
+    toKey(r.job_uuid) ??
+    (nestedJob ? toKey(nestedJob.id) : undefined) ??
+    (nestedJob ? toKey(nestedJob.jobId) : undefined) ??
+    (nestedJob ? toKey(nestedJob.job_id) : undefined) ??
+    (nestedJob ? toKey(nestedJob.external_job_id) : undefined) ??
+    findJobIdLike(r) ??
+    findJobIdLike(nestedJob)
+  );
 }
 
 export type CreateJobPayload = {
@@ -137,6 +338,7 @@ export interface RecruiterCandidateListItem {
   email: string;
   phone: string | null;
   category: string | null;
+  jobTitle?: string | null;
   createdAt: string | null;
   profilePicture?: string | null;
   publicCvUrl?: string | null;
@@ -299,17 +501,48 @@ export const recruiterApi = {
     const res = await authFetch("/recruiter/recruitments");
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || "Failed to list recruitments");
-    return data;
+    const root = data as Record<string, unknown>;
+    const listRaw =
+      (Array.isArray(root.recruitments) ? root.recruitments : undefined) ||
+      (Array.isArray(root.data) ? root.data : undefined) ||
+      (root.data && typeof root.data === "object" && Array.isArray((root.data as Record<string, unknown>).recruitments)
+        ? ((root.data as Record<string, unknown>).recruitments as unknown[])
+        : undefined) ||
+      [];
+    const recruitments = listRaw
+      .map((row) => normalizeRecruitmentRow(row))
+      .filter((r): r is RecruiterRecruitment => r != null);
+    return { success: !!root.success, recruitments };
   },
 
-  async createRecruitment(payload: { name: string; description?: string }) {
+  async createRecruitment(payload: { name: string; description?: string }): Promise<RecruiterCreateRecruitmentResponse> {
     const res = await authFetch("/recruiter/recruitments", {
       method: "POST",
-      body: JSON.stringify(payload),
+      // Some backend versions accept "title" instead of "name".
+      body: JSON.stringify({
+        name: payload.name,
+        title: payload.name,
+        description: payload.description,
+      }),
     });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || "Failed to create recruitment");
-    return data;
+    const data = await res.json().catch(() => ({} as Record<string, unknown>));
+    if (!res.ok) {
+      const message =
+        (typeof data.message === "string" && data.message) ||
+        (typeof data.error === "string" && data.error) ||
+        "Failed to create recruitment";
+      throw new Error(message);
+    }
+
+    const recruitment =
+      (data as { recruitment?: RecruiterRecruitment }).recruitment ||
+      (data as { data?: { recruitment?: RecruiterRecruitment } }).data?.recruitment ||
+      (data as { item?: RecruiterRecruitment }).item;
+
+    return {
+      ...(data as Record<string, unknown>),
+      recruitment,
+    } as RecruiterCreateRecruitmentResponse;
   },
 
   async getRecruitment(id: number): Promise<{ success: boolean; recruitment: RecruiterRecruitment }> {
@@ -363,7 +596,9 @@ export const recruiterApi = {
     const res = await authFetch("/recruiter/jobs");
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || "Failed to list jobs");
-    return data;
+    const raw = extractJobsFromListPayload(data);
+    const jobs = raw.map((row: unknown) => normalizeRecruiterJobRow(row)).filter((j): j is RecruiterJob => j != null);
+    return { success: !!data.success, jobs };
   },
 
   async createJob(payload: CreateJobPayload) {
@@ -371,9 +606,27 @@ export const recruiterApi = {
       method: "POST",
       body: JSON.stringify(payload),
     });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || "Failed to create job");
-    return data;
+    const data = await res.json().catch(() => ({} as Record<string, unknown>));
+    if (!res.ok) throw new Error((data as { error?: string; message?: string }).error || (data as { message?: string }).message || "Failed to create job");
+
+    const root = data as Record<string, unknown>;
+    const nested = (root.data && typeof root.data === "object" ? (root.data as Record<string, unknown>) : undefined) || undefined;
+
+    const jobRaw =
+      (root.job as unknown) ||
+      (root.recruiter_job as unknown) ||
+      (nested?.job as unknown) ||
+      (nested?.recruiter_job as unknown) ||
+      (Array.isArray(root.jobs) && root.jobs.length > 0 ? (root.jobs as unknown[])[0] : undefined) ||
+      (Array.isArray(nested?.jobs) && (nested!.jobs as unknown[]).length > 0 ? (nested!.jobs as unknown[])[0] : undefined);
+
+    if (jobRaw) {
+      const normalized = normalizeRecruiterJobRow(jobRaw);
+      const job = normalized ?? (jobRaw as RecruiterJob);
+      return { ...data, job } as { job: RecruiterJob } & typeof data;
+    }
+
+    return data as Record<string, unknown>;
   },
 
   async getJob(id: number | string): Promise<{ success: boolean; job: RecruiterJobWithApplications }> {
@@ -383,10 +636,18 @@ export const recruiterApi = {
       if (res.status === 404) throw new Error("Job not found");
       throw new Error(data.error || "Failed to load job");
     }
+    if (data.job) {
+      const j = data.job as RecruiterJobWithApplications;
+      const normalized = normalizeRecruiterJobRow(j) ?? j;
+      return { ...data, job: { ...j, ...normalized } };
+    }
     return data;
   },
 
-  async updateJob(id: number | string, payload: { title?: string; description?: string; status?: "draft" | "posted" }) {
+  async updateJob(
+    id: number | string,
+    payload: Partial<CreateJobPayload & { status: "draft" | "posted" }>,
+  ) {
     const res = await authFetch(`/recruiter/jobs/${encodeURIComponent(String(id))}`, {
       method: "PUT",
       body: JSON.stringify(payload),

@@ -29,9 +29,9 @@ interface AutoApplyMatch {
 }
 
 const FALLBACK_PACKAGES: PremiumPackage[] = [
-  { id: "starter", name: "Starter", credits: 5, price: 199, currency: "ZAR", description: "5 auto-apply credits" },
-  { id: "growth", name: "Growth", credits: 15, price: 499, currency: "ZAR", description: "15 credits (save 17%)" },
-  { id: "pro", name: "Pro", credits: 30, price: 899, currency: "ZAR", description: "30 credits (save 25%)" },
+  { id: "starter", name: "Starter", credits: 5, price: 0, currency: "ZAR", description: "5 auto-apply credits" },
+  { id: "growth", name: "Growth", credits: 15, price: 0, currency: "ZAR", description: "15 credits (save 17%)" },
+  { id: "pro", name: "Pro", credits: 30, price: 0, currency: "ZAR", description: "30 credits (save 25%)" },
 ];
 
 const SmartApplyPremiumPage = () => {
@@ -59,7 +59,12 @@ const SmartApplyPremiumPage = () => {
       .then(([creditsRes, packagesRes, matchesRes]) => {
         setCredits((creditsRes as { credits?: number }).credits ?? 0);
         const pkgList = (packagesRes as { packages?: PremiumPackage[] }).packages ?? [];
-        setPackages(pkgList.length > 0 ? pkgList : FALLBACK_PACKAGES);
+        const normalizedPackages = (pkgList.length > 0 ? pkgList : FALLBACK_PACKAGES).map((pkg) => ({
+          ...pkg,
+          price: 0,
+          currency: "ZAR",
+        }));
+        setPackages(normalizedPackages);
         setMatches((matchesRes as { matches?: AutoApplyMatch[] }).matches ?? []);
       })
       .catch(() => {
@@ -77,7 +82,11 @@ const SmartApplyPremiumPage = () => {
 
   const handlePurchase = (pkg: PremiumPackage) => {
     setPurchasingId(pkg.id);
-    navigate("/smart-apply/billing", { state: { pkg } });
+    toast({
+      title: "Coming soon",
+      description: "Premium CV purchases are temporarily disabled.",
+    });
+    setPurchasingId(null);
   };
 
   const handleAccept = async (matchId: string) => {
@@ -168,6 +177,15 @@ const SmartApplyPremiumPage = () => {
             </CardContent>
           </Card>
 
+          <Card className="mb-8 border-2 border-blue-200 bg-blue-50 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg text-blue-900">Coming soon</CardTitle>
+              <CardDescription className="text-blue-800">
+                Premium CV purchases are paused for now. All package prices are currently set to R0.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
           <Card className="mb-8 border-2 border-gray-200 bg-white shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg text-gray-900">Purchase credits</CardTitle>
@@ -176,16 +194,14 @@ const SmartApplyPremiumPage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-5 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {packages.map((pkg) => (
                   <div
                     key={pkg.id}
                     className="rounded-xl border-2 border-gray-200 bg-gray-50 p-5 flex flex-col shadow-sm"
                   >
                     <p className="font-bold text-gray-900 text-lg">{pkg.name}</p>
-                    <p className="text-2xl font-bold mt-2 text-gray-900">
-                      {pkg.currency ?? "ZAR"} {pkg.price}
-                    </p>
+                    <p className="text-2xl font-bold mt-2 text-gray-900">R0</p>
                     <p className="text-sm font-medium text-gray-700 mt-1">{pkg.credits} credits</p>
                     {pkg.description && (
                       <p className="text-sm text-gray-600 mt-1">{pkg.description}</p>
@@ -193,20 +209,16 @@ const SmartApplyPremiumPage = () => {
                     <Button
                       className="mt-5 text-white font-semibold hover:opacity-90"
                       style={{ backgroundColor: DEEP_BLUE }}
-                      disabled={!!purchasingId}
+                      disabled
                       onClick={() => handlePurchase(pkg)}
                     >
-                      {purchasingId === pkg.id ? (
-                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
-                      ) : (
-                        "Buy now"
-                      )}
+                      Coming soon
                     </Button>
                   </div>
                 ))}
               </div>
               <p className="text-sm text-gray-600 mt-5">
-                Payment is handled securely. If the purchase button does not complete a real payment, the backend may not be configured yet.
+                Payment for premium CV packages is temporarily unavailable while this feature is being finalized.
               </p>
             </CardContent>
           </Card>

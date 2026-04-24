@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
@@ -26,7 +26,8 @@ import {
 import { Loader2, Plus, Trash2, User, FileText, Download, Eye, MapPin, Camera, X, Mail, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { smartApplyAPI } from "@/services/api";
-import { runSmartApplyTour } from "@/components/SmartApplyTour";
+import { runJobAssistantTour } from "@/components/JobAssistantTour";
+import { expandSkillRowsFromName } from "@/features/smartApply/utils/cvSkillParsing";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -77,7 +78,7 @@ const GENDER_OPTIONS = ["", "Male", "Female", "Non-binary", "Prefer not to say",
 const PROFILE_PIC_KEY = "smart_apply_profile_picture";
 const SHOW_PP_ON_CV_KEY = "smart_apply_show_pp_on_cv";
 
-/** Website primary color (Smart Apply / header) */
+/** Website primary color (Job Assistant / header) */
 const PRIMARY_COLOR = "#1e3a5f";
 
 function todayISO(): string {
@@ -165,7 +166,7 @@ function normalizeSkill(item: unknown): SkillItem {
   return { name: (item as { text?: string })?.text || "", level: "" };
 }
 
-const SmartApplyProfile = () => {
+const JobAssistantProfile = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -208,9 +209,9 @@ const SmartApplyProfile = () => {
   const loadingDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const profilePicInputRef = useRef<HTMLInputElement>(null);
 
-  const loadCVs = () => {
+  const loadCVs = useCallback(() => {
     smartApplyAPI.listCVs().then((res: { cvs?: typeof cvs }) => setCvs(res?.cvs ?? [])).catch(() => setCvs([]));
-  };
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("smart_apply_token");
@@ -224,6 +225,7 @@ const SmartApplyProfile = () => {
       .then((res: { profile?: any }) => {
         if (cancelled) return;
         const p = res?.profile;
+        let completed = false;
         if (p) {
           if (p.fullName) localStorage.setItem("smart_apply_full_name", p.fullName);
           setPersonal({
@@ -256,11 +258,8 @@ const SmartApplyProfile = () => {
           setOverview(p.overview ?? "");
           setPrimaryCvId(p.primaryCvId != null ? Number(p.primaryCvId) : null);
           setEmailConfirmed(p.emailConfirmed !== false);
-          const completed = !!p.onboardingTourCompleted;
+          completed = !!p.onboardingTourCompleted;
           setOnboardingTourCompleted(completed);
-          if (shouldPromptTour && !completed) {
-            setTourPromptOpen(true);
-          }
           setAddresses(Array.isArray(p.addresses) ? p.addresses.map((a: any) => ({
             id: a.id,
             label: a.label ?? "Current",
@@ -275,7 +274,15 @@ const SmartApplyProfile = () => {
           setWorkExperience(ensureArray(p.workExperience).flatMap(parseMaybeJsonBlocks).map(normalizeWorkExp));
           setEducation(ensureArray(p.education).flatMap(parseMaybeJsonBlocks).map(normalizeEducation));
           setCertifications(ensureArray(p.certifications).flatMap(parseMaybeJsonBlocks).map(normalizeCert));
-          setKeySkills(ensureArray(p.keySkills).flatMap(parseMaybeJsonBlocks).map(normalizeSkill));
+          setKeySkills(
+            ensureArray(p.keySkills)
+              .flatMap(parseMaybeJsonBlocks)
+              .map(normalizeSkill)
+              .flatMap((sk) => expandSkillRowsFromName(sk.name || "", sk.level || "")),
+          );
+        }
+        if (shouldPromptTour && !completed) {
+          setTourPromptOpen(true);
         }
         loadCVs();
         setLoading(false);
@@ -299,7 +306,7 @@ const SmartApplyProfile = () => {
     return () => {
       cancelled = true;
     };
-  }, [navigate, toast, shouldPromptTour]);
+  }, [navigate, toast, shouldPromptTour, loadCVs]);
 
   const markTourComplete = async () => {
     try {
@@ -313,7 +320,7 @@ const SmartApplyProfile = () => {
 
   const handleStartTour = () => {
     setTourPromptOpen(false);
-    runSmartApplyTour(() => {
+    runJobAssistantTour(() => {
       markTourComplete();
     });
   };
@@ -583,6 +590,7 @@ const SmartApplyProfile = () => {
       const normalizedSkills = ensureArray(p.keySkills)
         .flatMap(parseMaybeJsonBlocks)
         .map(normalizeSkill)
+        .flatMap((sk) => expandSkillRowsFromName(sk.name || "", sk.level || ""))
         .filter((s) => s.name);
       setKeySkills(normalizedSkills);
 
@@ -1255,7 +1263,7 @@ const SmartApplyProfile = () => {
               {certifications.length === 0 && <p className="text-sm text-gray-500">No certifications added yet.</p>}
               {certifications.map((item, i) => (
                 <div key={i} className="p-4 rounded-lg border border-gray-200 bg-gray-50/50 flex flex-wrap items-end gap-3">
-                  <div className="flex-1 min-w-[140px]">
+                  <div className="flex-1 min-w-0 sm:min-w-[140px] w-full sm:w-auto">
                     <Label className="text-xs">Name</Label>
                     <Input
                       value={item.name ?? ""}
@@ -1264,7 +1272,7 @@ const SmartApplyProfile = () => {
                       className="mt-0.5 bg-white border-gray-300"
                     />
                   </div>
-                  <div className="flex-1 min-w-[140px]">
+                  <div className="flex-1 min-w-0 sm:min-w-[140px] w-full sm:w-auto">
                     <Label className="text-xs">Issuer</Label>
                     <Input
                       value={item.issuer ?? ""}
@@ -1273,7 +1281,7 @@ const SmartApplyProfile = () => {
                       className="mt-0.5 bg-white border-gray-300"
                     />
                   </div>
-                  <div className="w-[140px]">
+                  <div className="w-full sm:w-[140px]">
                     <Label className="text-xs">Date</Label>
                     <Input
                       type="date"
@@ -1307,7 +1315,7 @@ const SmartApplyProfile = () => {
               {keySkills.length === 0 && <p className="text-sm text-gray-500">No skills added yet.</p>}
               {keySkills.map((item, i) => (
                 <div key={i} className="flex flex-wrap items-end gap-3">
-                  <div className="flex-1 min-w-[160px]">
+                  <div className="flex-1 min-w-0 sm:min-w-[160px] w-full sm:w-auto">
                     <Label className="text-xs">Skill</Label>
                     <Input
                       value={item.name ?? ""}
@@ -1316,7 +1324,7 @@ const SmartApplyProfile = () => {
                       className="mt-0.5 bg-white border-gray-300"
                     />
                   </div>
-                  <div className="w-[160px]">
+                  <div className="w-full sm:w-[160px]">
                     <Label className="text-xs">Level</Label>
                     <Select
                       value={item.level ?? ""}
@@ -1375,7 +1383,7 @@ const SmartApplyProfile = () => {
           <DialogHeader>
             <DialogTitle>Take a quick tour?</DialogTitle>
             <DialogDescription>
-              Your data has been populated. Would you like a short guided tour of Smart Apply features?
+              Your data has been populated. Would you like a short guided tour of Job Assistant features?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -1392,4 +1400,4 @@ const SmartApplyProfile = () => {
   );
 };
 
-export default SmartApplyProfile;
+export default JobAssistantProfile;

@@ -20,7 +20,7 @@ const RecruiterHeader = () => {
 
   const handleLogout = () => {
     recruiterApi.logout();
-    navigate("/smart-apply/sign-in?mode=recruiter");
+    navigate("/recruiter/sign-in");
   };
 
   return (
@@ -33,7 +33,7 @@ const RecruiterHeader = () => {
             className="h-9 sm:h-10 w-auto"
           />
           <span className="text-lg sm:text-xl font-bold tracking-tight" style={{ color: DEEP_BLUE }}>
-            Smart Apply Recruiter
+            Job Assistant Recruiter
           </span>
         </Link>
         <nav className="hidden md:flex items-center gap-6">
@@ -78,11 +78,11 @@ const RecruiterHeader = () => {
             </>
           ) : (
             <>
-              <Link to="/smart-apply/sign-in?mode=recruiter" className="text-sm font-medium text-gray-600 hover:text-gray-900">
+              <Link to="/recruiter/sign-in" className="text-sm font-medium text-gray-600 hover:text-gray-900">
                 Sign in
               </Link>
               <Button asChild size="sm" className="text-white" style={{ backgroundColor: DEEP_BLUE }}>
-                <Link to="/smart-apply/sign-up?mode=recruiter">Sign up</Link>
+                <Link to="/recruiter/sign-in?mode=sign-up">Sign up</Link>
               </Button>
             </>
           )}
@@ -122,10 +122,10 @@ const RecruiterHeader = () => {
             </>
           ) : (
             <>
-              <Link to="/smart-apply/sign-in?mode=recruiter" className="py-2 text-sm font-medium text-gray-600" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/recruiter/sign-in" className="py-2 text-sm font-medium text-gray-600" onClick={() => setMobileMenuOpen(false)}>
                 Sign in
               </Link>
-              <Link to="/smart-apply/sign-up?mode=recruiter" className="py-2 text-sm font-medium text-gray-600" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/recruiter/sign-in?mode=sign-up" className="py-2 text-sm font-medium text-gray-600" onClick={() => setMobileMenuOpen(false)}>
                 Sign up
               </Link>
             </>

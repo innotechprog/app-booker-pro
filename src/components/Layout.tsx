@@ -1,7 +1,7 @@
 import { useLocation } from "react-router-dom";
 import ScrollToTop from "./ScrollToTop";
 import Header from "./Header";
-import SmartApplyHeader from "./SmartApplyHeader";
+import JobAssistantHeader from "./JobAssistantHeader";
 import RecruiterHeader from "./RecruiterHeader";
 import RecruiterGuestHeader from "./RecruiterGuestHeader";
 import { recruiterApi } from "@/services/recruiterApi";
@@ -12,13 +12,21 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
-  const isSmartApply = location.pathname.startsWith("/smart-apply");
+  const hasSmartApplyToken = !!localStorage.getItem("smart_apply_token");
+  const isSmartApplyPath = location.pathname.startsWith("/smart-apply");
+  const isJobsPath =
+    location.pathname === "/jobs" ||
+    location.pathname.startsWith("/jobs/") ||
+    location.pathname === "/smart-apply/jobs" ||
+    location.pathname.startsWith("/smart-apply/jobs/") ||
+    location.pathname.startsWith("/smart-apply/job/");
+  const isSmartApply = isSmartApplyPath && hasSmartApplyToken;
   const isRecruiter = location.pathname.startsWith("/recruiter");
 
   return (
     <div className="min-h-screen flex flex-col">
       <ScrollToTop />
-      {/* Header Section - Recruiter and Smart Apply get their own headers */}
+      {/* Header Section - Recruiter and Job Assistant get their own headers */}
       <div className="sticky top-0 z-50">
         {isRecruiter ? (
           recruiterApi.hasToken() ? (
@@ -27,7 +35,7 @@ const Layout = ({ children }: LayoutProps) => {
             <RecruiterGuestHeader />
           )
         ) : isSmartApply ? (
-          <SmartApplyHeader />
+          <JobAssistantHeader />
         ) : (
           <Header />
         )}

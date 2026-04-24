@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import ibLogoWhite from "@/images/ib-logo-white.png";
 
@@ -9,13 +9,14 @@ const NAV_ITEMS = [
   { to: "/education", label: "Education" },
   { to: "/book-service", label: "Send Me" },
   { to: "/it-solutions", label: "IT Solutions" },
-  { to: "/smart-apply", label: "Smart Apply" },
+  { to: "/smart-apply", label: "Job Assistant" },
   { to: "/jobs", label: "Jobs" },
 ];
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Helper function to determine if a link is active
   const isActive = (path: string) => {
@@ -33,6 +34,8 @@ const Header = () => {
     
     return `${baseClasses} ${isActive(path) ? activeClasses : inactiveClasses}`;
   };
+
+  const isEducationPage = location.pathname.startsWith("/education");
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -63,8 +66,18 @@ const Header = () => {
         {/* Right side - Login Button (show on Education and Universities pages) */}
         {(isActive("/education") || isActive("/universities")) && (
           <div className="hidden md:flex items-center">
-            <Button asChild variant="outlineLight" className="h-9 px-4 rounded-md">
-              <Link to="/learner/login">Login</Link>
+            <Button
+              variant="outlineLight"
+              className="h-9 rounded-md px-4"
+              onClick={() => {
+                if (isEducationPage) {
+                  navigate("/coming-soon");
+                  return;
+                }
+                navigate("/learner/login");
+              }}
+            >
+              Login
             </Button>
           </div>
         )}
@@ -97,10 +110,19 @@ const Header = () => {
             
             {(isActive("/education") || isActive("/universities")) && (
               <div className="pt-4 border-t border-border space-y-3">
-                <Button asChild variant="outlineLight" className="w-full h-9 rounded-md">
-                  <Link to="/learner/login" onClick={() => setIsMobileMenuOpen(false)}>
-                    Login
-                  </Link>
+                <Button
+                  variant="outlineLight"
+                  className="h-9 w-full rounded-md"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    if (isEducationPage) {
+                      navigate("/coming-soon");
+                      return;
+                    }
+                    navigate("/learner/login");
+                  }}
+                >
+                  Login
                 </Button>
               </div>
             )}

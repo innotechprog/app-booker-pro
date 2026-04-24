@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, ArrowLeft, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { recruiterApi, type RecruiterProfile } from "@/services/recruiterApi";
+import { RECRUITER_BUTTON_PRIMARY } from "@/features/recruiter/buttonStyles";
 
 const DEEP_BLUE = "#1e3a5f";
 
@@ -122,7 +123,7 @@ const RecruiterProfilePage = () => {
                     className="mt-1 bg-white border-gray-300"
                   />
                 </div>
-                <Button type="submit" disabled={saving} className="text-white hover:opacity-90" style={{ backgroundColor: DEEP_BLUE }}>
+                <Button type="submit" disabled={saving} className={RECRUITER_BUTTON_PRIMARY} style={{ backgroundColor: DEEP_BLUE }}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save changes"}
                 </Button>
               </form>

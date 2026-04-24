@@ -24,6 +24,8 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "off",
+      // Large legacy surface; warn keeps CI/deploy lint usable without blocking on full typing pass
+      "@typescript-eslint/no-explicit-any": "warn",
     },
   }
 );

@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { sendMeFinalCta } from "@/features/sendMe/constants";
+import { SEND_ME_BRAND_BLUE, SEND_ME_BTN_PRIMARY_LG } from "@/features/sendMe/buttonStyles";
 
 interface SendMeFinalCtaSectionProps {
   onBookNow: () => void;
@@ -14,9 +15,9 @@ const SendMeFinalCtaSection = ({ onBookNow }: SendMeFinalCtaSectionProps) => {
         <div className="mx-auto max-w-4xl rounded-3xl border border-gray-200 bg-white/90 p-10 text-center shadow-sm">
           <h3 className="mb-4 text-4xl font-bold text-gray-900">{sendMeFinalCta.title}</h3>
           <p className="mx-auto mb-8 max-w-2xl text-lg text-gray-600">{sendMeFinalCta.description}</p>
-          <Button className="h-12 rounded-xl bg-blue-600 px-8 text-lg font-semibold text-white hover:bg-blue-700" onClick={onBookNow}>
+          <Button className={SEND_ME_BTN_PRIMARY_LG} style={{ backgroundColor: SEND_ME_BRAND_BLUE }} onClick={onBookNow}>
             {sendMeFinalCta.ctaLabel}
-            <ArrowRight className="ml-2 h-5 w-5" />
+            <ArrowRight className="h-5 w-5" />
           </Button>
           <p className="mt-4 text-sm text-gray-500">{sendMeFinalCta.footnote}</p>
         </div>

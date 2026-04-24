@@ -14,7 +14,7 @@ import { smartApplyAPI } from "@/services/api";
 const SMART_APPLY_TOKEN_KEY = "smart_apply_token";
 const PRIMARY_COLOR = "#1e3a5f";
 
-const SmartApplySettingsPage = () => {
+const JobAssistantSettingsPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [passwordCurrent, setPasswordCurrent] = useState("");
@@ -214,4 +214,4 @@ const SmartApplySettingsPage = () => {
   );
 };
 
-export default SmartApplySettingsPage;
+export default JobAssistantSettingsPage;
