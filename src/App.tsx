@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import ComingSoon from "./pages/ComingSoon";
+import AboutPage from "./pages/AboutPage";
+import LegalPage from "./pages/LegalPage";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PackageProvider } from "@/contexts/PackageContext";
@@ -22,6 +24,7 @@ import {
 } from "@/features/sendMe";
 import { ContactPage } from "@/features/contact";
 import {
+  ApplicationHelpPage,
   EducationPage,
   UniversitiesPage,
   LearnerLoginPage,
@@ -112,8 +115,13 @@ const App = () => (
               <ScrollToTop />
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/about" element={<AboutPage />} />
                 <Route path="/contact" element={<ContactPage />} />
+                <Route path="/privacy" element={<LegalPage kind="privacy" />} />
+                <Route path="/terms" element={<LegalPage kind="terms" />} />
+                <Route path="/cookies" element={<LegalPage kind="cookies" />} />
                 <Route path="/education" element={<EducationPage />} />
+                <Route path="/application-help" element={<ApplicationHelpPage />} />
                 <Route path="/coming-soon" element={<ComingSoon />} />
                 <Route path="/book-service" element={<BookServicePage />} />
                 <Route path="/booking/success" element={<BookingSuccessPage />} />

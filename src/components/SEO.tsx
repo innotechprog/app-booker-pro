@@ -30,8 +30,8 @@ const SEO = ({
   const seoData = {
     home: {
       title: "IB Innovative Solutions | Education, IT & Job Assistant",
-      description: "Trusted professional services: tutoring, university applications, IT solutions, Send Me & Job Assistant bulk job applications. Gauteng & South Africa.",
-      keywords: "IBIS, IB Innovative Solutions, education, tutoring, university applications, IT solutions, Send Me, Job Assistant, bulk job apply, South Africa, Gauteng, Johannesburg, Pretoria",
+      description: "Trusted professional services: tutoring, university applications, IT solutions, Send Me & Smart Apply bulk job applications. Gauteng & South Africa.",
+      keywords: "IBIS, IB Innovative Solutions, education, tutoring, university applications, IT solutions, Send Me, Smart Apply, bulk job apply, South Africa, Gauteng, professional services",
       image: "/ib-logo-white.png",
       url: `${SITE_URL}`,
     },
@@ -42,6 +42,20 @@ const SEO = ({
       image: "/og-image-education.jpg",
       url: `${SITE_URL}/education`,
     },
+    universities: {
+      title: "South African Universities | Applications & Admissions Help - IBIS",
+      description: "Browse South African universities, compare programs, and apply through official portals. Get practical support for admissions, documents, and deadlines.",
+      keywords: "South African universities, university applications, admissions help, application deadlines, UCT, Wits, UP, Stellenbosch, UNISA, IBIS",
+      image: "/og-image-education.jpg",
+      url: `${SITE_URL}/universities`,
+    },
+    applicationHelp: {
+      title: "University Application Help | Admissions Support - IBIS",
+      description: "Get one-on-one university application support for forms, documents, and submissions. Fast guidance for South African admissions requirements.",
+      keywords: "application help, university admissions support, application forms, admission documents, South Africa universities, IBIS",
+      image: "/og-image-education.jpg",
+      url: `${SITE_URL}/application-help`,
+    },
     tutorials: {
       title: "Online Tutorials | Personalized Tutoring Grades 1-12 - IBIS",
       description: "Expert tutoring for any grade and subject. Flexible scheduling, curriculum coverage & progress tracking. Basic, Standard & Premium packages.",
@@ -50,9 +64,9 @@ const SEO = ({
       url: `${SITE_URL}/tutorials`,
     },
     bookService: {
-      title: "Send Me Services | Personal Assistance & Errands - IBIS",
-      description: "Errand running, delivery & personal assistance. Household tasks & business support across Gauteng. Your trusted helping hand.",
-      keywords: "Send Me, errand running, delivery, personal assistance, household tasks, Gauteng, South Africa, IBIS",
+      title: "Send Me | On-Demand Errands, Delivery & Assistance - IBIS",
+      description: "Personal errand running, delivery services, and on-demand assistance. Book Send Me for household tasks, event and childcare support, custom requests, and more across Gauteng and South Africa.",
+      keywords: "Send Me, on-demand personal assistance, running errands, delivery services, household tasks, event assistance, childcare support, custom requests, document collection, shopping assistance, Gauteng, South Africa",
       image: "/og-image-send-me.jpg",
       url: `${SITE_URL}/book-service`,
     },
@@ -92,17 +106,17 @@ const SEO = ({
       url: `${SITE_URL}/learner/register`,
     },
     booking: {
-      title: "Book Send Me | Errands & Personal Assistance - IBIS",
+      title: "Book Send Me Online | Errands, Delivery & Assistance - IBIS",
       description:
-        "Request Send Me online: errands, delivery and on-demand help. Add your address, preferred date and service; our team confirms and quotes. Gauteng & South Africa.",
-      keywords: "Send Me booking, book errand, personal assistant, delivery help, Gauteng, South Africa, IBIS",
+        "Submit your Send Me booking online for errands, delivery, and personal assistance. Share your address, preferred date, and service details for quick confirmation.",
+      keywords: "book Send Me, Send Me booking online, errand booking, delivery booking, personal assistance booking, on-demand services, IBIS",
       image: "/og-image-send-me.jpg",
       url: `${SITE_URL}/booking`,
     },
     bookingSuccess: {
-      title: "Booking Received | Send Me - IBIS",
-      description: "Your Send Me request was submitted successfully. An IBIS agent will contact you soon using the details you provided.",
-      keywords: "Send Me, booking confirmation, IBIS",
+      title: "Send Me Booking Confirmed | Request Received - IBIS",
+      description: "Your Send Me request has been received. Our team will review your service details and contact you shortly with confirmation and next steps.",
+      keywords: "Send Me booking confirmed, booking success, service request received, IBIS Send Me",
       image: "/og-image-send-me.jpg",
       url: `${SITE_URL}/booking/success`,
     },
@@ -168,10 +182,16 @@ const SEO = ({
     "invoices",
     "bookingSuccess",
   ]);
-  const shouldNoindex = noindex || noindexPages.has(page);
+
+  const pageAliases: Record<string, string> = {
+    "it-solutions": "itSolutions",
+  };
+
+  const resolvedPage = pageAliases[page] || page;
+  const shouldNoindex = noindex || noindexPages.has(resolvedPage);
 
   // Get SEO data for current page
-  const currentSeo = seoData[page as keyof typeof seoData] || seoData.home;
+  const currentSeo = seoData[resolvedPage as keyof typeof seoData] || seoData.home;
 
   // Use provided props or fall back to page defaults
   const finalTitle = title || currentSeo.title;

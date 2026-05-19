@@ -60,78 +60,80 @@ const LearnerHeader = () => {
   };
 
   return (
-    <header className="w-full px-4 sm:px-6 py-3 bg-white border-b border-gray-200">
-      <div className="flex items-center justify-between">
-        <Link to="/learner/dashboard" className="text-xl font-bold text-gray-900">Learner Portal</Link>
+    <header className="w-full px-4 pt-4 sm:px-6">
+      <div className="mx-auto rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm sm:px-6">
+        <div className="flex items-center justify-between">
+          <Link to="/learner/dashboard" className="text-xl font-bold text-gray-900">Learner Portal</Link>
 
-        {/* Desktop nav */}
-        <nav className="hidden md:flex items-center space-x-6">
-          <Link to="/learner/dashboard" className={getLinkClasses("/learner/dashboard")}>Dashboard</Link>
-          <Link to="/learner/subjects" className={getLinkClasses("/learner/subjects")}>Subjects</Link>
-          <Link to="/learner/tutorials" className={getLinkClasses("/learner/tutorials")}>Tutorials</Link>
-          <Link to="/learner/tutors" className={getLinkClasses("/learner/tutors")}>Tutors</Link>
-          <Link to="/learner/notes" className={getLinkClasses("/learner/notes")}>Notes</Link>
-          <Link to="/learner/packages" className={getLinkClasses("/learner/packages")}>Packages</Link>
-        </nav>
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center space-x-6">
+            <Link to="/learner/dashboard" className={getLinkClasses("/learner/dashboard")}>Dashboard</Link>
+            <Link to="/learner/subjects" className={getLinkClasses("/learner/subjects")}>Subjects</Link>
+            <Link to="/learner/tutorials" className={getLinkClasses("/learner/tutorials")}>Tutorials</Link>
+            <Link to="/learner/tutors" className={getLinkClasses("/learner/tutors")}>Tutors</Link>
+            <Link to="/learner/notes" className={getLinkClasses("/learner/notes")}>Notes</Link>
+            <Link to="/learner/packages" className={getLinkClasses("/learner/packages")}>Packages</Link>
+          </nav>
 
-        <div className="hidden md:flex items-center gap-3">
-          {isAuthenticated && (
-            <>
-              <Link to="/learner/dashboard">
-                <Button variant="ghost" size="icon" className="relative">
-                  <Calendar className="h-5 w-5 text-gray-700" />
-                </Button>
-              </Link>
-              <Link to="/learner/dashboard">
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-5 w-5 text-gray-700" />
-                  {unreadCount > 0 && (
-                    <span className="absolute top-0 right-0 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                      {unreadCount}
-                    </span>
-                  )}
-                </Button>
-              </Link>
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-semibold">
-                  {getInitials(userName)}
-                </span>
-              </div>
-            </>
-          )}
-          <Button variant="outline" size="sm" onClick={handleLogout} className="bg-[whitesmoke] border-gray-300 text-gray-700 hover:bg-gray-200">
-            <LogOut className="h-4 w-4 mr-2" /> Logout
+          <div className="hidden md:flex items-center gap-3">
+            {isAuthenticated && (
+              <>
+                <Link to="/learner/dashboard">
+                  <Button variant="ghost" size="icon" className="relative">
+                    <Calendar className="h-5 w-5 text-gray-700" />
+                  </Button>
+                </Link>
+                <Link to="/learner/dashboard">
+                  <Button variant="ghost" size="icon" className="relative">
+                    <Bell className="h-5 w-5 text-gray-700" />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </Button>
+                </Link>
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600">
+                  <span className="text-white text-sm font-semibold">
+                    {getInitials(userName)}
+                  </span>
+                </div>
+              </>
+            )}
+            <Button variant="outline" size="sm" onClick={handleLogout} className="bg-[whitesmoke] border-gray-300 text-gray-700 hover:bg-gray-200">
+              <LogOut className="h-4 w-4 mr-2" /> Logout
+            </Button>
+          </div>
+
+          {/* Mobile toggle */}
+          <Button variant="ghost" size="icon" className="md:hidden text-gray-700" onClick={()=>setIsMobileMenuOpen(v=>!v)}>
+            {isMobileMenuOpen ? <X className="h-5 w-5"/> : <Menu className="h-5 w-5"/>}
           </Button>
         </div>
 
-        {/* Mobile toggle */}
-        <Button variant="ghost" size="icon" className="md:hidden text-gray-700" onClick={()=>setIsMobileMenuOpen(v=>!v)}>
-          {isMobileMenuOpen ? <X className="h-5 w-5"/> : <Menu className="h-5 w-5"/>}
-        </Button>
-      </div>
-
-      {isMobileMenuOpen && (
-        <div className="md:hidden mt-3 border-t border-gray-200">
-          {isAuthenticated && (
-            <div className="flex items-center justify-center py-3 border-b border-gray-200">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-semibold">
-                  {getInitials(userName)}
-                </span>
+        {isMobileMenuOpen && (
+          <div className="mt-3 border-t border-gray-200 md:hidden">
+            {isAuthenticated && (
+              <div className="flex items-center justify-center border-b border-gray-200 py-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600">
+                  <span className="text-white text-sm font-semibold">
+                    {getInitials(userName)}
+                  </span>
+                </div>
               </div>
-            </div>
-          )}
-          <nav className="flex flex-col py-3 space-y-2">
-            <Link to="/learner/dashboard" onClick={()=>setIsMobileMenuOpen(false)} className={`${getLinkClasses("/learner/dashboard")} py-2`}>Dashboard</Link>
-            <Link to="/learner/subjects" onClick={()=>setIsMobileMenuOpen(false)} className={`${getLinkClasses("/learner/subjects")} py-2`}>Subjects</Link>
-            <Link to="/learner/tutorials" onClick={()=>setIsMobileMenuOpen(false)} className={`${getLinkClasses("/learner/tutorials")} py-2`}>Tutorials</Link>
-            <Link to="/learner/tutors" onClick={()=>setIsMobileMenuOpen(false)} className={`${getLinkClasses("/learner/tutors")} py-2`}>Tutors</Link>
-            <Link to="/learner/notes" onClick={()=>setIsMobileMenuOpen(false)} className={`${getLinkClasses("/learner/notes")} py-2`}>Notes</Link>
-            <Link to="/learner/packages" onClick={()=>setIsMobileMenuOpen(false)} className={`${getLinkClasses("/learner/packages")} py-2`}>Packages</Link>
-            <Button variant="outline" onClick={handleLogout} className="mt-2 bg-[whitesmoke] border-gray-300 text-gray-700 hover:bg-gray-200">Logout</Button>
-          </nav>
-        </div>
-      )}
+            )}
+            <nav className="flex flex-col space-y-2 py-3">
+              <Link to="/learner/dashboard" onClick={()=>setIsMobileMenuOpen(false)} className={`${getLinkClasses("/learner/dashboard")} py-2`}>Dashboard</Link>
+              <Link to="/learner/subjects" onClick={()=>setIsMobileMenuOpen(false)} className={`${getLinkClasses("/learner/subjects")} py-2`}>Subjects</Link>
+              <Link to="/learner/tutorials" onClick={()=>setIsMobileMenuOpen(false)} className={`${getLinkClasses("/learner/tutorials")} py-2`}>Tutorials</Link>
+              <Link to="/learner/tutors" onClick={()=>setIsMobileMenuOpen(false)} className={`${getLinkClasses("/learner/tutors")} py-2`}>Tutors</Link>
+              <Link to="/learner/notes" onClick={()=>setIsMobileMenuOpen(false)} className={`${getLinkClasses("/learner/notes")} py-2`}>Notes</Link>
+              <Link to="/learner/packages" onClick={()=>setIsMobileMenuOpen(false)} className={`${getLinkClasses("/learner/packages")} py-2`}>Packages</Link>
+              <Button variant="outline" onClick={handleLogout} className="mt-2 bg-[whitesmoke] border-gray-300 text-gray-700 hover:bg-gray-200">Logout</Button>
+            </nav>
+          </div>
+        )}
+      </div>
     </header>
   );
 };

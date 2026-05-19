@@ -5,7 +5,7 @@ import { heroContent } from "@/features/public/constants";
 const HeroSection = () => {
   return (
     <section
-      className="relative flex min-h-[80vh] items-center justify-center px-6 py-6"
+      className="relative flex min-h-[80vh] items-center justify-center px-6 pb-6 pt-28 md:pt-32"
       style={{
         backgroundImage: `url(${heroImage})`,
         backgroundSize: "cover",

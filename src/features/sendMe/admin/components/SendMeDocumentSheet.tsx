@@ -51,13 +51,11 @@ const SendMeDocumentSheet = forwardRef<HTMLDivElement, SendMeDocumentSheetProps>
       >
         <div className="mb-8 flex items-start justify-between border-b-2 pb-6" style={{ borderColor: SEND_ME_BRAND_BLUE }}>
           <div>
-            {kind === "quotation" ? (
-              <img
-                src={ibLogoBlack}
-                alt="IB Innovative Solutions"
-                className="mb-3 h-10 w-auto object-contain"
-              />
-            ) : null}
+            <img
+              src={ibLogoBlack}
+              alt="IB Innovative Solutions"
+              className="mb-3 h-10 w-auto object-contain"
+            />
             <h1 className="text-2xl font-bold tracking-tight" style={{ color: SEND_ME_BRAND_BLUE }}>
               Send Me
             </h1>

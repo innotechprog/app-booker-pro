@@ -217,7 +217,7 @@ const EducationPage = () => {
   return (
     <Layout>
       <SEO page="education" />
-      <div className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 py-20">
+      <div className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 pb-20 pt-32">
         <div className="mx-auto max-w-7xl px-6 text-center">
           <h1 className="mb-6 text-5xl font-bold text-white md:text-6xl">Education Services</h1>
           <p className="mx-auto mb-8 max-w-3xl text-xl leading-relaxed text-gray-300">

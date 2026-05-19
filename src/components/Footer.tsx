@@ -1,14 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { 
-  Facebook, 
-  Twitter, 
-  Instagram, 
-  Linkedin, 
-  Mail, 
-  Phone, 
-  MapPin,
-  ArrowUp
-} from "lucide-react";
+import { Mail, Phone, MapPin, ArrowUp } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -35,24 +27,24 @@ const Footer = () => {
             <h4 className="text-lg font-semibold">Quick Links</h4>
             <ul className="space-y-2">
               <li>
-                <a href="#home" className="text-gray-300 hover:text-white transition-colors">
+                <Link to="/" className="text-gray-300 transition-colors hover:text-white">
                   Home
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#about" className="text-gray-300 hover:text-white transition-colors">
+                <Link to="/about" className="text-gray-300 transition-colors hover:text-white">
                   About Us
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#services" className="text-gray-300 hover:text-white transition-colors">
+                <Link to="/#services" className="text-gray-300 transition-colors hover:text-white">
                   Services
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#contact" className="text-gray-300 hover:text-white transition-colors">
+                <Link to="/contact" className="text-gray-300 transition-colors hover:text-white">
                   Contact
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -62,19 +54,24 @@ const Footer = () => {
             <h4 className="text-lg font-semibold">Our Services</h4>
             <ul className="space-y-2">
               <li>
-                <a href="/education" className="text-gray-300 hover:text-white transition-colors">
+                <Link to="/education" className="text-gray-300 transition-colors hover:text-white">
                   Tutoring
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/send-me" className="text-gray-300 hover:text-white transition-colors">
+                <Link to="/book-service" className="text-gray-300 transition-colors hover:text-white">
                   Send Me
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/it-solutions" className="text-gray-300 hover:text-white transition-colors">
+                <Link to="/it-solutions" className="text-gray-300 transition-colors hover:text-white">
                   IT Solutions
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link to="/smart-apply" className="text-gray-300 transition-colors hover:text-white">
+                  Job Assistant
+                </Link>
               </li>
             </ul>
           </div>
@@ -116,15 +113,15 @@ const Footer = () => {
               © {currentYear} IB Innovative Solutions. All rights reserved.
             </p>
             <div className="flex space-x-6 text-sm">
-              <a href="#privacy" className="text-gray-400 hover:text-white transition-colors">
+              <Link to="/privacy" className="text-gray-400 transition-colors hover:text-white">
                 Privacy Policy
-              </a>
-              <a href="#terms" className="text-gray-400 hover:text-white transition-colors">
+              </Link>
+              <Link to="/terms" className="text-gray-400 transition-colors hover:text-white">
                 Terms of Service
-              </a>
-              <a href="#cookies" className="text-gray-400 hover:text-white transition-colors">
+              </Link>
+              <Link to="/cookies" className="text-gray-400 transition-colors hover:text-white">
                 Cookie Policy
-              </a>
+              </Link>
             </div>
           </div>
         </div>

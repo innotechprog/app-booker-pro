@@ -5,8 +5,8 @@ import ibLogoBlack from "@/images/ib-logo-black.png";
 const DEEP_BLUE = "#1e3a5f";
 
 const RecruiterGuestHeader = () => (
-  <header className="w-full bg-white border-b border-gray-200">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+  <header className="w-full px-4 pt-4 sm:px-6">
+    <div className="mx-auto flex max-w-7xl items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm sm:px-6">
       <Link to="/recruiter" className="flex items-center gap-3 focus:outline-none">
         <img
           src={ibLogoBlack}

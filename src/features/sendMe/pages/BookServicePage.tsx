@@ -23,7 +23,12 @@ const BookServicePage = () => {
 
   return (
     <Layout>
-      <SEO page="bookService" />
+      <SEO
+        page="bookService"
+        title="Send Me | On-Demand Errands, Delivery & Assistance - IBIS"
+        description="Personal errand running, delivery services, and on-demand assistance. Book Send Me for household tasks, event and childcare support, custom requests, and more across Gauteng and South Africa."
+        keywords="Send Me, on-demand personal assistance, running errands, delivery services, household tasks, event assistance, childcare support, custom requests, document collection, shopping assistance, Gauteng, South Africa"
+      />
       <SendMeHeroSection onBookNow={handleBookNow} />
       <SendMeServicesGridSection />
       <SendMeCustomRequestsSection onBookNow={handleBookNow} />

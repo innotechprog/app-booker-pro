@@ -42,93 +42,95 @@ const Header = () => {
   }, [location.pathname]);
 
   return (
-    <header className="relative w-full border-b border-border/60 bg-background">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-        <div className="flex items-center">
-          <Link to="/" className="flex items-center focus:outline-none">
-            <img
-              src={ibLogoWhite}
-              alt="IB Innovative Solutions - IBIS"
-              className="h-8 sm:h-9 w-auto"
-            />
-          </Link>
-        </div>
-      
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-5 lg:gap-7">
-          {NAV_ITEMS.map((item) => (
-            <Link key={item.to} to={item.to} className={getLinkClasses(item.to)}>
-              {item.label}
+    <header className="relative w-full px-4 pt-4 sm:px-6">
+      <div className="relative mx-auto w-full max-w-6xl rounded-2xl border border-border/60 bg-background shadow-sm">
+        <div className="flex items-center justify-between px-4 py-3 sm:px-6">
+          <div className="flex items-center">
+            <Link to="/" className="flex items-center focus:outline-none">
+              <img
+                src={ibLogoWhite}
+                alt="IB Innovative Solutions - IBIS"
+                className="h-8 sm:h-9 w-auto"
+              />
             </Link>
-          ))}
-        </nav>
-
-        {/* Right side - Login Button (show on Education and Universities pages) */}
-        {(isActive("/education") || isActive("/universities")) && (
-          <div className="hidden md:flex items-center">
-            <Button
-              variant="outlineLight"
-              className="h-9 rounded-md px-4"
-              onClick={() => {
-                if (isEducationPage) {
-                  navigate("/coming-soon");
-                  return;
-                }
-                navigate("/learner/login");
-              }}
-            >
-              Login
-            </Button>
           </div>
-        )}
 
-        {/* Mobile Menu Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="md:hidden p-2"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
-        >
-          {isMobileMenuOpen ? (
-            <X className="h-5 w-5" />
-          ) : (
-            <Menu className="h-5 w-5" />
-          )}
-        </Button>
-      </div>
-
-      {/* Mobile Navigation */}
-      {isMobileMenuOpen && (
-        <div className="absolute left-0 right-0 top-full z-50 border-t border-border/60 bg-background shadow-sm md:hidden">
-          <nav className="mx-auto flex w-full max-w-6xl flex-col space-y-1 px-4 py-3 sm:px-6">
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-5 lg:gap-7">
             {NAV_ITEMS.map((item) => (
-              <Link key={item.to} to={item.to} className={`${getLinkClasses(item.to)} rounded-md px-2 py-2`} onClick={() => setIsMobileMenuOpen(false)}>
+              <Link key={item.to} to={item.to} className={getLinkClasses(item.to)}>
                 {item.label}
               </Link>
             ))}
-            
-            {(isActive("/education") || isActive("/universities")) && (
-              <div className="pt-4 border-t border-border space-y-3">
-                <Button
-                  variant="outlineLight"
-                  className="h-9 w-full rounded-md"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    if (isEducationPage) {
-                      navigate("/coming-soon");
-                      return;
-                    }
-                    navigate("/learner/login");
-                  }}
-                >
-                  Login
-                </Button>
-              </div>
-            )}
           </nav>
+
+          {/* Right side - Login Button (show on Education and Universities pages) */}
+          {(isActive("/education") || isActive("/universities")) && (
+            <div className="hidden md:flex items-center">
+              <Button
+                variant="outlineLight"
+                className="h-9 rounded-md px-4"
+                onClick={() => {
+                  if (isEducationPage) {
+                    navigate("/coming-soon");
+                    return;
+                  }
+                  navigate("/learner/login");
+                }}
+              >
+                Login
+              </Button>
+            </div>
+          )}
+
+          {/* Mobile Menu Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="md:hidden p-2"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+          >
+            {isMobileMenuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
+          </Button>
         </div>
-      )}
+
+        {/* Mobile Navigation */}
+        {isMobileMenuOpen && (
+          <div className="absolute left-0 right-0 top-full z-50 mt-2 rounded-2xl border border-border/60 bg-background shadow-sm md:hidden">
+            <nav className="mx-auto flex w-full max-w-6xl flex-col space-y-1 px-4 py-3 sm:px-6">
+              {NAV_ITEMS.map((item) => (
+                <Link key={item.to} to={item.to} className={`${getLinkClasses(item.to)} rounded-md px-2 py-2`} onClick={() => setIsMobileMenuOpen(false)}>
+                  {item.label}
+                </Link>
+              ))}
+
+              {(isActive("/education") || isActive("/universities")) && (
+                <div className="space-y-3 border-t border-border pt-4">
+                  <Button
+                    variant="outlineLight"
+                    className="h-9 w-full rounded-md"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      if (isEducationPage) {
+                        navigate("/coming-soon");
+                        return;
+                      }
+                      navigate("/learner/login");
+                    }}
+                  >
+                    Login
+                  </Button>
+                </div>
+              )}
+            </nav>
+          </div>
+        )}
+      </div>
     </header>
   );
 };

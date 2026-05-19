@@ -3,7 +3,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AddressAutocompleteInput from "@/features/sendMe/components/AddressAutocompleteInput";
 import {
-  bookingGlassPanelClass,
   bookingInputClass,
   bookingInputLabelClass,
   bookingInputWithIconClass,
@@ -20,7 +19,7 @@ interface BookingPersonalInfoStepProps {
 
 const BookingPersonalInfoStep = ({ form, update }: BookingPersonalInfoStepProps) => {
   return (
-    <div className={bookingGlassPanelClass}>
+    <div className="space-y-4">
       <h3 className={bookingPanelHeadingClass}>Personal Information</h3>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>

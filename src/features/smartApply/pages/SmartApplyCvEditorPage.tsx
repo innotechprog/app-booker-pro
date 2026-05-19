@@ -451,7 +451,7 @@ const JobAssistantCvEditor = () => {
         let canvas: HTMLCanvasElement;
         try {
           canvas = await html2canvas(clone, {
-            scale: 2,
+            scale: 1.5,
             useCORS: true,
             backgroundColor: "#ffffff",
             windowWidth: a4PxWidth,
@@ -463,13 +463,14 @@ const JobAssistantCvEditor = () => {
             document.body.removeChild(exportHost);
           }
         }
-        const imgData = canvas.toDataURL("image/png");
+        const imgData = canvas.toDataURL("image/jpeg", 0.72);
 
         const pdf = new jsPDF({
           orientation: "portrait",
           unit: "pt",
           format: "a4",
-        });
+          compress: true,
+          });
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
 
@@ -479,13 +480,13 @@ const JobAssistantCvEditor = () => {
 
         let heightLeft = imgHeight;
         let position = margin;
-        pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+        pdf.addImage(imgData, "JPEG", margin, position, imgWidth, imgHeight);
         heightLeft -= pageHeight - margin * 2;
 
         while (heightLeft > 0) {
           position = margin + (heightLeft - imgHeight);
           pdf.addPage();
-          pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+          pdf.addImage(imgData, "JPEG", margin, position, imgWidth, imgHeight);
           heightLeft -= pageHeight - margin * 2;
         }
 
@@ -1006,3 +1007,4 @@ const JobAssistantCvEditor = () => {
 };
 
 export default JobAssistantCvEditor;
+

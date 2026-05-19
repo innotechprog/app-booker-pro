@@ -82,9 +82,9 @@ const SmartApplyHeader = () => {
   }, []);
 
   return (
-    <header className="w-full bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
-        <div className="flex items-center justify-between">
+    <header className="w-full px-4 pt-4 sm:px-6">
+      <div className="mx-auto max-w-7xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
           {/* Left: IB logo + Smart Apply */}
           <Link
             to="/smart-apply"
@@ -256,7 +256,7 @@ const SmartApplyHeader = () => {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-200 bg-white py-4 px-4 shadow-lg">
+        <div className="border-t border-gray-200 bg-white px-4 py-4 md:hidden">
           <nav className="flex flex-col gap-3">
             <Link
               to="/smart-apply/dashboard"

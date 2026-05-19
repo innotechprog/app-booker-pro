@@ -108,6 +108,8 @@ export function runJobAssistantTour(onComplete?: () => void): void {
     nextBtnText: "Next",
     prevBtnText: "Back",
     doneBtnText: "Got it",
+    showButtons: ["next", "previous", "close"],
+    allowClose: true,
     smoothScroll: true,
     onDestroyed: () => runComplete(),
   });

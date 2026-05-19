@@ -7,7 +7,7 @@ const ContactPage = () => {
   return (
     <Layout>
       <SEO page="contact" />
-      <section className="relative bg-gradient-to-b from-[#0a183d] via-[#183a7a] to-[#07122c] px-6 py-20">
+      <section className="relative bg-gradient-to-b from-[#0a183d] via-[#183a7a] to-[#07122c] px-6 pb-20 pt-32">
         <div className="mx-auto max-w-6xl text-center">
           <h1 className="mb-6 text-6xl font-bold text-white md:text-7xl">Contact Us</h1>
           <p className="mx-auto mb-8 max-w-3xl text-xl leading-relaxed text-white/90">

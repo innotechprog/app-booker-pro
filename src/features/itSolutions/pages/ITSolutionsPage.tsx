@@ -132,7 +132,7 @@ const ITSolutionsPage = () => {
   return (
     <Layout>
       <SEO page="it-solutions" />
-      <div className="relative flex min-h-[480px] items-center justify-center overflow-hidden bg-gradient-to-b from-[#0a183d] via-[#183a7a] to-[#07122c] py-24">
+      <div className="relative flex min-h-[480px] items-center justify-center overflow-hidden bg-gradient-to-b from-[#0a183d] via-[#183a7a] to-[#07122c] pb-24 pt-32">
         <div className="pointer-events-none absolute inset-0 select-none opacity-30">
           <svg width="100%" height="100%" viewBox="0 0 1440 480" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
             <circle cx="1200" cy="100" r="180" fill="#fff" fillOpacity="0.07" />

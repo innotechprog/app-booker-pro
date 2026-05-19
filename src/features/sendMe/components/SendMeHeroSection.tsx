@@ -18,7 +18,7 @@ const SendMeHeroSection = ({ onBookNow }: SendMeHeroSectionProps) => {
           <circle cx="800" cy="300" r="100" fill="#fff" fillOpacity="0.06" />
         </svg>
       </div>
-      <div className="relative z-10 mx-auto flex min-h-[520px] w-full max-w-6xl items-center px-6 py-20">
+      <div className="relative z-10 mx-auto flex min-h-[520px] w-full max-w-6xl items-center px-6 pb-20 pt-32">
         <div className="w-full text-center">
           <div className="mx-auto mb-6 inline-flex items-center justify-center rounded-full bg-white/10 p-3 ring-1 ring-white/20">
             <Send className="h-10 w-10 text-white" />

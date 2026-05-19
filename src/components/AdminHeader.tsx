@@ -7,12 +7,7 @@ const AdminHeader = () => {
   return (
     <header style={{
       width: '100%',
-      background: '#1e293b',
-      color: 'white',
-      padding: '16px 0',
-      borderBottom: '3px solid #3b82f6',
-      marginBottom: 24,
-      boxShadow: '0 2px 8px rgba(30,41,59,0.08)',
+      padding: '16px 16px 0',
       zIndex: 1000
     }}>
       <div style={{
@@ -21,7 +16,12 @@ const AdminHeader = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 32px',
+        padding: '16px 32px',
+        background: '#1e293b',
+        color: 'white',
+        borderBottom: '3px solid #3b82f6',
+        borderRadius: 24,
+        boxShadow: '0 2px 8px rgba(30,41,59,0.08)',
       }}>
         <div style={{ fontWeight: 700, fontSize: 28, letterSpacing: 1, color: '#3b82f6' }}>
           IBIS <span style={{ color: 'white' }}>Admin</span>

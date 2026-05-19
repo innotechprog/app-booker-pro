@@ -1,4 +1,5 @@
 import { useState } from "react";
+import SEO from "@/components/SEO";
 
 const ApplicationHelpPage = () => {
   const [form, setForm] = useState({ name: "", email: "", cellphone: "", message: "" });
@@ -43,6 +44,7 @@ const ApplicationHelpPage = () => {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-16">
+      <SEO page="applicationHelp" />
       <h1 className="mb-6 text-3xl font-bold">University Application Help Request</h1>
       <div className="mb-6 rounded border-l-4 border-blue-600 bg-blue-50 p-4 text-black">
         <p className="mb-2">For urgent assistance, you can:</p>

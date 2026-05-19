@@ -5,7 +5,7 @@ import type { WorkExperienceItem, EducationItem, CertificationItem, SkillItem } 
 const ACCENT = "#1e3a5f";
 
 /** Shared "professional paper" style applied to all templates */
-const CARD_BASE = "bg-white text-slate-900 overflow-hidden min-h-[280px] rounded-lg border border-slate-300/80 shadow-[0_10px_30px_-22px_rgba(15,23,42,0.55)]";
+const CARD_BASE = "bg-white text-slate-900 overflow-hidden min-h-[280px] rounded-lg shadow-[0_10px_30px_-22px_rgba(15,23,42,0.55)]";
 const PROFESSIONAL_CANVAS =
   "font-sans antialiased [&_h1]:font-semibold [&_h1]:tracking-tight [&_h1]:leading-tight [&_h1]:text-slate-900 [&_h2]:text-[10px] [&_h2]:font-semibold [&_h2]:uppercase [&_h2]:tracking-[0.16em] [&_h2]:text-slate-700 [&_p]:text-slate-700 [&_p]:leading-relaxed [&_li]:text-slate-700 [&_li]:leading-relaxed [&_.text-gray-900]:!text-slate-900 [&_.text-gray-800]:!text-slate-800 [&_.text-gray-700]:!text-slate-700 [&_.text-gray-600]:!text-slate-600 [&_.text-gray-500]:!text-slate-500 [&_.border-gray-100]:!border-slate-200/70 [&_.border-gray-200]:!border-slate-200 [&_.cv-dark-sidebar_h1]:!text-white [&_.cv-dark-sidebar_h2]:!text-white [&_.cv-dark-sidebar_p]:!text-white/90 [&_.cv-dark-sidebar_li]:!text-white/90 [&_.cv-dark-sidebar_.text-gray-900]:!text-white [&_.cv-dark-sidebar_.text-gray-800]:!text-white/90 [&_.cv-dark-sidebar_.text-gray-700]:!text-white/85 [&_.cv-dark-sidebar_.text-gray-600]:!text-white/80 [&_.cv-dark-sidebar_.text-gray-500]:!text-white/70";
 
@@ -193,7 +193,7 @@ function EmailLink({ email, className = "text-inherit" }: { email: string; class
   if (!email) return null;
   const cleanEmail = normalizeEmail(email);
   if (!cleanEmail) return null;
-  return <a href={`mailto:${cleanEmail}`} className={`${className} underline hover:opacity-80`} onClick={() => onLinkClick?.(`mailto:${cleanEmail}`)}>{cleanEmail}</a>;
+  return <a href={`mailto:${cleanEmail}`} className={`${className} no-underline hover:opacity-80`} onClick={() => onLinkClick?.(`mailto:${cleanEmail}`)}>{cleanEmail}</a>;
 }
 
 /** Renders phone as a clickable tel link when onLinkClick is available */
@@ -202,7 +202,7 @@ function PhoneLink({ phone, className = "text-inherit" }: { phone: string; class
   if (!phone) return null;
   const cleanPhone = normalizeText(phone);
   if (!cleanPhone) return null;
-  return <a href={`tel:${cleanPhone}`} className={`${className} underline hover:opacity-80`} onClick={() => onLinkClick?.(`tel:${cleanPhone}`)}>{cleanPhone}</a>;
+  return <a href={`tel:${cleanPhone}`} className={`${className} no-underline hover:opacity-80`} onClick={() => onLinkClick?.(`tel:${cleanPhone}`)}>{cleanPhone}</a>;
 }
 
 /** Renders contact + links; links are clickable and optionally tracked */
@@ -213,11 +213,11 @@ function ContactLinksContent({ personal }: { personal: CvPreviewData["personal"]
   const sep2 = " · ";
   if (personal.email) {
     const cleanEmail = normalizeEmail(personal.email);
-    parts.push(<a key="e" href={`mailto:${cleanEmail}`} className="text-inherit underline hover:opacity-80" onClick={() => onLinkClick?.(`mailto:${cleanEmail}`)}>{cleanEmail}</a>);
+    parts.push(<a key="e" href={`mailto:${cleanEmail}`} className="text-inherit no-underline hover:opacity-80" onClick={() => onLinkClick?.(`mailto:${cleanEmail}`)}>{cleanEmail}</a>);
   }
   if (personal.phone) {
     const cleanPhone = normalizeText(personal.phone);
-    parts.push(<a key="p" href={`tel:${cleanPhone}`} className="text-inherit underline hover:opacity-80" onClick={() => onLinkClick?.(`tel:${cleanPhone}`)}>{cleanPhone}</a>);
+    parts.push(<a key="p" href={`tel:${cleanPhone}`} className="text-inherit no-underline hover:opacity-80" onClick={() => onLinkClick?.(`tel:${cleanPhone}`)}>{cleanPhone}</a>);
   }
   if (personal.currentLocation) parts.push(<span key="l">{normalizeText(personal.currentLocation)}</span>);
   const contactParts = parts;
@@ -225,12 +225,12 @@ function ContactLinksContent({ personal }: { personal: CvPreviewData["personal"]
   if (personal.linkedinUrl) {
     const href = /^https?:\/\//i.test(personal.linkedinUrl) ? personal.linkedinUrl : `https://${personal.linkedinUrl}`;
     const cleanLinkedin = normalizeText(personal.linkedinUrl);
-    linkParts.push(<a key="li" href={href} target="_blank" rel="noopener noreferrer" className="text-inherit underline hover:opacity-80" onClick={() => onLinkClick?.(href)}>{cleanLinkedin}</a>);
+    linkParts.push(<a key="li" href={href} target="_blank" rel="noopener noreferrer" className="text-inherit no-underline hover:opacity-80" onClick={() => onLinkClick?.(href)}>{cleanLinkedin}</a>);
   }
   if (personal.website) {
     const href = /^https?:\/\//i.test(personal.website) ? personal.website : `https://${personal.website}`;
     const cleanWebsite = normalizeText(personal.website);
-    linkParts.push(<a key="w" href={href} target="_blank" rel="noopener noreferrer" className="text-inherit underline hover:opacity-80" onClick={() => onLinkClick?.(href)}>{cleanWebsite}</a>);
+    linkParts.push(<a key="w" href={href} target="_blank" rel="noopener noreferrer" className="text-inherit no-underline hover:opacity-80" onClick={() => onLinkClick?.(href)}>{cleanWebsite}</a>);
   }
   const hasContact = contactParts.length > 0;
   const hasLinks = linkParts.length > 0;
@@ -1170,3 +1170,4 @@ export const SAMPLE_CV_PREVIEW_DATA: CvPreviewData = {
   accentColor: undefined,
   customSections: undefined,
 };
+
