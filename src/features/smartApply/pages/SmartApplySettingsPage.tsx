@@ -11,7 +11,6 @@ import { Loader2, Lock, ArrowLeft, UserX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { smartApplyAPI } from "@/services/api";
 
-const SMART_APPLY_TOKEN_KEY = "smart_apply_token";
 const PRIMARY_COLOR = "#1e3a5f";
 
 const JobAssistantSettingsPage = () => {
@@ -28,7 +27,7 @@ const JobAssistantSettingsPage = () => {
   useEffect(() => {
     const token = localStorage.getItem("smart_apply_token");
     if (!token) {
-      navigate("/smart-apply");
+      navigate("/smart-apply/sign-in", { replace: true });
     }
   }, [navigate]);
 
@@ -185,9 +184,9 @@ const JobAssistantSettingsPage = () => {
                   setDeactivating(true);
                   try {
                     await smartApplyAPI.deactivateAccount(deactivatePassword.trim());
-                    localStorage.removeItem(SMART_APPLY_TOKEN_KEY);
+                    smartApplyAPI.logout();
                     toast({ title: "Account deactivated", variant: "default" });
-                    navigate("/smart-apply");
+                    navigate("/smart-apply/sign-in");
                   } catch (err) {
                     toast({
                       title: err instanceof Error ? err.message : "Failed to deactivate account",
