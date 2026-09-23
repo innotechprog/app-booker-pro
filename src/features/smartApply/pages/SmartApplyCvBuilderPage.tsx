@@ -51,7 +51,7 @@ const CV_PREVIEW_HEIGHT = 373;
 const PROFILE_PIC_KEY = "smart_apply_profile_picture";
 const SHOW_PP_ON_CV_KEY = "smart_apply_show_pp_on_cv";
 
-/** Scales the CV preview to fill the card container with a polished, eye-catching frame */
+/** Scales the CV preview to fill the card container as a clean document preview */
 function CvPreviewCard({ templateId, data }: { templateId: number; data?: CvPreviewData }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.5);
@@ -75,20 +75,18 @@ function CvPreviewCard({ templateId, data }: { templateId: number; data?: CvPrev
   return (
     <div
       ref={containerRef}
-      className="absolute inset-0 w-full h-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-100 via-gray-50 to-slate-100 transition-transform duration-300 group-hover:scale-[1.03]"
+      className="absolute inset-0 w-full h-full flex items-center justify-center overflow-hidden bg-white transition-transform duration-300 group-hover:scale-[1.01]"
     >
-      {/* Paper-like frame with subtle 3D shadow */}
       <div
-        className="shrink-0 rounded-md overflow-hidden"
+        className="shrink-0 overflow-hidden"
         style={{
           width: CV_PREVIEW_WIDTH,
           height: CV_PREVIEW_HEIGHT,
           transform: `scale(${scale})`,
           transformOrigin: "center center",
-          boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)",
         }}
       >
-        <div className="w-full h-full bg-white rounded-md overflow-hidden border border-gray-200/80">
+        <div className="w-full h-full bg-white overflow-hidden">
           <CvPreviewByTemplate templateId={templateId} data={data ?? SAMPLE_CV_PREVIEW_DATA} compact />
         </div>
       </div>
