@@ -11,34 +11,34 @@ export default defineConfig(({ mode }) => {
   const base = baseRaw.endsWith("/") ? baseRaw : `${baseRaw}/`;
 
   return {
-  base,
-  server: {
-    host: "::",
-    port: 8080,
-    proxy: {
-      // Job Assist route lives on the local ib-backend (not yet on production)
-      "/api/job-assist": {
-        target: "http://localhost:5000",
-        changeOrigin: true,
-      },
-      // Send Me dedicated route lives on the local ib-backend (not yet on production)
-      "/api/sendme": {
-        target: "http://localhost:5000",
-        changeOrigin: true,
-      },
-      "/api": {
-        target: "https://ib-backend.ib-innovativesolutions.com",
-        changeOrigin: true,
+    base,
+    server: {
+      host: "::",
+      port: 8080,
+      proxy: {
+        // Job Assist route lives on the local ib-backend (not yet on production)
+        "/api/job-assist": {
+          target: "http://localhost:5000",
+          changeOrigin: true,
+        },
+        // Send Me dedicated route lives on the local ib-backend (not yet on production)
+        "/api/sendme": {
+          target: "http://localhost:5000",
+          changeOrigin: true,
+        },
+        "/api": {
+          target: "https://ib-backend.ib-innovativesolutions.com",
+          changeOrigin: true,
+        },
       },
     },
-  },
-  plugins: [
-    react(),
-  ],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+    plugins: [
+      react(),
+    ],
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
     },
-  },
-};
+  };
 });
