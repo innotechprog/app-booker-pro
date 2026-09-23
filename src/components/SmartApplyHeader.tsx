@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Menu, X, User, Sparkles, LogOut, LayoutDashboard, Settings, Crown, Bell, Wand2, Mic } from "lucide-react";
 import ibLogoBlack from "@/images/ib-logo-black.png";
-import { smartApplyAPI } from "@/services/api";
+import { clearSmartApplySession, smartApplyAPI } from "@/services/api";
 
 const DEEP_BLUE = "#1e3a5f";
 const PROFILE_PIC_KEY = "smart_apply_profile_picture";
@@ -41,9 +41,7 @@ const SmartApplyHeader = () => {
     `py-2 text-sm font-medium transition-colors ${isActivePath(path) ? activeClass : inactiveClass}`;
 
   const handleLogout = () => {
-    localStorage.removeItem("smart_apply_token");
-    localStorage.removeItem("smart_apply_full_name");
-    localStorage.removeItem(PROFILE_PIC_KEY);
+    clearSmartApplySession();
     setInitials("");
     setProfilePictureUrl(null);
     navigate("/smart-apply/sign-in");
@@ -82,8 +80,8 @@ const SmartApplyHeader = () => {
   }, []);
 
   return (
-    <header className="w-full px-4 pt-4 sm:px-6">
-      <div className="mx-auto max-w-7xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+    <header className="w-full bg-white border-b border-gray-200">
+      <div className="mx-auto max-w-7xl">
         <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
           {/* Left: IB logo + Smart Apply */}
           <Link
