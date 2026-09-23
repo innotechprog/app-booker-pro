@@ -30,8 +30,8 @@ const SEO = ({
   const seoData = {
     home: {
       title: "IB Innovative Solutions | Education, IT & Job Assistant",
-      description: "Trusted professional services: tutoring, university applications, IT solutions, Send Me & Smart Apply bulk job applications. Gauteng & South Africa.",
-      keywords: "IBIS, IB Innovative Solutions, education, tutoring, university applications, IT solutions, Send Me, Smart Apply, bulk job apply, South Africa, Gauteng, professional services",
+      description: "Trusted professional services: tutoring, university applications, IT solutions, Send Me & Job Assistant bulk job applications. Gauteng & South Africa.",
+      keywords: "IBIS, IB Innovative Solutions, education, tutoring, university applications, IT solutions, Send Me, Job Assistant, bulk job apply, South Africa, Gauteng, Johannesburg, Pretoria",
       image: "/ib-logo-white.png",
       url: `${SITE_URL}`,
     },
@@ -64,9 +64,9 @@ const SEO = ({
       url: `${SITE_URL}/tutorials`,
     },
     bookService: {
-      title: "Send Me | On-Demand Errands, Delivery & Assistance - IBIS",
-      description: "Personal errand running, delivery services, and on-demand assistance. Book Send Me for household tasks, event and childcare support, custom requests, and more across Gauteng and South Africa.",
-      keywords: "Send Me, on-demand personal assistance, running errands, delivery services, household tasks, event assistance, childcare support, custom requests, document collection, shopping assistance, Gauteng, South Africa",
+      title: "Send Me Services | Errands, Delivery & Personal Assistance - IBIS",
+      description: "Book Send Me for errands, same-day delivery, personal assistance, and household task support. Fast, reliable on-demand help in Gauteng and across South Africa.",
+      keywords: "Send Me services, errand running, same-day delivery, personal assistant, household tasks, on-demand help, Gauteng, South Africa, IBIS",
       image: "/og-image-send-me.jpg",
       url: `${SITE_URL}/book-service`,
     },
@@ -197,7 +197,7 @@ const SEO = ({
   const finalTitle = title || currentSeo.title;
   const finalDescription = description || currentSeo.description;
   const finalKeywords = keywords || currentSeo.keywords;
-  const finalImagePath = image || currentSeo.image;
+  const finalImagePath = image || "/ib-logo-black.png";
   const finalImage = finalImagePath.startsWith('http') ? finalImagePath : `${SITE_URL}${finalImagePath}`;
   const finalUrl = url || currentSeo.url;
   const finalImageAlt = imageAlt || `${finalTitle} - IB Innovative Solutions`;
