@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import DashboardLayout from "@/components/DashboardLayout";
+import SEO from "@/components/SEO";
 import { 
   ArrowLeft, 
   Play, 
@@ -136,7 +137,14 @@ const TutorialDiscussion = () => {
   }
 
   return (
-    <DashboardLayout>
+    <>
+      <SEO
+        title="Tutorial Discussion | IBIS"
+        description="Join the discussion for your tutorial. Ask questions, get answers, and interact with tutors and learners on IBIS."
+        type="website"
+        url="https://ib-innovativesolutions.com/tutorial-discussion"
+      />
+      <DashboardLayout>
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
@@ -403,7 +411,8 @@ const TutorialDiscussion = () => {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+      </DashboardLayout>
+    </>
   );
 };
 
