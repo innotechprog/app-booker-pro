@@ -24,6 +24,9 @@ let googleAuthInitialized = false;
 let onSuccessCallback: ((credential: string) => void) | null = null;
 let onErrorCallback: ((error: string) => void) | null = null;
 
+// Queue of containers waiting to have buttons rendered after init
+const pendingRenderContainers: Array<{ container: HTMLElement; text: string }> = [];
+
 export const loadGoogleScript = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (window.google?.accounts?.id) {
@@ -34,7 +37,6 @@ export const loadGoogleScript = (): Promise<void> => {
     // Check if script already exists
     const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
     if (existingScript) {
-      // Wait for it to load
       existingScript.addEventListener('load', () => resolve());
       existingScript.addEventListener('error', () => reject(new Error('Failed to load Google OAuth script')));
       return;
@@ -50,7 +52,42 @@ export const loadGoogleScript = (): Promise<void> => {
   });
 };
 
-export const initializeGoogleAuth = (onSuccess: (credential: string) => void, onError?: (error: string) => void) => {
+/**
+ * Renders Google's official sign-in button into the given container element.
+ * Uses renderButton which opens a reliable popup flow (not One Tap).
+ * Call this after initializeGoogleAuth has been called.
+ */
+export const renderGoogleButton = (
+  container: HTMLElement,
+  text: 'signin_with' | 'signup_with' | 'continue_with' | 'signin' = 'signin_with'
+): void => {
+  if (!GOOGLE_CLIENT_ID) return;
+
+  if (!window.google?.accounts?.id || !googleAuthInitialized) {
+    // Queue it to be rendered once init completes
+    pendingRenderContainers.push({ container, text });
+    return;
+  }
+
+  try {
+    window.google.accounts.id.renderButton(container, {
+      type: 'standard',
+      theme: 'outline',
+      size: 'large',
+      text,
+      shape: 'rectangular',
+      width: Math.min(container.offsetWidth || 400, 400),
+    });
+  } catch (e) {
+    console.warn('Google renderButton failed:', e);
+  }
+};
+
+export const initializeGoogleAuth = (
+  onSuccess: (credential: string) => void,
+  onError?: (error: string) => void,
+  onReady?: () => void
+) => {
   if (!GOOGLE_CLIENT_ID) {
     console.warn('Google Client ID not configured. Please set VITE_GOOGLE_CLIENT_ID in your .env file');
     if (onError) onError('Google OAuth not configured. Please contact support.');
@@ -61,6 +98,11 @@ export const initializeGoogleAuth = (onSuccess: (credential: string) => void, on
   onErrorCallback = onError || null;
 
   if (googleAuthInitialized) {
+    if (onReady) onReady();
+    // Flush any pending containers
+    pendingRenderContainers.splice(0).forEach(({ container, text }) =>
+      renderGoogleButton(container, text)
+    );
     return;
   }
 
@@ -88,6 +130,13 @@ export const initializeGoogleAuth = (onSuccess: (credential: string) => void, on
       });
 
       googleAuthInitialized = true;
+
+      if (onReady) onReady();
+
+      // Flush any containers that were queued before init completed
+      pendingRenderContainers.splice(0).forEach(({ container, text }) =>
+        renderGoogleButton(container, text)
+      );
     })
     .catch((error) => {
       console.error('Error loading Google OAuth:', error);
@@ -95,6 +144,10 @@ export const initializeGoogleAuth = (onSuccess: (credential: string) => void, on
     });
 };
 
+/**
+ * @deprecated Use renderGoogleButton() with a container ref instead.
+ * This kept for backward compatibility but pages should migrate to renderButton.
+ */
 export const triggerGoogleSignIn = () => {
   if (!GOOGLE_CLIENT_ID) {
     if (onErrorCallback) {
@@ -103,56 +156,77 @@ export const triggerGoogleSignIn = () => {
     return;
   }
 
-  if (window.google?.accounts?.id) {
-    window.google.accounts.id.prompt((notification: any) => {
-      if (!onErrorCallback) return;
-
-      const notDisplayed = typeof notification?.isNotDisplayed === 'function' && notification.isNotDisplayed();
-      const skipped = typeof notification?.isSkippedMoment === 'function' && notification.isSkippedMoment();
-      const dismissed = typeof notification?.isDismissedMoment === 'function' && notification.isDismissedMoment();
-
-      if (notDisplayed) {
-        const reason = typeof notification?.getNotDisplayedReason === 'function'
-          ? String(notification.getNotDisplayedReason() || '')
-          : '';
-        if (/unregistered_origin|invalid_client|missing_client_id/i.test(reason)) {
-          onErrorCallback('Google sign-in is not allowed for this app origin. Add this site URL to Authorized JavaScript origins in Google Cloud Console.');
+  if (!window.google?.accounts?.id || !googleAuthInitialized) {
+    // Attempt a self-heal init path so button clicks still work if GIS wasn't ready yet.
+    loadGoogleScript()
+      .then(() => {
+        if (!window.google?.accounts?.id) {
+          if (onErrorCallback) onErrorCallback('Google OAuth library not loaded');
           return;
         }
-        onErrorCallback(reason ? `Google sign-in unavailable (${reason}).` : 'Google sign-in is currently unavailable on this browser/session.');
-        return;
-      }
 
-      if (skipped) {
-        const reason = typeof notification?.getSkippedReason === 'function'
-          ? String(notification.getSkippedReason() || '')
-          : '';
-        if (/auto_cancel|user_cancel|tap_outside|issuing_failed/i.test(reason)) {
-          onErrorCallback('Sign in was cancelled.');
-          return;
-        }
-        if (!reason || /unknown_reason/i.test(reason)) {
-          const origin = window.location.origin;
-          onErrorCallback(
-            `Google sign-in could not start on this browser/session. If this keeps happening, verify ${origin} is added to Authorized JavaScript origins in Google Cloud Console, then allow popups/3rd-party cookies and try again.`
-          );
-          return;
-        }
-        onErrorCallback(reason ? `Google sign-in skipped (${reason}).` : 'Google sign-in was skipped.');
-        return;
-      }
+        if (!googleAuthInitialized) {
+          if (!onSuccessCallback) {
+            if (onErrorCallback) onErrorCallback('Google sign-in is initializing. Please try again.');
+            return;
+          }
 
-      if (dismissed) {
-        const reason = typeof notification?.getDismissedReason === 'function'
-          ? String(notification.getDismissedReason() || '')
-          : '';
-        onErrorCallback(reason ? `Google sign-in dismissed (${reason}).` : 'Sign in was cancelled.');
-      }
+          window.google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: (response: any) => {
+              if (response.credential) {
+                if (onSuccessCallback) onSuccessCallback(response.credential);
+              } else if (onErrorCallback) {
+                onErrorCallback('Failed to get Google credential');
+              }
+            },
+          });
+          googleAuthInitialized = true;
+        }
+
+        triggerGoogleSignIn();
+      })
+      .catch(() => {
+        if (onErrorCallback) onErrorCallback('Failed to load Google OAuth');
+      });
+    return;
+  }
+
+  // Render the button in a hidden off-screen container and click it.
+  // This uses renderButton (popup flow) which is more reliable than prompt().
+  const HIDDEN_ID = '__gsi_trigger_container__';
+  let hidden = document.getElementById(HIDDEN_ID) as HTMLElement | null;
+  if (!hidden) {
+    hidden = document.createElement('div');
+    hidden.id = HIDDEN_ID;
+    hidden.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:200px;height:44px;overflow:hidden;pointer-events:none;opacity:0;';
+    document.body.appendChild(hidden);
+  }
+  // Clear and re-render
+  hidden.innerHTML = '';
+  hidden.style.pointerEvents = 'auto';
+
+  try {
+    window.google.accounts.id.renderButton(hidden, {
+      type: 'standard',
+      size: 'large',
+      text: 'signin_with',
+      width: 200,
     });
-  } else {
-    const errorMsg = 'Google OAuth not initialized. Please wait a moment and try again.';
-    console.error(errorMsg);
-    if (onErrorCallback) onErrorCallback(errorMsg);
+
+    // Give the iframe a moment to render, then click it
+    setTimeout(() => {
+      const iframe = hidden!.querySelector('iframe');
+      if (iframe) {
+        iframe.click();
+      } else {
+        (hidden as HTMLElement).click();
+      }
+      hidden!.style.pointerEvents = 'none';
+    }, 100);
+  } catch (e) {
+    console.warn('triggerGoogleSignIn renderButton failed:', e);
+    if (onErrorCallback) onErrorCallback('Google sign-in failed to open. Please try again.');
   }
 };
 
