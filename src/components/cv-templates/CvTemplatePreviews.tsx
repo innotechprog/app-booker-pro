@@ -299,75 +299,293 @@ function getReadableTextColor(bg: string): "#111827" | "#ffffff" {
   return luminance > 0.6 ? "#111827" : "#ffffff";
 }
 
-// —— Template 1: Classic One-Column ——
+/** Pipe-separated contact row for Template 1 (email | phone | location | LinkedIn). */
+function Template1ContactLine({ personal }: { personal: CvPreviewData["personal"] }) {
+  const onLinkClick = React.useContext(CvLinkTrackingContext);
+  const parts: React.ReactNode[] = [];
+  const push = (node: React.ReactNode) => {
+    if (parts.length) parts.push(<span key={`sep-${parts.length}`} className="px-1" style={{ color: "#111111" }}>|</span>);
+    parts.push(node);
+  };
+
+  if (personal.email) {
+    const cleanEmail = normalizeEmail(personal.email);
+    if (cleanEmail) {
+      push(
+        <a
+          key="e"
+          href={`mailto:${cleanEmail}`}
+          className="text-inherit no-underline hover:opacity-80"
+          onClick={() => onLinkClick?.(`mailto:${cleanEmail}`)}
+        >
+          {cleanEmail}
+        </a>
+      );
+    }
+  }
+  if (personal.phone) {
+    const cleanPhone = normalizeText(personal.phone);
+    if (cleanPhone) {
+      push(
+        <a
+          key="p"
+          href={`tel:${cleanPhone}`}
+          className="text-inherit no-underline hover:opacity-80"
+          onClick={() => onLinkClick?.(`tel:${cleanPhone}`)}
+        >
+          {cleanPhone}
+        </a>
+      );
+    }
+  }
+  if (personal.currentLocation) {
+    push(<span key="l">{normalizeText(personal.currentLocation)}</span>);
+  }
+  if (personal.linkedinUrl) {
+    const href = /^https?:\/\//i.test(personal.linkedinUrl) ? personal.linkedinUrl : `https://${personal.linkedinUrl}`;
+    const cleanLinkedin = normalizeText(personal.linkedinUrl);
+    push(
+      <a
+        key="li"
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-inherit no-underline hover:opacity-80"
+        onClick={() => onLinkClick?.(href)}
+      >
+        {cleanLinkedin}
+      </a>
+    );
+  } else if (personal.website) {
+    const href = /^https?:\/\//i.test(personal.website) ? personal.website : `https://${personal.website}`;
+    const cleanWebsite = normalizeText(personal.website);
+    push(
+      <a
+        key="w"
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-inherit no-underline hover:opacity-80"
+        onClick={() => onLinkClick?.(href)}
+      >
+        {cleanWebsite}
+      </a>
+    );
+  }
+
+  if (parts.length === 0) return null;
+  return <>{parts}</>;
+}
+
+/** Template 1 colours */
+const T1_TEXT = "#111111";
+const T1_RULE = "#d1d5db";
+
+// —— Template 1: Classic One-Column (exact match to provided mockup) ——
 function Template1({ data }: { data: CvPreviewData }) {
   const { personal, overview, workExperience, education, certifications, keySkills } = data;
-  const accent = data.accentColor || ACCENT;
+  const text = T1_TEXT;
+  const name = (personal.fullName || "Full Name").toUpperCase();
+  const hasContact = !!(personal.email || personal.phone || personal.currentLocation || personal.linkedinUrl || personal.website);
+  // Contact line already covers LinkedIn/website — don't duplicate via auto Personal Details
+  const customSections = (data.customSections ?? []).filter((s) => s.id !== "personal-details-auto");
+
+  const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+    <div
+      className="cv-t1-section mb-2.5 text-[13px] font-bold uppercase tracking-[0.06em] leading-none"
+      style={{ color: text }}
+    >
+      {children}
+    </div>
+  );
+
+  const Rule = () => <div className="w-full" style={{ borderTop: `1px solid ${T1_RULE}` }} />;
+
   return (
-    <div className={`${CARD_BASE} font-sans antialiased`}>
-      <div className="h-1.5 w-16 rounded-br-md" style={{ backgroundColor: accent }} />
-      <div className="p-5 pb-4 border-b border-gray-100">
-        <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">{personal.fullName || "Your name"}</h1>
-        {personal.jobTitle && <p className="text-[13px] text-gray-600 mt-1">{personal.jobTitle}</p>}
-        {(contactLine(personal) || linksLine(personal)) && (
-          <p className="text-[11px] text-gray-500 mt-2 leading-relaxed"><ContactLinksContent personal={personal} /></p>
+    <div className={`${CARD_BASE} font-sans antialiased bg-white`} style={{ color: text }}>
+      {/* Header — ALL CAPS name, pipe contact, no job title (matches mockup) */}
+      <div className="px-7 pt-7 pb-4">
+        <div
+          className="cv-t1-name text-[28px] font-bold leading-tight tracking-tight uppercase"
+          style={{ color: text }}
+        >
+          {name}
+        </div>
+        {hasContact && (
+          <div className="cv-t1-body mt-2 text-[12px] leading-relaxed" style={{ color: text, fontSize: 12 }}>
+            <Template1ContactLine personal={personal} />
+          </div>
         )}
       </div>
-      <div className="px-5 pb-5 space-y-4 text-sm pt-4">
-        {overview && (
-          <section>
-            <SectionHeader accent={accent}>Professional Summary</SectionHeader>
-            <p className="whitespace-pre-wrap text-gray-700 leading-relaxed">{overview}</p>
+      <div className="px-7">
+        <Rule />
+      </div>
+
+      <div className="px-7 pb-7">
+        {overview ? (
+          <section className="pt-4">
+            <SectionTitle>Professional Summary</SectionTitle>
+            <p className="whitespace-pre-wrap text-[12.5px] leading-[1.55]" style={{ color: text }}>
+              {overview}
+            </p>
+            <div className="mt-4">
+              <Rule />
+            </div>
           </section>
-        )}
+        ) : null}
+
         {workExperience.length > 0 && (
-          <section>
-            <SectionHeader accent={accent}>Experience</SectionHeader>
-            <ul className="space-y-3">
+          <section className="pt-4">
+            <SectionTitle>Work Experience</SectionTitle>
+            <div className="space-y-4">
               {workExperience.map((w, i) => {
                 const bullets = w.description ? descriptionToBullets(w.description) : [];
+                const dates = [w.startDate, w.endDate].filter(Boolean).join(" – ");
                 return (
-                <li key={i} className="border-l-2 border-gray-100 pl-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="font-semibold text-gray-900">{w.jobTitle || "Role"}{w.company && ` — ${w.company}`}</span>
-                    {(w.startDate || w.endDate) && <span className="text-gray-500 text-xs shrink-0">{[w.startDate, w.endDate].filter(Boolean).join(" – ")}</span>}
+                  <div key={i}>
+                    <div className="flex items-baseline justify-between gap-4">
+                      <span className="text-[13px] font-bold leading-snug" style={{ color: text }}>
+                        {w.jobTitle || "Job Title"}
+                      </span>
+                      {dates ? (
+                        <span className="shrink-0 text-[12px]" style={{ color: text, fontSize: 12 }}>
+                          {dates}
+                        </span>
+                      ) : null}
+                    </div>
+                    {w.company ? (
+                      <div className="mt-0.5 text-[12.5px]" style={{ color: text }}>
+                        {w.company}
+                      </div>
+                    ) : null}
+                    {bullets.length > 0 && (
+                      <>
+                        <div className="mt-2 mb-2" style={{ borderTop: `1px dotted ${T1_RULE}` }} />
+                        <ul className="ml-4 list-disc space-y-1 text-[12.5px] leading-[1.5]" style={{ color: text }}>
+                          {bullets.map((line, j) => (
+                            <li key={j} className="pl-0.5">
+                              {line}
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
                   </div>
-                  {bullets.length > 0 && <ul className="mt-1 list-disc list-inside text-gray-700 text-[12px] marker:text-gray-400 space-y-0.5">{bullets.map((line, j) => <li key={j}>{line}</li>)}</ul>}
-                </li>
-              );})}
-            </ul>
+                );
+              })}
+            </div>
+            <div className="mt-4">
+              <Rule />
+            </div>
           </section>
         )}
+
         {education.length > 0 && (
-          <section>
-            <SectionHeader accent={accent}>Education</SectionHeader>
-            <ul className="space-y-2">
-              {education.map((e, i) => (
-                <li key={i} className="flex items-start justify-between gap-3">
-                  <span className="font-medium text-gray-900">{e.qualification || "Qualification"}{e.institution && <span className="text-gray-600"> — {e.institution}</span>}</span>
-                  {(e.startDate || e.endDate) && <span className="text-gray-500 text-xs shrink-0">{[e.startDate, e.endDate].filter(Boolean).join(" – ")}</span>}
+          <section className="pt-4">
+            <SectionTitle>Education</SectionTitle>
+            <div className="space-y-3">
+              {education.map((e, i) => {
+                const dateLabel =
+                  e.endDate && e.startDate && e.endDate !== e.startDate
+                    ? `${e.startDate} – ${e.endDate}`
+                    : e.endDate || e.startDate || "";
+                return (
+                  <div key={i}>
+                    <div className="flex items-baseline justify-between gap-4">
+                      <span className="text-[13px] font-bold leading-snug" style={{ color: text }}>
+                        {e.qualification || "Degree, Field of Study"}
+                      </span>
+                      {dateLabel ? (
+                        <span className="shrink-0 text-[12px]" style={{ color: text, fontSize: 12 }}>
+                          {dateLabel}
+                        </span>
+                      ) : null}
+                    </div>
+                    {e.institution ? (
+                      <div className="mt-0.5 text-[12.5px]" style={{ color: text }}>
+                        {e.institution}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-4">
+              <Rule />
+            </div>
+          </section>
+        )}
+
+        {keySkills.length > 0 && (
+          <section className="pt-4">
+            <SectionTitle>Skills</SectionTitle>
+            <div className="flex flex-wrap gap-2 items-start">
+              {keySkills.map((s, i) => (
+                <span
+                  key={i}
+                  className="cv-t1-skill-chip rounded-md border bg-white"
+                  style={{
+                    borderColor: T1_RULE,
+                    color: text,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    alignSelf: "flex-start",
+                    textAlign: "center",
+                    fontSize: 12,
+                    lineHeight: 1.2,
+                    padding: "6px 10px",
+                    boxSizing: "border-box",
+                    height: "auto",
+                    minHeight: 0,
+                  }}
+                >
+                  {(s.name || "").trim()}
+                </span>
+              ))}
+            </div>
+            {(certifications.length > 0 || customSections.length > 0) && (
+              <div className="mt-4">
+                <Rule />
+              </div>
+            )}
+          </section>
+        )}
+
+        {certifications.length > 0 && (
+          <section className="pt-4">
+            <SectionTitle>Certifications</SectionTitle>
+            <ul className="space-y-1 text-[12.5px]" style={{ color: text }}>
+              {certifications.map((c, i) => (
+                <li key={i}>
+                  {c.name}
+                  {c.issuer ? ` (${c.issuer})` : ""}
+                  {c.date ? ` — ${c.date}` : ""}
                 </li>
               ))}
             </ul>
+            {customSections.length > 0 && (
+              <div className="mt-4">
+                <Rule />
+              </div>
+            )}
           </section>
         )}
-        {keySkills.length > 0 && (
-          <section>
-            <SectionHeader accent={accent}>Skills</SectionHeader>
-            <div className="flex flex-wrap gap-1.5">{keySkills.map((s, i) => <span key={i} className="px-2 py-0.5 rounded border border-gray-200 bg-gray-50 text-[11px]">{s.name}</span>)}</div>
-          </section>
+
+        {customSections.length > 0 && (
+          <div className="pt-4 space-y-4">
+            {customSections.map((s) =>
+              s.title.trim() || s.content.trim() ? (
+                <section key={s.id}>
+                  <SectionTitle>{s.title || "Section"}</SectionTitle>
+                  <p className="whitespace-pre-wrap text-[12.5px] leading-[1.55]" style={{ color: text }}>
+                    {s.content || "—"}
+                  </p>
+                </section>
+              ) : null
+            )}
+          </div>
         )}
-        {certifications.length > 0 && (
-          <section>
-            <SectionHeader accent={accent}>Certifications</SectionHeader>
-            <ul className="space-y-1 text-gray-700">
-              {certifications.map((c, i) => (
-                <li key={i}>{c.name}{c.issuer && ` (${c.issuer})`}{c.date && ` — ${c.date}`}</li>
-              ))}
-            </ul>
-          </section>
-        )}
-        <CustomSectionsBlock sections={data.customSections ?? []} accent={accent} className="mt-2" />
       </div>
     </div>
   );
@@ -1138,7 +1356,7 @@ export function CvPreviewByTemplate({ templateId, data, compact, onLinkClick }: 
   ) : content;
   if (compact) {
     return (
-      <div className="cv-preview-compact h-full max-h-[373px] overflow-hidden text-[8px] [&_h1]:!text-[10px] [&_h2]:!text-[7px] [&_p]:!text-[8px] [&_li]:!text-[8px] [&_span]:!text-[8px] leading-[1.2] [&_*]:!leading-[1.2] [&_.p-5]:!p-2 [&_.p-4]:!p-2 [&_.px-5]:!px-2 [&_.pb-5]:!pb-2">
+      <div className="cv-preview-compact h-full max-h-[373px] overflow-hidden text-[8px] [&_h1]:!text-[10px] [&_h2]:!text-[7px] [&_p]:!text-[8px] [&_li]:!text-[8px] [&_span]:!text-[8px] [&_.cv-t1-name]:!text-[10px] [&_.cv-t1-section]:!text-[7px] [&_.cv-t1-body]:!text-[8px] leading-[1.2] [&_*]:!leading-[1.2] [&_.p-5]:!p-2 [&_.p-4]:!p-2 [&_.px-5]:!px-2 [&_.px-7]:!px-2 [&_.pt-7]:!pt-2 [&_.pb-7]:!pb-2 [&_.pb-5]:!pb-2">
         {content}
       </div>
     );
