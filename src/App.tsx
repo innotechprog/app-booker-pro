@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import Packages from "./pages/Packages";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -39,6 +40,11 @@ import {
 } from "@/features/education";
 import { ITSolutionsPage } from "@/features/itSolutions";
 import { recruiterApi } from "@/services/recruiterApi";
+import {
+  clearSmartApplySession,
+  smartApplyAPI,
+  SMART_APPLY_SESSION_EXPIRED_EVENT,
+} from "@/services/api";
 
 // Job Assistant pages
 import JobAssistant from "./features/smartApply/pages/SmartApplyPage";
@@ -53,9 +59,6 @@ import JobAssistantBilling from "./features/smartApply/pages/SmartApplyBillingPa
 import JobAssistantCheckout from "./features/smartApply/pages/SmartApplyCheckoutPage";
 import JobAssistantNotifications from "./features/smartApply/pages/SmartApplyNotificationsPage";
 import JobAssistantMyApplications from "./features/smartApply/pages/SmartApplyMyApplicationsPage";
-import JobAssistantJobAssist from "./features/smartApply/pages/SmartApplyJobAssistPage";
-import JobAssistantInterviewPrep from "./features/smartApply/pages/SmartApplyInterviewPrepPage";
-import Jobs from "./features/smartApply/pages/SmartApplyJobsPage";
 import PublicCvView from "./features/smartApply/pages/PublicCvViewPage";
 
 // Recruiter pages
@@ -84,16 +87,94 @@ const RecruiterEntryPage = () =>
   recruiterApi.hasToken() ? <RecruiterTalentSearchPage /> : <RecruitersPage />;
 
 const SMART_APPLY_TOKEN_KEY = "smart_apply_token";
+const SMART_APPLY_SIGN_IN = "/smart-apply/sign-in";
+
+type SmartApplySessionStatus = "checking" | "authenticated" | "unauthenticated";
+
+/** Validates Job Assistant session; clears local auth and redirects when missing/invalid. */
+function useSmartApplySessionGuard(): SmartApplySessionStatus {
+  const [status, setStatus] = useState<SmartApplySessionStatus>(() =>
+    localStorage.getItem(SMART_APPLY_TOKEN_KEY) ? "checking" : "unauthenticated"
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const markUnauthenticated = () => {
+      if (!cancelled) setStatus("unauthenticated");
+    };
+
+    window.addEventListener(SMART_APPLY_SESSION_EXPIRED_EVENT, markUnauthenticated);
+
+    const token = localStorage.getItem(SMART_APPLY_TOKEN_KEY);
+    if (!token) {
+      markUnauthenticated();
+      return () => {
+        cancelled = true;
+        window.removeEventListener(SMART_APPLY_SESSION_EXPIRED_EVENT, markUnauthenticated);
+      };
+    }
+
+    smartApplyAPI
+      .getProfile()
+      .then(() => {
+        if (!cancelled) setStatus("authenticated");
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        // 401 already cleared the session via clearSmartApplySession().
+        if (!localStorage.getItem(SMART_APPLY_TOKEN_KEY)) {
+          setStatus("unauthenticated");
+          return;
+        }
+        const message = err instanceof Error ? err.message : "";
+        const isAuthFailure =
+          message === "Session expired" ||
+          /not authorized|unauthorized|invalid token|401/i.test(message);
+        if (isAuthFailure) {
+          clearSmartApplySession();
+          setStatus("unauthenticated");
+          return;
+        }
+        // Network / server blips: keep the local session so we don't kick users offline.
+        setStatus("authenticated");
+      });
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener(SMART_APPLY_SESSION_EXPIRED_EVENT, markUnauthenticated);
+    };
+  }, []);
+
+  return status;
+}
 
 const JobAssistantProtectedRoute = ({ children }: { children: JSX.Element }) => {
-  const hasSmartApplyToken = !!localStorage.getItem(SMART_APPLY_TOKEN_KEY);
-  return hasSmartApplyToken ? children : <Navigate to="/smart-apply/sign-in" replace />;
+  const status = useSmartApplySessionGuard();
+  if (status === "checking") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+      </div>
+    );
+  }
+  if (status === "unauthenticated") {
+    return <Navigate to={SMART_APPLY_SIGN_IN} replace />;
+  }
+  return children;
 };
 
 /** Logged-out users must not see app landing/CV onboarding at `/smart-apply` — only sign-in / sign-up. */
 const JobAssistantRootRoute = () => {
-  const hasSmartApplyToken = !!localStorage.getItem(SMART_APPLY_TOKEN_KEY);
-  if (!hasSmartApplyToken) return <Navigate to="/smart-apply/sign-in" replace />;
+  const status = useSmartApplySessionGuard();
+  if (status === "checking") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+      </div>
+    );
+  }
+  if (status === "unauthenticated") return <Navigate to={SMART_APPLY_SIGN_IN} replace />;
   return <JobAssistant />;
 };
 
@@ -163,13 +244,13 @@ const App = () => (
                 <Route path="/smart-apply/checkout" element={<JobAssistantProtectedRoute><JobAssistantCheckout /></JobAssistantProtectedRoute>} />
                 <Route path="/smart-apply/notifications" element={<JobAssistantProtectedRoute><JobAssistantNotifications /></JobAssistantProtectedRoute>} />
                 <Route path="/smart-apply/my-applications" element={<JobAssistantProtectedRoute><JobAssistantMyApplications /></JobAssistantProtectedRoute>} />
-                <Route path="/smart-apply/jobs" element={<JobAssistantProtectedRoute><Jobs /></JobAssistantProtectedRoute>} />
-                <Route path="/smart-apply/jobs/:jobId" element={<JobAssistantProtectedRoute><Jobs /></JobAssistantProtectedRoute>} />
-                <Route path="/smart-apply/job/:jobId" element={<JobAssistantProtectedRoute><Jobs /></JobAssistantProtectedRoute>} />
-                <Route path="/jobs" element={<Navigate to="/smart-apply/jobs" replace />} />
-                <Route path="/jobs/:jobId" element={<JobAssistantProtectedRoute><Jobs /></JobAssistantProtectedRoute>} />
-                <Route path="/smart-apply/job-assist" element={<JobAssistantProtectedRoute><JobAssistantJobAssist /></JobAssistantProtectedRoute>} />
-                <Route path="/smart-apply/interview-prep" element={<JobAssistantProtectedRoute><JobAssistantInterviewPrep /></JobAssistantProtectedRoute>} />
+                <Route path="/smart-apply/jobs" element={<JobAssistantProtectedRoute><ComingSoon /></JobAssistantProtectedRoute>} />
+                <Route path="/smart-apply/jobs/:jobId" element={<JobAssistantProtectedRoute><ComingSoon /></JobAssistantProtectedRoute>} />
+                <Route path="/smart-apply/job/:jobId" element={<JobAssistantProtectedRoute><ComingSoon /></JobAssistantProtectedRoute>} />
+                <Route path="/jobs" element={<ComingSoon />} />
+                <Route path="/jobs/:jobId" element={<ComingSoon />} />
+                <Route path="/smart-apply/job-assist" element={<JobAssistantProtectedRoute><ComingSoon /></JobAssistantProtectedRoute>} />
+                <Route path="/smart-apply/interview-prep" element={<JobAssistantProtectedRoute><ComingSoon /></JobAssistantProtectedRoute>} />
                 <Route path="/smart-apply/*" element={<JobAssistantProtectedRoute><Navigate to="/smart-apply/jobs" replace /></JobAssistantProtectedRoute>} />
                 {/* Public CV shareable link */}
                 <Route path="/cv/:slug" element={<PublicCvView />} />
