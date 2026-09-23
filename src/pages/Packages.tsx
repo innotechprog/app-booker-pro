@@ -4,6 +4,7 @@ import { packagesAPI, subjectsAPI } from "@/services/api";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 
 interface ServicePackage {
   id: string;
@@ -363,7 +364,14 @@ const Packages = () => {
   }
 
   return (
-    <DashboardLayout>
+    <>
+      <SEO
+        title="Packages | IBIS"
+        description="Browse and enroll in IBIS service packages. Choose from free, basic, premium, and specialized packages for learners and professionals."
+        type="website"
+        url="https://ib-innovativesolutions.com/packages"
+      />
+      <DashboardLayout>
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
@@ -752,7 +760,8 @@ const Packages = () => {
       )}
 
       <Footer />
-    </DashboardLayout>
+      </DashboardLayout>
+    </>
   );
 };
 
