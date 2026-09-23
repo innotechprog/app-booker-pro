@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 
 interface Invoice {
   id: string;
@@ -151,7 +152,11 @@ const Invoices = () => {
   }
 
   return (
-    <Layout>
+    <>
+      <SEO
+        page="invoices"
+      />
+      <Layout>
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
@@ -306,7 +311,8 @@ const Invoices = () => {
         </div>
       </div>
       <Footer />
-    </Layout>
+      </Layout>
+    </>
   );
 };
 
