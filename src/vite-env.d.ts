@@ -6,6 +6,7 @@ interface ImportMetaEnv {
   readonly VITE_LOCAL_API_URL?: string;
   /** Override Send Me booking API base; otherwise production uses `VITE_API_URL`. */
   readonly VITE_SENDME_API_URL?: string;
+  readonly VITE_GOOGLE_CLIENT_ID?: string;
   readonly VITE_GOOGLE_MAPS_API_KEY?: string;
   /** Send Me staff admin (`/sendme/admin`). Required in production builds; in dev defaults to `sendme` if unset. */
   readonly VITE_SENDME_ADMIN_PASSWORD?: string;
