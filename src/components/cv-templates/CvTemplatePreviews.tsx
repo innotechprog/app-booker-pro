@@ -4,8 +4,8 @@ import type { WorkExperienceItem, EducationItem, CertificationItem, SkillItem } 
 
 const ACCENT = "#1e3a5f";
 
-/** Shared "professional paper" style applied to all templates */
-const CARD_BASE = "bg-white text-slate-900 overflow-hidden min-h-[280px] rounded-lg shadow-[0_10px_30px_-22px_rgba(15,23,42,0.55)]";
+/** Shared base style applied to all templates */
+const CARD_BASE = "bg-white text-slate-900 overflow-hidden min-h-[280px]";
 const PROFESSIONAL_CANVAS =
   "font-sans antialiased [&_h1]:font-semibold [&_h1]:tracking-tight [&_h1]:leading-tight [&_h1]:text-slate-900 [&_h2]:text-[10px] [&_h2]:font-semibold [&_h2]:uppercase [&_h2]:tracking-[0.16em] [&_h2]:text-slate-700 [&_p]:text-slate-700 [&_p]:leading-relaxed [&_li]:text-slate-700 [&_li]:leading-relaxed [&_.text-gray-900]:!text-slate-900 [&_.text-gray-800]:!text-slate-800 [&_.text-gray-700]:!text-slate-700 [&_.text-gray-600]:!text-slate-600 [&_.text-gray-500]:!text-slate-500 [&_.border-gray-100]:!border-slate-200/70 [&_.border-gray-200]:!border-slate-200 [&_.cv-dark-sidebar_h1]:!text-white [&_.cv-dark-sidebar_h2]:!text-white [&_.cv-dark-sidebar_p]:!text-white/90 [&_.cv-dark-sidebar_li]:!text-white/90 [&_.cv-dark-sidebar_.text-gray-900]:!text-white [&_.cv-dark-sidebar_.text-gray-800]:!text-white/90 [&_.cv-dark-sidebar_.text-gray-700]:!text-white/85 [&_.cv-dark-sidebar_.text-gray-600]:!text-white/80 [&_.cv-dark-sidebar_.text-gray-500]:!text-white/70";
 
@@ -1121,7 +1121,7 @@ export function CvPreviewByTemplate({ templateId, data, compact, onLinkClick }: 
     <div className={PROFESSIONAL_CANVAS}>
       <CvLinkTrackingContext.Provider value={onLinkClick ?? null}>
         {hasQr ? (
-          <div className="rounded-md border border-slate-200 overflow-hidden bg-white">
+          <div className="overflow-hidden bg-white">
             <CvOnlineQrHeader url={data.cvOnlineUrl!} />
             <Component data={templateData} />
           </div>
