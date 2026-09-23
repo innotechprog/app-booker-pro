@@ -102,18 +102,42 @@ export const authAPI = {
   },
 
   googleLogin: async (idToken: string) => {
-    const data = await fetchWithAuth('/auth/google', {
-      method: 'POST',
-      body: JSON.stringify({ idToken })
-    });
-    
-    if (data.token) {
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('learner_current', JSON.stringify({ email: data.user.email }));
-      localStorage.setItem('learnerData', JSON.stringify(data.user));
+    const payloadVariants = [
+      { idToken },
+      { credential: idToken },
+      { token: idToken },
+      { accessToken: idToken },
+    ];
+
+    let lastErrorMessage = 'Google login failed';
+    let networkError: Error | null = null;
+
+    for (const payload of payloadVariants) {
+      try {
+        const data = await fetchWithAuth('/auth/google', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('learner_current', JSON.stringify({ email: data.user.email }));
+          localStorage.setItem('learnerData', JSON.stringify(data.user));
+        }
+
+        return data;
+      } catch (error: any) {
+        const msg = error?.message || 'Google login failed';
+        lastErrorMessage = msg;
+        if (msg.includes('Cannot connect to server')) {
+          networkError = error;
+          break;
+        }
+      }
     }
-    
-    return data;
+
+    if (networkError) throw networkError;
+    throw new Error(lastErrorMessage);
   }
 };
 
@@ -419,9 +443,24 @@ export const clearAuth = () => {
 // =============================================
 
 const SMART_APPLY_TOKEN_KEY = 'smart_apply_token';
+const SMART_APPLY_FULL_NAME_KEY = 'smart_apply_full_name';
+const SMART_APPLY_PROFILE_PIC_KEY = 'smart_apply_profile_picture';
+const SMART_APPLY_SHOW_PP_ON_CV_KEY = 'smart_apply_show_pp_on_cv';
+export const SMART_APPLY_SESSION_EXPIRED_EVENT = 'smart-apply-session-expired';
 const SMART_APPLY_LOCAL_BASE_URL = (import.meta.env.VITE_LOCAL_API_URL || API_BASE_URL).replace(/\/+$/, '');
 
 const getSmartApplyToken = (): string | null => localStorage.getItem(SMART_APPLY_TOKEN_KEY);
+
+/** Clear Job Assistant session locally and notify the app to redirect to sign-in. */
+export function clearSmartApplySession() {
+  localStorage.removeItem(SMART_APPLY_TOKEN_KEY);
+  localStorage.removeItem(SMART_APPLY_FULL_NAME_KEY);
+  localStorage.removeItem(SMART_APPLY_PROFILE_PIC_KEY);
+  localStorage.removeItem(SMART_APPLY_SHOW_PP_ON_CV_KEY);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(SMART_APPLY_SESSION_EXPIRED_EVENT));
+  }
+}
 
 /** Resolve jobs array from common API envelope shapes (`jobs`, `data.jobs`, `results`, etc.). */
 function extractJobsFromListPayload(data: unknown): unknown[] {
@@ -464,6 +503,10 @@ const fetchWithSmartApplyAuth = async (url: string, options: RequestInit = {}) =
     throw new Error(msg);
   }
   if (!response.ok) {
+    if (response.status === 401) {
+      clearSmartApplySession();
+      throw new Error('Session expired');
+    }
     const data = await response.json().catch(() => ({}));
     const msg = data.message || data.error || `Server error: ${response.status}`;
     if (response.status === 404) {
@@ -481,7 +524,13 @@ const fetchWithSmartApplyAuthBlob = async (url: string): Promise<Blob> => {
   const path = url.startsWith('/') ? url : `/${url}`;
   const fullUrl = `${API_BASE_URL}${path}`;
   const response = await fetch(fullUrl, { headers });
-  if (!response.ok) throw new Error(response.status === 404 ? 'CV not found' : `Server error: ${response.status}`);
+  if (!response.ok) {
+    if (response.status === 401) {
+      clearSmartApplySession();
+      throw new Error('Session expired');
+    }
+    throw new Error(response.status === 404 ? 'CV not found' : `Server error: ${response.status}`);
+  }
   return response.blob();
 };
 
@@ -516,11 +565,21 @@ export const smartApplyAPI = {
       body: JSON.stringify(payload)
     });
     if (!res.ok) {
+      if (res.status === 401) {
+        clearSmartApplySession();
+        throw new Error('Session expired');
+      }
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error || `Server error: ${res.status} ${res.statusText}`);
     }
     return res.json();
   },
+
+  logout: () => {
+    clearSmartApplySession();
+  },
+
+  hasToken: (): boolean => !!getSmartApplyToken(),
 
   getDashboard: async () => {
     return await fetchWithSmartApplyAuth('/smart-apply/dashboard');
@@ -633,15 +692,31 @@ export const smartApplyAPI = {
   },
 
   googleLogin: async (idToken: string) => {
-    const res = await fetch(`${API_BASE_URL}/smart-apply/auth/google`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.message || 'Google sign-in failed');
-    if (data.token) localStorage.setItem(SMART_APPLY_TOKEN_KEY, data.token);
-    return data;
+    const payloadVariants = [
+      { idToken },
+      { credential: idToken },
+      { token: idToken },
+      { accessToken: idToken },
+    ];
+
+    let lastErrorMessage = 'Google sign-in failed';
+
+    for (const payload of payloadVariants) {
+      const res = await fetch(`${API_BASE_URL}/smart-apply/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        if (data.token) localStorage.setItem(SMART_APPLY_TOKEN_KEY, data.token);
+        return data;
+      }
+      lastErrorMessage = data.message || data.error || `Server error: ${res.status}`;
+      if (res.status >= 500) break;
+    }
+
+    throw new Error(lastErrorMessage);
   },
 
   changePassword: async (currentPassword: string, newPassword: string) => {
