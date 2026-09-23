@@ -70,7 +70,7 @@ const PublicCvView = () => {
   return (
     <Layout>
       <SEO title={`${data.cvData.personal?.fullName || "CV"} – Online CV`} />
-      <div className="min-h-screen bg-gray-100 py-8 px-4">
+      <div className="min-h-screen bg-white py-8 px-4">
         <div className="max-w-[210mm] mx-auto">
           <div className="flex justify-end mb-2 print:hidden">
             <button
@@ -80,10 +80,10 @@ const PublicCvView = () => {
               <Download className="h-4 w-4" /> Download PDF
             </button>
           </div>
-          <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200 p-2 sm:p-4">
+          <div className="bg-white overflow-hidden">
             <CvPreviewByTemplate templateId={data.templateId} data={data.cvData} onLinkClick={handleLinkClick} />
           </div>
-          <p className="text-center text-sm text-gray-500 mt-4">Scanned from a printed CV · Job Assistant</p>
+          <p className="text-center text-sm text-gray-500 mt-4">Online CV · Job Assistant</p>
         </div>
       </div>
     </Layout>
