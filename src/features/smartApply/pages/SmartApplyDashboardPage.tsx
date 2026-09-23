@@ -54,6 +54,10 @@ const SmartApplyDashboardPage = () => {
         });
       })
       .catch((err) => {
+        if (err?.message === "Session expired" || !localStorage.getItem("smart_apply_token")) {
+          navigate("/smart-apply/sign-in", { replace: true });
+          return;
+        }
         setError(err?.message ?? "Failed to load dashboard");
         setData({ jobsApplied: 0, matchingJobs: 0, profileStatus: "incomplete" });
       })
