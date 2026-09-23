@@ -24,6 +24,10 @@ const Layout = ({ children }: LayoutProps) => {
     "/terms",
     "/cookies",
     "/coming-soon",
+    "/jobs",
+    "/smart-apply/jobs",
+    "/smart-apply/job-assist",
+    "/smart-apply/interview-prep",
   ]);
   const isHeroHeaderPath = heroHeaderPaths.has(location.pathname);
   const isSmartApplyPath = location.pathname.startsWith("/smart-apply");
@@ -36,12 +40,13 @@ const Layout = ({ children }: LayoutProps) => {
   const isSmartApply = isSmartApplyPath && hasSmartApplyToken;
   const isRecruiter = location.pathname.startsWith("/recruiter");
   const useOverlayHeader = isHeroHeaderPath && !isRecruiter && !isSmartApply;
+  const headerWrapperClass = useOverlayHeader ? "fixed inset-x-0 top-0 z-50" : "sticky top-0 z-50";
 
   return (
-    <div className="relative min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <ScrollToTop />
       {/* Header Section - Recruiter and Job Assistant get their own headers */}
-      <div className="fixed inset-x-0 top-0 z-50">
+      <div className={headerWrapperClass}>
         {isRecruiter ? (
           recruiterApi.hasToken() ? (
             <RecruiterHeader />
@@ -55,7 +60,7 @@ const Layout = ({ children }: LayoutProps) => {
         )}
       </div>
       {/* Main Content Section - Takes remaining space */}
-      <main className={`flex-1 ${useOverlayHeader ? "" : "pt-28"}`}>
+      <main className="flex-1">
         {children}
       </main>
     </div>
