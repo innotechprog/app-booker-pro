@@ -5,9 +5,9 @@ import SEO from "@/components/SEO";
 
 function Index() {
   return (
-    <Layout>
+    <>
       <SEO page="home" />
-
+      <Layout>
       <div className="bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 relative overflow-hidden">
         {/* Background decorative elements */}
         <div className="absolute inset-0 opacity-30">
@@ -31,7 +31,8 @@ function Index() {
 
       {/* Footer hidden for logged-in learners */}
       {localStorage.getItem('learnerData') === null && <Footer />}
-    </Layout>
+      </Layout>
+    </>
   );
 }
 
