@@ -89,9 +89,9 @@ const Tutorials = () => {
 
 
   return (
-    <div className="min-h-screen">
+    <>
       <SEO page="tutorials" />
-      
+      <div className="min-h-screen">
       {/* Hero Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700"></div>
