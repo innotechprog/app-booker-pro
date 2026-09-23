@@ -5,7 +5,12 @@ import SEO from "@/components/SEO";
 const ComingSoon = () => {
   return (
     <Layout>
-      <SEO title="Coming Soon" description="This feature is currently in development and will be available soon." />
+      <SEO
+        title="Coming Soon | IBIS"
+        description="This feature is currently in development and will be available soon. Stay tuned for updates from IB Innovative Solutions."
+        type="website"
+        url="https://ib-innovativesolutions.com/coming-soon"
+      />
       <section className="relative overflow-hidden bg-gradient-to-b from-[#1f4fcf] via-[#1b49c1] to-[#173ca8] pb-24 pt-32 md:pb-28 md:pt-36">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.15),transparent_55%)]" />
         <div className="relative mx-auto max-w-4xl px-6 text-center text-white">
