@@ -130,12 +130,12 @@ const Register = () => {
   return (
     <>
       <SEO page="register" />
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center px-4 py-8">
+      <div className="min-h-[100dvh] bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-start justify-center px-4 pb-10 pt-[max(1rem,env(safe-area-inset-top,0px))] sm:items-center sm:py-8">
       <div className="w-full max-w-md">
         <Button
           variant="ghost"
           onClick={() => navigate("/")}
-          className="mb-6 text-white hover:text-blue-300 hover:bg-white/10 px-4 py-2 rounded-xl transition-all duration-300 group"
+          className="mb-6 min-h-11 w-full text-white hover:text-blue-200 hover:bg-white/10 px-4 py-2 rounded-xl transition-all duration-300 group border border-white/30 sm:w-auto"
         >
           <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform duration-300" />
           Back to Home
