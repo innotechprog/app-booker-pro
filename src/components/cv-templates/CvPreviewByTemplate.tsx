@@ -1,6 +1,6 @@
 import React from "react";
 import type { CvPreviewData } from "./types";
-import { CV_FONT_SCALE_MAX, CV_FONT_SCALE_MIN } from "./types";
+import { CV_EDITOR_PREVIEW_ZOOM, CV_FONT_SCALE_MAX, CV_FONT_SCALE_MIN } from "./types";
 import {
   PROFESSIONAL_CANVAS,
   CvLinkTrackingContext,
@@ -12,10 +12,25 @@ import {
 } from "./shared";
 import { getCvTemplateComponent } from "./registry";
 
-export function CvPreviewByTemplate({ templateId, data, compact, onLinkClick }: { templateId: number; data: CvPreviewData; compact?: boolean; onLinkClick?: (url: string) => void }) {
+export function CvPreviewByTemplate({
+  templateId,
+  data,
+  compact,
+  livePreview,
+  onLinkClick,
+}: {
+  templateId: number;
+  data: CvPreviewData;
+  compact?: boolean;
+  /** Smaller type in the editor side panel only */
+  livePreview?: boolean;
+  onLinkClick?: (url: string) => void;
+}) {
   const Component = getCvTemplateComponent(templateId);
   const hasQr = !compact && !!data.cvOnlineUrl;
-  const fontScale = compact ? 1 : Math.min(CV_FONT_SCALE_MAX, Math.max(CV_FONT_SCALE_MIN, data.cvFontScale ?? 1));
+  const userFontScale = compact ? 1 : Math.min(CV_FONT_SCALE_MAX, Math.max(CV_FONT_SCALE_MIN, data.cvFontScale ?? 1));
+  const panelZoom = livePreview ? CV_EDITOR_PREVIEW_ZOOM : 1;
+  const fontScale = userFontScale * panelZoom;
   const personalDetailsSection = buildPersonalDetailsSection(data.personal);
   const existingSections = data.customSections ?? [];
   const hasPersonalDetailsSection = existingSections.some((s) => s.id === "personal-details-auto");
@@ -101,7 +116,7 @@ export function CvPreviewByTemplate({ templateId, data, compact, onLinkClick }: 
       })),
   };
   const content = (
-    <div className={PROFESSIONAL_CANVAS}>
+    <div className={`${PROFESSIONAL_CANVAS} w-full max-w-full min-w-0 box-border`}>
       <CvLinkTrackingContext.Provider value={onLinkClick ?? null}>
         {hasQr ? (
           <div className="overflow-hidden bg-white">
