@@ -66,6 +66,22 @@ interface UserDetails {
 const inputClass =
   "rounded-md border border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 text-sm";
 
+/** Visible on white auth panel (site root uses light text on dark `--foreground`). */
+const lightPanelOutlineBtn =
+  "min-h-11 border-gray-300 bg-white text-gray-900 hover:bg-gray-50 hover:text-gray-900 shadow-sm";
+
+function AuthBackLink({ to = "/" }: { to?: string }) {
+  return (
+    <Link
+      to={to}
+      className="inline-flex items-center gap-0.5 text-sm font-medium text-gray-600 hover:text-gray-900"
+    >
+      <ChevronLeft className="h-4 w-4 shrink-0" />
+      Back
+    </Link>
+  );
+}
+
 const textareaClass =
   "rounded-md border border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 text-sm";
 
@@ -837,7 +853,7 @@ const SmartApply = () => {
   // First screen: sign in / sign up (same layout as Learner Portal)
   if (!hasToken) {
     return (
-      <div className="min-h-screen flex overflow-hidden">
+      <div className="flex min-h-[100dvh] overflow-x-hidden">
         <SEO page="smartApply" />
         {/* Left – Branding */}
         <div className="hidden lg:flex lg:w-1/2 fixed left-0 top-0 h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 items-center justify-center p-12">
@@ -864,36 +880,20 @@ const SmartApply = () => {
               <p className="text-xl text-gray-300">
                 {isRecruiterMode ? "Post jobs and manage candidates" : "Apply to many companies at once"}
               </p>
-              <Button
-                type="button"
-                variant="outline"
-                className="mt-4 border-white/60 text-white hover:bg-white/10 hover:text-white"
-                onClick={() => {
-                  const next = !isRecruiterMode;
-                  setIsRecruiterMode(next);
-                  setAuthError("");
-                  setSearchParams(next ? { mode: "recruiter" } : {});
-                }}
-              >
-                {isRecruiterMode ? "I'm a candidate" : "I'm a recruiter"}
-              </Button>
             </div>
           </div>
         </div>
         {/* Right – Form */}
-        <div
-          className={`w-full lg:w-1/2 lg:ml-[50%] flex justify-center bg-white p-8 overflow-y-auto h-screen ${
-            authView === "signup" ? "items-start" : "items-center"
-          }`}
-        >
-          <div className={`w-full max-w-md space-y-8 ${authView === "signup" ? "mt-6 lg:mt-10" : ""}`}>
-            <Link to="/">
-              <Button type="button" variant="outline" className="gap-2">
-                <ChevronLeft className="h-4 w-4" />
-                Back
-              </Button>
-            </Link>
-            <div className="lg:hidden text-center mb-8">
+        <div className="flex min-h-[100dvh] w-full flex-col bg-white text-gray-900 lg:ml-[50%] lg:w-1/2">
+          <div
+            className="sticky top-0 z-20 flex justify-start border-b border-gray-100 bg-white px-4 py-2 sm:px-6 lg:static lg:z-auto lg:border-0 lg:bg-transparent lg:px-8 lg:pt-6 lg:pb-0"
+            style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top, 0px))" }}
+          >
+            <AuthBackLink />
+          </div>
+          <div className="flex flex-1 flex-col overflow-y-auto px-4 pb-10 pt-4 sm:px-6 lg:justify-center lg:px-8 lg:py-8">
+          <div className={`mx-auto w-full max-w-md space-y-6 ${authView === "signup" ? "lg:mt-0" : ""}`}>
+            <div className="lg:hidden text-center mb-4">
               <div className="flex justify-center mb-4">
                 <div className="w-16 h-16 border-4 border-blue-600 rounded-full flex items-center justify-center">
                   <Sparkles className="w-8 h-8 text-blue-600" />
@@ -902,14 +902,14 @@ const SmartApply = () => {
               <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-700 mb-2">
                 {isRecruiterMode ? <><Building2 className="h-3.5 w-3.5" /> Recruiter</> : <><User className="h-3.5 w-3.5" /> Candidate</>}
               </span>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                 {authView === "login"
                   ? (isRecruiterMode ? "Sign in to recruiter account" : "Sign in to your account")
                   : (isRecruiterMode ? "Create recruiter account" : "Create your account")}
               </h1>
             </div>
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="hidden lg:block text-2xl font-bold text-gray-900">
                 {authView === "login"
                   ? (isRecruiterMode ? "Sign in to recruiter account" : "Sign in to your account")
                   : (isRecruiterMode ? "Create recruiter account" : "Create your account")}
@@ -922,7 +922,7 @@ const SmartApply = () => {
                   <div className="relative w-full h-11">
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="outlineLight"
                       className={`w-full h-11 ${inputClass}`}
                       onClick={() => triggerGoogleSignIn()}
                       disabled={isGoogleLoading}
@@ -1011,7 +1011,7 @@ const SmartApply = () => {
                   <div className="relative w-full h-11">
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="outlineLight"
                       className={`w-full h-11 ${inputClass}`}
                       onClick={() => triggerGoogleSignIn()}
                       disabled={isGoogleLoading}
@@ -1125,6 +1125,7 @@ const SmartApply = () => {
                 </>
               )}
             </div>
+          </div>
           </div>
         </div>
       </div>
