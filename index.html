@@ -4,9 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="author" content="IB Innovative Solutions" />
-    <!-- Favicon: site logo (ib-logo-white.png from src/images, copied to public) -->
-    <link rel="icon" type="image/png" href="/ib-logo-white.png" />
-    <link rel="apple-touch-icon" href="/ib-logo-white.png" />
+    <!-- Square favicon (multiple of 48px) so Google can show the logo in search results -->
+    <link rel="icon" type="image/png" href="/favicon.png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "IB Innovative Solutions",
+        "alternateName": "IBIS",
+        "url": "https://ib-innovativesolutions.com",
+        "logo": "https://ib-innovativesolutions.com/logo.png"
+      }
+    </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
 
