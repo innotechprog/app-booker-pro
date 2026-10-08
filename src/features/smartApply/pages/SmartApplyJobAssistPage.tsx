@@ -533,11 +533,14 @@ const SmartApplyJobAssistPage = () => {
                         <SelectValue placeholder="Select a template" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({ length: 20 }, (_, index) => {
+                        {Array.from({ length: 5 }, (_, index) => {
                           const templateId = String(index + 1);
+                          const comingSoon = ["3", "4", "5"].includes(templateId);
                           return (
-                            <SelectItem key={templateId} value={templateId}>
+                            <SelectItem key={templateId} value={templateId} disabled={comingSoon}>
                               Template {templateId}
+                              {templateId === "2" ? " (R20)" : ""}
+                              {comingSoon ? " — Coming Soon" : ""}
                             </SelectItem>
                           );
                         })}
