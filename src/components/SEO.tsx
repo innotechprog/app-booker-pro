@@ -245,7 +245,7 @@ const SEO = ({
           "name": "IB Innovative Solutions",
           "alternateName": "IBIS",
           "url": SITE_URL,
-          "logo": `${SITE_URL}/ib-logo-white.png`,
+          "logo": `${SITE_URL}/logo.png`,
           "description": "Solutions you can trust everyday. Education support, IT solutions, Send Me and Job Assistant bulk job applications. South Africa.",
           "address": {
             "@type": "PostalAddress",
@@ -293,7 +293,12 @@ const SEO = ({
           "name": "IB Innovative Solutions",
           "url": SITE_URL,
           "description": "Professional services: education, IT solutions, Send Me, Job Assistant. Gauteng & South Africa.",
-          "publisher": { "@type": "Organization", "name": "IB Innovative Solutions" }
+          "publisher": {
+            "@type": "Organization",
+            "name": "IB Innovative Solutions",
+            "url": SITE_URL,
+            "logo": `${SITE_URL}/logo.png`
+          }
         })}
       </script>
     </Helmet>
