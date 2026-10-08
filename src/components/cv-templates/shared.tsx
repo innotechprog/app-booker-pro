@@ -13,6 +13,7 @@ export const PROFESSIONAL_CANVAS =
 export function SectionHeader({ children, accent }: { children: React.ReactNode; accent?: string }) {
   return (
     <h2
+      data-cv-heading=""
       className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600 border-b border-slate-200 pb-1.5 mb-2"
       style={accent ? { color: accent, borderColor: accent + "40" } : undefined}
     >
@@ -64,7 +65,7 @@ export function CustomSectionsBlock({ sections, accent, className = "" }: { sect
     <>
       {sections.map((s) => (
         s.title.trim() || s.content.trim() ? (
-          <section key={s.id} className={className}>
+          <section key={s.id} data-cv-block="" className={className}>
             <h2 className="text-[11px] font-semibold uppercase tracking-wider border-b border-gray-200 pb-1 mb-1.5" style={{ color }}>{s.title || "Section"}</h2>
             <p className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed">{s.content || "—"}</p>
           </section>
@@ -263,6 +264,7 @@ export function PdfSafeBulletList({
       {items.map((line, j) => (
         <li
           key={j}
+          data-cv-block=""
           className="cv-pdf-bullet-item"
           style={{
             display: "block",
@@ -356,6 +358,7 @@ export function PdfSafeSkillChips({
       {skills.map((s, i) => (
         <span
           key={i}
+          data-cv-block=""
           className={`cv-t1-skill-chip ${chipClassName}`}
           style={{
             display: "inline-block",
