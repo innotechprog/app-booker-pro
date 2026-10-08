@@ -1,7 +1,46 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const SITE_URL = process.env.VITE_SITE_URL || "https://ib-innovativesolutions.com";
+const DEFAULT_SITE_URL = "https://ib-innovativesolutions.com";
+
+/** Load Vite env files. Already-set process.env values win. Later files override earlier ones. */
+function loadEnvFiles() {
+  const mode = process.env.MODE || "production";
+  const files = [".env", ".env.local", `.env.${mode}`, `.env.${mode}.local`];
+  const parsed = {};
+  for (const file of files) {
+    const full = path.resolve(file);
+    if (!fs.existsSync(full)) continue;
+    const text = fs.readFileSync(full, "utf8");
+    for (const line of text.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const eq = trimmed.indexOf("=");
+      if (eq <= 0) continue;
+      const key = trimmed.slice(0, eq).trim();
+      let value = trimmed.slice(eq + 1).trim();
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1);
+      }
+      parsed[key] = value;
+    }
+  }
+  for (const [key, value] of Object.entries(parsed)) {
+    if (process.env[key] === undefined) process.env[key] = value;
+  }
+}
+
+loadEnvFiles();
+
+if (["0", "false", "no"].includes(String(process.env.VITE_PRERENDER_SEO || "").toLowerCase())) {
+  console.log("SEO prerender skipped (VITE_PRERENDER_SEO is disabled).");
+  process.exit(0);
+}
+
+const SITE_URL = (process.env.VITE_SITE_URL || DEFAULT_SITE_URL).replace(/\/+$/, "");
 const DIST_DIR = path.resolve("dist");
 const INDEX_PATH = path.join(DIST_DIR, "index.html");
 
@@ -131,11 +170,19 @@ function absoluteImage(imagePath) {
   return imagePath.startsWith("http") ? imagePath : `${SITE_URL}${imagePath}`;
 }
 
+const SEO_START = "<!-- seo-prerender:start -->";
+const SEO_END = "<!-- seo-prerender:end -->";
+
 function buildHead(route, data) {
   const url = absoluteUrl(route);
   const image = absoluteImage("/ib-logo-black.png");
 
-  return `\n    <title>${data.title}</title>\n    <meta name="description" content="${data.description}" />\n    <meta name="keywords" content="${data.keywords}" />\n    <meta name="author" content="IB Innovative Solutions" />\n    <meta name="robots" content="index, follow" />\n    <link rel="canonical" href="${url}" />\n\n    <meta property="og:title" content="${data.title}" />\n    <meta property="og:description" content="${data.description}" />\n    <meta property="og:image" content="${image}" />\n    <meta property="og:image:alt" content="${data.title} - IB Innovative Solutions" />\n    <meta property="og:url" content="${url}" />\n    <meta property="og:type" content="website" />\n    <meta property="og:site_name" content="IB Innovative Solutions" />\n    <meta property="og:locale" content="en_ZA" />\n\n    <meta name="twitter:card" content="summary_large_image" />\n    <meta name="twitter:title" content="${data.title}" />\n    <meta name="twitter:description" content="${data.description}" />\n    <meta name="twitter:image" content="${image}" />\n    <meta name="twitter:image:alt" content="${data.title} - IB Innovative Solutions" />\n    <meta name="twitter:site" content="@ibis_solutions" />\n  `;
+  return `\n    ${SEO_START}\n    <title>${data.title}</title>\n    <meta name="description" content="${data.description}" />\n    <meta name="keywords" content="${data.keywords}" />\n    <meta name="author" content="IB Innovative Solutions" />\n    <meta name="robots" content="index, follow" />\n    <link rel="canonical" href="${url}" />\n\n    <meta property="og:title" content="${data.title}" />\n    <meta property="og:description" content="${data.description}" />\n    <meta property="og:image" content="${image}" />\n    <meta property="og:image:alt" content="${data.title} - IB Innovative Solutions" />\n    <meta property="og:url" content="${url}" />\n    <meta property="og:type" content="website" />\n    <meta property="og:site_name" content="IB Innovative Solutions" />\n    <meta property="og:locale" content="en_ZA" />\n\n    <meta name="twitter:card" content="summary_large_image" />\n    <meta name="twitter:title" content="${data.title}" />\n    <meta name="twitter:description" content="${data.description}" />\n    <meta name="twitter:image" content="${image}" />\n    <meta name="twitter:image:alt" content="${data.title} - IB Innovative Solutions" />\n    <meta name="twitter:site" content="@ibis_solutions" />\n    ${SEO_END}\n  `;
+}
+
+function stripSeoBlock(html) {
+  const pattern = new RegExp(`\\s*${SEO_START}[\\s\\S]*?${SEO_END}\\s*`, "g");
+  return html.replace(pattern, "\n");
 }
 
 function writeRouteHtml(route, html) {
@@ -154,7 +201,7 @@ function run() {
     throw new Error("dist/index.html not found. Run vite build first.");
   }
 
-  const baseHtml = fs.readFileSync(INDEX_PATH, "utf8");
+  const baseHtml = stripSeoBlock(fs.readFileSync(INDEX_PATH, "utf8"));
 
   for (const [route, data] of Object.entries(seoByRoute)) {
     const headMarkup = buildHead(route, data);
@@ -162,7 +209,9 @@ function run() {
     writeRouteHtml(route, routeHtml);
   }
 
-  console.log(`SEO prerender complete for ${Object.keys(seoByRoute).length} routes.`);
+  console.log(
+    `SEO prerender complete for ${Object.keys(seoByRoute).length} routes (${SITE_URL}).`
+  );
 }
 
 run();
