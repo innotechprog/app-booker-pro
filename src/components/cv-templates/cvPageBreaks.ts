@@ -83,13 +83,15 @@ export function computeCuts(total: number, pageSlice: number, blocks: CvBlock[])
   const cuts = [0];
   let y = 0;
   let guard = 0;
-  while (y < total - 1 && guard < 40) {
+  while (y < total && guard < 40) {
     guard += 1;
     const limit = Math.min(total, y + pageSlice);
     let next = chooseCut(y, limit, total, blocks, pageSlice);
     if (next <= y + 0.5) next = Math.min(total, y + pageSlice);
+    if (next > total) next = total;
     cuts.push(next);
     y = next;
   }
+  if (cuts[cuts.length - 1] < total) cuts.push(total);
   return cuts;
 }
