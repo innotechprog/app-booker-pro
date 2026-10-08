@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SEO from "@/components/SEO";
 import { useAuth } from "@/contexts/AuthContext";
-import { GraduationCap } from "lucide-react";
+import { ChevronLeft, GraduationCap } from "lucide-react";
 import { initializeGoogleAuth, renderGoogleButton, triggerGoogleSignIn } from "@/utils/googleAuth";
 import { toast } from "sonner";
 
@@ -93,7 +93,7 @@ const LearnerRegister = () => {
   };
 
   return (
-    <div className="min-h-screen flex overflow-hidden">
+    <div className="flex min-h-[100dvh] overflow-x-hidden">
       <SEO title="Learner Register" />
       
       {/* Left Side - Branding (Fixed) */}
@@ -113,9 +113,26 @@ const LearnerRegister = () => {
       </div>
 
       {/* Right Side - Register Form (Scrollable) */}
-      <div className="w-full lg:w-1/2 lg:ml-[50%] flex items-center justify-center bg-white p-8 overflow-y-auto h-screen">
-        <div className="w-full max-w-md space-y-8">
-          <div className="lg:hidden text-center mb-8">
+      <div className="flex min-h-[100dvh] w-full flex-col bg-white text-gray-900 lg:ml-[50%] lg:w-1/2">
+        <div
+          className="sticky top-0 z-20 border-b border-gray-100 bg-white px-4 py-3 sm:px-6 lg:static lg:border-0 lg:px-8 lg:pt-8"
+          style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}
+        >
+          <Button
+            asChild
+            type="button"
+            variant="outlineLight"
+            className="min-h-11 w-full gap-2 border-gray-300 bg-white text-gray-900 hover:bg-gray-50 shadow-sm sm:w-auto"
+          >
+            <Link to="/" className="inline-flex min-h-10 w-full items-center justify-center gap-2 text-gray-900 sm:w-auto sm:justify-start">
+              <ChevronLeft className="h-4 w-4 shrink-0" />
+              Back
+            </Link>
+          </Button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-4 pb-10 pt-4 sm:px-6 lg:flex lg:items-center lg:justify-center lg:px-8 lg:py-8">
+        <div className="mx-auto w-full max-w-md space-y-6">
+          <div className="lg:hidden text-center mb-4">
             <div className="flex justify-center mb-4">
               <div className="w-16 h-16 border-4 border-blue-600 rounded-full flex items-center justify-center">
                 <GraduationCap className="w-8 h-8 text-blue-600" />
@@ -132,8 +149,8 @@ const LearnerRegister = () => {
             {showGoogleFallback && (
               <Button
                 type="button"
-                variant="outline"
-                className="w-full h-11"
+                variant="outlineLight"
+                className="w-full h-11 border-gray-300 bg-white text-gray-900 hover:bg-gray-50"
                 onClick={handleGoogleSignup}
                 disabled={isGoogleLoading}
               >
@@ -211,6 +228,7 @@ const LearnerRegister = () => {
               </Link>
             </p>
           </div>
+        </div>
         </div>
       </div>
     </div>
